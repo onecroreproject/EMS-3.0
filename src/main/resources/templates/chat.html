@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp-Like Employee Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <style>
+         :root {
+    --primary-color: #0057D9;         /* Deep enterprise blue (Microsoft/Meta-style) */
+    --secondary-color: #0078D4;       /* Lighter blue accent */
+    --accent-color: #FFB900;          /* Warm vibrant accent (used sparingly like Microsoft/Google) */
+    
+    --chat-bg: #F3F4F6;               /* Soft light grey background */
+    --message-self: #E5F1FB;          /* Subtle blue tint for own messages */
+    --message-other: #FFFFFF;         /* White for others' messages */
+    
+    --muted-color: #5F6368;           /* Muted text (Google style) */
+    --border-color: #E0E0E0;          /* Soft border grey */
+    --light-bg: #FAFAFA;              /* Ultra-light background for clean UI */
+    --sidebar-bg: #FFFFFF;            /* Clean white sidebar */
+    --hover-color: #F1F3F4;           /* Subtle hover effect */
+
+    --gradient-bg: linear-gradient(135deg, #0057D9, #0078D4); /* Cool blue gradient */
+}
+
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background: var(--light-bg);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            height: 100vh;
+            background: var(--chat-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            height: 100%;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .search-bar {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-input {
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.2);
+            transform: scale(1.02);
+        }
+
+        .employee {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .employee:hover {
+            background: var(--hover-color);
+            transform: translateX(5px);
+        }
+
+        .employee.active {
+            background: var(--hover-color);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .employee-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .employee-avatar:hover {
+            transform: rotate(360deg);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid white;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-dot.online {
+            background: #25D366;
+        }
+
+        .status-dot.offline {
+            background: #9CA3AF;
+        }
+
+        .employee-details {
+            flex: 1;
+        }
+
+        .employee-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .employee-status {
+            font-size: 12px;
+            color: var(--muted-color);
+        }
+
+        .unread-badge {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: transform 0.3s ease;
+        }
+
+        .unread-badge:hover {
+            transform: scale(1.1);
+        }
+
+        /* Chat Area */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .chat-header:hover {
+            background: var(--hover-color);
+        }
+
+        .chat-header-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--muted-color);
+            transition: color 0.2s ease;
+        }
+
+        .chat-header-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .chat-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+
+        .chat-header-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--chat-bg);
+            /* background-image: url('https://i.imgur.com/n5pZQwB.png'); */
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.self {
+            margin-left: auto;
+        }
+
+        .message.other {
+            margin-right: auto;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            line-height: 1.5;
+            transition: transform 0.2s ease;
+        }
+
+        .message-bubble:hover {
+            transform: translateY(-2px);
+        }
+
+        .message.self .message-bubble {
+            background: var(--message-self);
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.other .message-bubble {
+            background: var(--message-other);
+            border-bottom-left-radius: 2px;
+        }
+
+        .message-sender {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted-color);
+            margin-bottom: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--muted-color);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .message.other .message-time {
+            text-align: left;
+        }
+
+        .ticks {
+            color: #34B7F1; /* Blue ticks for read */
+        }
+
+        .ticks.read {
+            color: #34B7F1; /* Blue for read */
+        }
+
+        .ticks.sent {
+            color: #999; /* Gray for sent */
+        }
+
+        .typing {
+            font-size: 12px;
+            color: var(--muted-color);
+            font-style: italic;
+            padding: 10px 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .chat-footer {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-input {
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 14px;
+            resize: none;
+            min-height: 40px;
+            max-height: 100px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.2);
+            transform: scale(1.02);
+        }
+
+        .send-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover {
+            background: #20B058;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Profile Sidebar */
+        .profile-sidebar {
+            background: white;
+            border-left: 1px solid var(--border-color);
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .profile-sidebar:hover {
+            box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 auto 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .profile-pic:hover {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .profile-email {
+            font-size: 13px;
+            color: var(--muted-color);
+        }
+
+        .profile-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .profile-details {
+            padding: 20px 0;
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        .detail-item:hover {
+            transform: translateX(5px);
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--muted-color);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .profile-sidebar {
+                display: none;
+            }
+            .sidebar {
+                width: 300px;
+                position: absolute;
+                z-index: 1000;
+                transform: translateX(-100%);
+                animation: slideIn 0.3s ease forwards;
+            }
+            .chat-area {
+                width: 100%;
+            }
+            .show-sidebar .sidebar {
+                transform: translateX(0);
+            }
+            .show-sidebar .chat-area {
+                display: none;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .chat-container {
+                margin: 0;
+                border-radius: 0;
+            }
+            .chat-header {
+                font-size: 14px;
+            }
+            .message-bubble {
+                font-size: 13px;
+            }
+            .send-button {
+                padding: 8px 15px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--muted-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+        .back-button {
+    text-decoration: none;
+    color: var(--sidebar-bg);
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+   
+}
+
+.back-icon {
+    width: 34px;
+    height: 34px;
+    transition: color 0.2s ease;
+    font-weight: bolder;
+}
+
+.back-button:hover .back-icon {
+    color: black;
+}
+    </style>
+</head>
+<body>
+<div class="container-fluid chat-container">
+    <div class="row h-100">
+        <!-- Sidebar -->
+     <div class="col-12 col-md-4 col-lg-3 sidebar p-0" id="employeeListContainer">
+            <div class="sidebar-header d-flex justify-content-between align-items-center">
+              <div class="user-info">
+    <a href="/employees/employee/home" class="back-button" title="Back to Home">
+        <!-- Back Arrow SVG Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+        </svg>
+    </a>
+    
+    <div class="user-avatar" th:text="${userName?.substring(0,1)?.toUpperCase()}">UN</div>
+    
+    <div>
+        <div class="user-name" th:text="${userName}">User Name</div>
+        <div class="user-email" th:text="${userEmail}">user@example.com</div>
+    </div>
+</div>
+    <div class="dropdown">
+        <button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#" onclick="openProfile()">My Profile</a></li>
+            <li><a class="dropdown-item" href="#" onclick="openGroupModal()">Create Group</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#">Logout</a></li>
+        </ul>
+    </div>
+</div>
+
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input form-control"
+                       placeholder="Search by name or email..."
+                       onkeyup="handleSearch(event)" aria-label="Search employees"/>
+            </div>
+            <div id="employeeList" class="employee-list"></div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="col-12 col-md-8 col-lg-6 d-flex flex-column chat-area p-0">
+            <div class="chat-header" id="chatHeader">
+                <button class="chat-header-btn d-md-none" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="chat-header-avatar">JD</div>
+                <div>
+                    <div class="chat-header-name">Select an employee to chat</div>
+                    <div class="chat-header-status"></div>
+                </div>
+            </div>
+            <div class="chat-box flex-grow-1" id="chatBox"></div>
+            <div id="typingStatus" class="typing"></div>
+            <div class="chat-footer">
+                <textarea id="messageInput" class="message-input form-control"
+                          placeholder="Type a message..."
+                          oninput="sendTyping()"
+                          onfocus="startTyping()"
+                          onblur="stopTyping()"
+                          aria-label="Message input"></textarea>
+                <button class="send-button" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Profile Sidebar -->
+        <div class="col-12 col-lg-3 profile-sidebar d-none d-lg-block" id="profileSidebar">
+            <div class="profile-header">
+                <div class="profile-pic" id="profilePic">JD</div>
+                <div class="profile-name" id="profileName">No user selected</div>
+                <div class="profile-email" id="profileEmail">---</div>
+                <div class="profile-status">
+                    <span class="status-dot offline" id="profileStatus"></span>
+                    <span id="profileStatusText">Offline</span>
+                </div>
+            </div>
+            <div class="profile-details">
+                <div class="detail-item">
+                    <div class="detail-label">About</div>
+                    <div class="detail-value" id="profileAbout">Select a user to see details.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+let stompClient = null;
+let userEmail = [[${userEmail}]];
+let userName = [[${userName}]];
+let receiverEmail = null;
+let receiverName = null;
+let allEmployees = [];
+let sidebarRefreshTimeout = null;
+
+// ------------------- Connect WebSocket -------------------
+function connect() {
+    let socket = new SockJS('/ws/chat');
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        console.log("Connected: " + frame);
+
+        // Subscribe for direct messages
+        stompClient.subscribe("/user/" + userEmail + "/queue/messages", function (msg) {
+            const message = JSON.parse(msg.body);
+            showMessage(message, message.senderEmail === userEmail);
+
+           if (message.senderEmail === receiverEmail) {
+    // Mark as read if chat is open
+    fetch(`/api/chat/readConversation?user1=${userEmail}&user2=${receiverEmail}`, { method: "POST" });
+    const badge = document.getElementById("badge-" + receiverEmail);
+    if (badge) badge.innerText = "";
+} else {
+    // Increment unread count for sender
+    const badge = document.getElementById("badge-" + message.senderEmail);
+    if (badge) {
+        const currentCount = parseInt(badge.innerText) || 0;
+        badge.innerText = currentCount + 1;
+    }
+    loadSidebar(); // Refresh sidebar for new messages
+}
+
+        });
+
+        // Subscribe to status updates (online/offline)
+        stompClient.subscribe("/topic/status", function (statusMsg) {
+            const s = JSON.parse(statusMsg.body);
+
+            // Update sidebar dot
+            const dot = document.querySelector(`#badge-${s.email}`)?.parentNode?.querySelector('.status-dot');
+            if (dot) dot.className = "status-dot " + (s.online ? "online" : "offline");
+
+            // Update sidebar status text
+            const statusEl = document.querySelector(`#badge-${s.email}`)?.parentNode?.querySelector('.employee-status');
+            if (statusEl) {
+                statusEl.innerText = s.online ? (s.typing ? "typing..." : "online") :
+                    (s.lastSeen ? "last seen " + new Date(s.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : "offline");
+            }
+
+            // Update profile panel
+            if (receiverEmail === s.email) {
+                document.getElementById("profileStatus").className = "status-dot " + (s.online ? "online" : "offline");
+                document.getElementById("profileStatusText").innerText =
+                    s.online ? "Online" : (s.lastSeen ? "Last seen: " + new Date(s.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : "Offline");
+            }
+        });
+
+        // Subscribe to typing events
+        stompClient.subscribe("/user/" + userEmail + "/queue/typing", function (msg) {
+            const typingEvent = JSON.parse(msg.body);
+            // Only show typing if the sender is the current chat partner
+            if (receiverEmail === typingEvent.email && typingEvent.typing) {
+                document.getElementById("typingStatus").innerText = receiverName + " is typing...";
+            } else {
+                document.getElementById("typingStatus").innerText = "";
+            }
+        });
+
+        // Subscribe to read receipts
+        stompClient.subscribe("/user/" + userEmail + "/queue/readReceipt", function (msg) {
+            const data = JSON.parse(msg.body);
+            const el = document.querySelector("#msg-" + data.messageId + " .ticks");
+            if (el) {
+                el.innerText = "✓✓";
+                el.className = "ticks read";
+            }
+        });
+
+        // Subscribe to sidebar auto-refresh
+        stompClient.subscribe("/topic/sidebarUpdate", function () {
+            loadSidebar();
+        });
+
+        // Announce myself online
+        stompClient.send("/app/online", {}, userEmail);
+
+        window.addEventListener("beforeunload", () => {
+            stompClient.send("/app/offline", {}, userEmail);
+        });
+
+        loadSidebar();
+    }, function (error) {
+        console.error("WebSocket connection error:", error);
+    });
+}
+
+// ------------------- Sidebar -------------------
+async function loadSidebar() {
+    if (sidebarRefreshTimeout) clearTimeout(sidebarRefreshTimeout);
+    sidebarRefreshTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch(`/api/chat/sidebar?email=${userEmail}`);
+            if (!response.ok) throw new Error("Failed to load sidebar");
+            const employees = await response.json();
+            allEmployees = employees;
+            renderSidebar(employees);
+        } catch (error) {
+            console.error("Error loading sidebar:", error);
+            document.getElementById("employeeList").innerHTML = "<div>Error loading employees</div>";
+        }
+    }, 300);
+}
+
+function renderSidebar(users) {
+    const container = document.getElementById("employeeList");
+    container.innerHTML = "";
+    users.forEach(emp => {
+        const div = document.createElement("div");
+        div.className = `employee ${receiverEmail === emp.email ? 'active' : ''}`;
+        div.onclick = () => startChat(emp.email, emp.name);
+
+        let statusText = "";
+        if (emp.online) {
+            statusText = emp.typing ? "typing..." : "online";
+        } else {
+            statusText = emp.lastSeen
+                ? "last seen " + new Date(emp.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+                : "offline";
+        }
+
+        div.innerHTML = `
+            <div class="employee-avatar">
+                ${emp.name.charAt(0).toUpperCase()}
+                <div class="status-dot ${emp.online ? 'online' : 'offline'}"></div>
+            </div>
+            <div class="employee-details">
+                <div class="employee-name">${emp.name}</div>
+                <div class="employee-status">${statusText}</div>
+            </div>
+            <span class="unread-badge" id="badge-${emp.email}">
+                ${emp.unreadCount > 0 ? emp.unreadCount : ""}
+            </span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// ------------------- Chat -------------------
+async function startChat(email, name) {
+    try {
+        receiverEmail = email;
+        receiverName = name;
+
+        document.getElementById("chatHeader").innerHTML = `
+            <button class="chat-header-btn d-md-none" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="chat-header-avatar">${name.charAt(0).toUpperCase()}</div>
+            <div>
+                <div class="chat-header-name">${name}</div>
+                <div class="chat-header-status"></div>
+            </div>
+        `;
+        document.getElementById("chatBox").innerHTML = "";
+        document.getElementById("typingStatus").innerText = "";
+
+        document.getElementById("profileName").innerText = name;
+        document.getElementById("profileEmail").innerText = email;
+        document.getElementById("profilePic").innerText = name.charAt(0).toUpperCase();
+
+        // Update profile status
+        const emp = allEmployees.find(e => e.email === email);
+        if (emp) {
+            document.getElementById("profileStatus").className = "status-dot " + (emp.online ? "online" : "offline");
+            document.getElementById("profileStatusText").innerText =
+                emp.online ? "Online" : (emp.lastSeen ? "Last seen: " + new Date(emp.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : "Offline");
+        }
+
+        // Reset badge
+        const badge = document.getElementById("badge-" + email);
+        if (badge) badge.innerText = "";
+
+        // Mark messages as read
+        await fetch(`/api/chat/readConversation?user1=${userEmail}&user2=${receiverEmail}`, { method: "POST" });
+
+        // Load chat history
+        const res = await fetch(`/api/chat/history?user1=${userEmail}&user2=${receiverEmail}`);
+        if (res.ok) {
+            const history = await res.json();
+            history.forEach(msg => showMessage(msg, msg.senderEmail === userEmail));
+        } else {
+            console.error("Failed to load chat history:", res.status);
+        }
+
+        loadSidebar();
+    } catch (error) {
+        console.error("Error in startChat:", error);
+    }
+}
+
+// ------------------- Send / Show Message -------------------
+function sendMessage() {
+    const content = document.getElementById("messageInput").value.trim();
+    if (!content || !receiverEmail) return;
+
+    const msg = {
+        id: Date.now().toString(),
+        senderEmail: userEmail,
+        senderName: userName,
+        receiverEmail: receiverEmail,
+        content: content,
+        timestamp: new Date().toISOString(),
+        read: false
+    };
+
+    stompClient.send("/app/sendMessage", {}, JSON.stringify(msg));
+    showMessage(msg, true);
+    document.getElementById("messageInput").value = "";
+}
+
+// ------------------- Show Message -------------------
+function showMessage(msg, self) {
+    const div = document.createElement("div");
+    div.className = `message ${self ? "self" : "other"}`;
+    div.id = "msg-" + (msg.id || Date.now());
+
+    const sender = self ? "You" : (msg.senderName || msg.senderEmail);
+    const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    const ticks = self ? (msg.read ? '✓✓' : '✓') : '';
+    const tickClass = self ? (msg.read ? 'ticks read' : 'ticks sent') : 'ticks';
+
+    div.innerHTML = `
+        <div class="message-sender">${sender}</div>
+        <div class="message-bubble">${msg.content}</div>
+        <div class="message-time">${time} <span class="${tickClass}">${ticks}</span></div>
+    `;
+    document.getElementById("chatBox").appendChild(div);
+    document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+}
+
+// ------------------- Typing -------------------
+function startTyping() {
+    if (!receiverEmail) return;
+    stompClient.send("/app/typing", {}, JSON.stringify({
+        email: userEmail,
+        receiver: receiverEmail,
+        typing: true
+    }));
+}
+
+function stopTyping() {
+    if (!receiverEmail) return;
+    stompClient.send("/app/typing", {}, JSON.stringify({
+        email: userEmail,
+        receiver: receiverEmail,
+        typing: false
+    }));
+}
+
+function sendTyping() {
+    if (!receiverEmail) return;
+    startTyping();
+    clearTimeout(window.typingTimeout);
+    window.typingTimeout = setTimeout(stopTyping, 2000);
+}
+
+// ------------------- Search -------------------
+function handleSearch(event) {
+    const term = event.target.value.toLowerCase();
+    const filtered = allEmployees.filter(emp =>
+        emp.name.toLowerCase().includes(term) || emp.email.toLowerCase().includes(term)
+    );
+    renderSidebar(filtered);
+}
+
+// ------------------- Sidebar Toggle -------------------
+function toggleSidebar() {
+    document.getElementById("employeeListContainer").classList.toggle("show-sidebar");
+    document.querySelector(".chat-area").classList.toggle("d-none");
+}
+
+// ------------------- Init -------------------
+document.addEventListener('DOMContentLoaded', () => {
+    connect();
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        } else {
+            sendTyping();
+        }
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Activity Logs</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Public Sans Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans&display=swap" rel="stylesheet">
+
+  <!-- DataTables CSS -->
+  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet"/>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Public Sans', sans-serif;
+      background-color: #f9f9f9;
+    }
+    .page-header {
+      background-color: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .page-header h2 {
+      margin: 0;
+    }
+    .btn-export {
+      margin-left: 10px;
+    }
+    .filter-section {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .filter-section h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-card {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .detail-card {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .detail-card h6 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    .detail-card p {
+      margin: 5px 0 0;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+    .table thead {
+      background-color: #f1f3f4;
+      font-weight: bold;
+    }
+    th, td {
+      white-space: nowrap;
+    }
+    .app-table {
+      margin-top: 15px;
+    }
+    .collapsible {
+      cursor: pointer;
+    }
+    .collapsible-content {
+      display: none;
+      overflow: hidden;
+    }
+    .employee-info {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .employee-detail {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .employee-detail label {
+      font-weight: 600;
+      min-width: 120px;
+      margin-bottom: 0;
+    }
+    .employee-detail span {
+      flex: 1;
+    }
+    .log-table {
+      width: 100%;
+    }
+    .log-table th {
+      background-color: #f8f9fa;
+    }
+    .badge-active {
+      background-color: #198754;
+    }
+    .badge-idle {
+      background-color: #6c757d;
+    }
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .page-header > div {
+        margin-top: 15px;
+        width: 100%;
+      }
+      .btn-export {
+        margin-left: 0;
+        margin-top: 10px;
+        width: 100%;
+      }
+      .log-details {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div th:replace="fragments/sidebar :: sidebar"></div>
+    <div class="sidebar-page-content">
+
+<div class="container-fluid mt-5">
+  <div class="page-header">
+    <h2>Admin: Activity Logs</h2>
+    <div>
+      <a href="/admin/home" class="btn btn-outline-secondary">← Back</a>
+      <button class="btn btn-outline-success btn-export" onclick="exportToCSV()">
+        <i class="fas fa-file-excel me-1"></i> Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Form -->
+  <form th:action="@{/admin/activity/logs}" method="get" class="row g-3 mb-4 filter-section">
+    <h3>Activity Log Filters</h3>
+    <div class="col-md-3">
+      <label class="form-label">Department</label>
+      <select id="deptSelect" name="departmentId" class="form-select">
+        <option value="">-- All Departments --</option>
+        <option th:each="d : ${departments}" 
+                th:value="${d.id}" 
+                th:text="${d.name}" 
+                th:selected="${d.id == selectedDepartment}"></option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Team</label>
+      <select id="teamSelect" name="teamId" class="form-select">
+        <option value="">-- All Teams --</option>
+        <option th:each="t : ${teams}" 
+                th:value="${t.id}" 
+                th:text="${t.name}" 
+                th:selected="${t.id == selectedTeam}"></option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Employee</label>
+      <select id="empSelect" name="employeeCode" class="form-select">
+        <option value="">-- All Employees --</option>
+        <option th:each="e : ${employees}" 
+                th:value="${e.employeeCode}" 
+                th:text="${e.name}"
+                th:attr="data-email=${e.email}, data-code=${e.employeeCode}"
+                th:selected="${e.employeeCode == selectedEmployee}"></option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Email</label>
+      <input type="text" id="empEmail" class="form-control" readonly>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Employee Code</label>
+      <input type="text" id="empCode" class="form-control" readonly>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Start Date</label>
+      <input type="date" name="startDate" th:value="${startDate}" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">End Date</label>
+      <input type="date" name="endDate" th:value="${endDate}" class="form-control">
+    </div>
+    <div class="col-12 text-end mt-2">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-filter me-1"></i> Filter
+      </button>
+      <a th:href="@{/admin/activity/logs}" class="btn btn-secondary ms-2">
+        <i class="fas fa-sync-alt me-1"></i> Reset
+      </a>
+    </div>
+  </form>
+
+  <!-- Employee Info Display -->
+  <div th:if="${selectedEmployee}" class="employee-info">
+    <h4>Employee Information</h4>
+    <div class="employee-detail">
+      <label>Name:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('name')}">Employee Name</span>
+    </div>
+    <div class="employee-detail">
+      <label>Email:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('email')}">employee@example.com</span>
+    </div>
+    <div class="employee-detail">
+      <label>Employee Code:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('code')}">EMP001</span>
+    </div>
+  </div>
+
+  <!-- Activity Logs -->
+  <div th:if="${structuredLogs.empty}">
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i> No activity logs found for the selected filters.
+    </div>
+  </div>
+
+  <div th:each="log : ${structuredLogs}" class="log-card">
+    <div class="log-header">
+<!-- <h4 th:text="|${log.employeeName} (${log.employeeMail})|">Employee Name (email@example.com)</h4> -->
+
+<h4 th:text="${log.employeeEmail}">employee@example.com</h4>
+
+    <span class="text-muted" th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">2025-09-09 12:00:00</span>
+    </div>
+    
+    <div class="log-details">
+     
+      <div class="detail-card">
+        <h6>Active Time</h6>
+        <p th:text="${log.lastActiveTime}" class="text-success">00h 00m 10s</p>
+      </div>
+      <div class="detail-card">
+        <h6>Idle Time</h6>
+        <p th:text="${log.lastIdleTime}" class="text-secondary">00h 00m 05s</p>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5>Application Usage Summary</h5>
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleLogDetails(this)">
+        <i class="fas fa-list me-1"></i> View Full Log
+      </button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered log-table">
+        <thead>
+          <tr>
+            <th>Application</th>
+            <th>Count</th>
+            <th>Total Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="exeEntry : ${log.exeAppCount}">
+            <td th:text="${exeEntry.key}">Application.exe</td>
+            <td><span class="badge bg-primary" th:text="${exeEntry.value}">5</span></td>
+            <td th:text="${log.exeAppTotalTime[exeEntry.key]}">00h 05m 00s</td>
+          </tr>
+          <tr th:if="${log.unknownCount > 0}">
+            <td>Unknown Applications</td>
+            <td><span class="badge bg-secondary" th:text="${log.unknownCount}">3</span></td>
+            <td th:text="${log.unknownTime}">00h 00m 15s</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Full Log Details (Collapsed by default) -->
+    <div class="collapsible-content mt-3">
+      <h5>Detailed Log Entries</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Window</th>
+              <th>App</th>
+              <th>Active Time</th>
+              <th>Idle Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="entry : ${log.entries}">
+              <td th:text="${entry.timestamp}">2025-09-09T12:00:00.000</td>
+              <td th:text="${entry.window}">Window Title</td>
+              <td>
+                <span th:if="${entry.app.endsWith('.exe')}" class="badge bg-info" th:text="${entry.app}">App.exe</span>
+                <span th:unless="${entry.app.endsWith('.exe')}" th:text="${entry.app}">App</span>
+              </td>
+              <td><span class="badge badge-active" th:text="${entry.active}">10s</span></td>
+              <td><span class="badge badge-idle" th:text="${entry.idle}">5s</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- JS Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script th:inline="javascript">
+  window.selectedDepartment = /*[[${selectedDepartment}]]*/ '';
+  window.selectedTeam = /*[[${selectedTeam}]]*/ '';
+  window.selectedEmployee = /*[[${selectedEmployee}]]*/ '';
+  window.employeeInfoMap = /*[[${employeeInfoMap}]]*/ {};
+</script>
+
+<script>
+  // Update employee info when selection changes
+  document.getElementById('empSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const email = selectedOption.getAttribute('data-email');
+    const code = selectedOption.getAttribute('data-code');
+    
+    document.getElementById('empEmail').value = email || '';
+    document.getElementById('empCode').value = code || '';
+  });
+
+  // Initialize employee info if an employee is already selected
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.selectedEmployee) {
+      const empSelect = document.getElementById('empSelect');
+      const selectedOption = Array.from(empSelect.options).find(option => 
+        option.value === window.selectedEmployee
+      );
+      
+      if (selectedOption) {
+        const email = selectedOption.getAttribute('data-email');
+        const code = selectedOption.getAttribute('data-code');
+        
+        document.getElementById('empEmail').value = email || '';
+        document.getElementById('empCode').value = code || '';
+      }
+    }
+  });
+
+  // Toggle log details
+  function toggleLogDetails(button) {
+    const content = button.closest('.log-card').querySelector('.collapsible-content');
+    if (content.style.display === "block") {
+      content.style.display = "none";
+      button.innerHTML = '<i class="fas fa-list me-1"></i> View Full Log';
+    } else {
+      content.style.display = "block";
+      button.innerHTML = '<i class="fas fa-times me-1"></i> Hide Full Log';
+    }
+  }
+
+  // Export to Excel
+  function exportToCSV() {
+    let csv = [];
+    const logs = document.querySelectorAll('.log-card');
+    
+    // Add header row
+    csv.push(['Employee Name', 'Employee Code', 'Email', 'Timestamp', 'Total Active', 'Total Idle', 'Applications']);
+    
+    // Add data rows
+    logs.forEach(log => {
+      const nameElement = log.querySelector('.log-header h4');
+      const timestampElement = log.querySelector('.log-header span');
+      const activeElement = log.querySelector('.detail-card:nth-child(1) p');
+      const idleElement = log.querySelector('.detail-card:nth-child(2) p');
+      
+      if (nameElement && timestampElement && activeElement && idleElement) {
+        const name = nameElement.textContent;
+        const timestamp = timestampElement.textContent;
+        const active = activeElement.textContent;
+        const idle = idleElement.textContent;
+        
+        // Get applications
+        let apps = '';
+        const appRows = log.querySelectorAll('.log-table tbody tr');
+        appRows.forEach(row => {
+          const appName = row.cells[0].textContent;
+          const appCount = row.cells[1].textContent;
+          const appTime = row.cells[2].textContent;
+          apps += appName + ' (Count: ' + appCount + ', Time: ' + appTime + '); ';
+        });
+        
+        csv.push([name, '', '', timestamp, active, idle, apps]);
+      }
+    });
+    
+    const csvContent = csv.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'ActivityLogs.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Dynamic dropdown logic
+  const deptSelect = document.getElementById('deptSelect');
+  const teamSelect = document.getElementById('teamSelect');
+  const empSelect = document.getElementById('empSelect');
+
+  function loadTeams(deptId, selectedTeamId = null) {
+    if (!deptId) {
+      teamSelect.innerHTML = '<option value="">-- All Teams --</option>';
+      empSelect.innerHTML = '<option value="">-- All Employees --</option>';
+      document.getElementById('empEmail').value = '';
+      document.getElementById('empCode').value = '';
+      return;
+    }
+
+    teamSelect.innerHTML = '<option>Loading...</option>';
+    fetch(`/api/teams?departmentId=${deptId}`)
+      .then(res => res.json())
+      .then(data => {
+        teamSelect.innerHTML = '<option value="">-- All Teams --</option>';
+        data.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t.id;
+          option.textContent = t.name;
+          if (t.id === selectedTeamId) option.selected = true;
+          teamSelect.appendChild(option);
+        });
+
+        if (selectedTeamId) {
+          loadEmployees(selectedTeamId, window.selectedEmployee);
+        }
+      });
+  }
+
+  function loadEmployees(teamId, selectedEmpCode = null) {
+    if (!teamId) {
+      empSelect.innerHTML = '<option value="">-- All Employees --</option>';
+      document.getElementById('empEmail').value = '';
+      document.getElementById('empCode').value = '';
+      return;
+    }
+
+    empSelect.innerHTML = '<option>Loading...</option>';
+    fetch(`/api/employees?teamId=${teamId}`)
+      .then(res => res.json())
+      .then(data => {
+        empSelect.innerHTML = '<option value="">-- All Employees --</option>';
+        data.forEach(emp => {
+          const option = document.createElement('option');
+          option.value = emp.employeeCode;
+          option.textContent = emp.name;
+          option.setAttribute('data-email', emp.email);
+          option.setAttribute('data-code', emp.employeeCode);
+          if (emp.employeeCode === selectedEmpCode) option.selected = true;
+          empSelect.appendChild(option);
+        });
+
+        // Update employee info if an employee is selected
+        if (selectedEmpCode) {
+          const selectedOption = Array.from(empSelect.options).find(option => 
+            option.value === selectedEmpCode
+          );
+          
+          if (selectedOption) {
+            const email = selectedOption.getAttribute('data-email');
+            const code = selectedOption.getAttribute('data-code');
+            
+            document.getElementById('empEmail').value = email || '';
+            document.getElementById('empCode').value = code || '';
+          }
+        }
+      });
+  }
+
+  deptSelect.addEventListener('change', () => {
+    loadTeams(deptSelect.value);
+  });
+
+  teamSelect.addEventListener('change', () => {
+    loadEmployees(teamSelect.value);
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.selectedDepartment) {
+      loadTeams(window.selectedDepartment, window.selectedTeam);
+    } else if (window.selectedTeam) {
+      loadEmployees(window.selectedTeam, window.selectedEmployee);
+    }
+  });
+</script>
+
+</div>
+</div>
+</body>
+</html>

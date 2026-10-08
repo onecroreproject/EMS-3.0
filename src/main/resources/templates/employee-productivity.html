@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Employee Productivity</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/empstyle.css}">
+
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background: #f4f6f8;
+            color: #333;
+        }
+
+        h2, h4 {
+            font-weight: 700;
+        }
+
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }
+
+        table {
+            background: #ffffff;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        thead th {
+            background: #e9ecef !important;
+            font-weight: 600;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .no-tasks {
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        canvas {
+            margin-top: 10px;
+            max-width: 280px;
+            height: auto !important;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div th:replace="fragments/usersidebar :: sidebar"></div>
+
+<!-- Main Container -->
+<div class="container mt-5 animate__animated animate__fadeIn" style="max-width: 900px; margin-left: 400px;">
+
+    <h2 class="mb-4 text-center animate__animated animate__fadeInDown">
+        Productivity Report - <span th:text="${productivity.name}">Employee Name</span>
+    </h2>
+
+    <!-- Summary Cards -->
+    <div class="row mb-3 ">
+        <div class="col-md-3 animate__animated animate__fadeInUp animate__delay-1s">
+            <div class="card text-white bg-success text-center p-3">
+                <h5 class="card-title">Tasks Completed</h5>
+                <p class="display-6 fw-bold" th:text="${productivity.completedTasks}">0</p>
+            </div>
+        </div>
+        <div class="col-md-3 animate__animated animate__fadeInUp animate__delay-2s">
+            <div class="card text-white bg-primary text-center p-3">
+                <h5 class="card-title">On Time</h5>
+                <p class="display-6 fw-bold" th:text="${productivity.onTimeTasks}">0</p>
+            </div>
+        </div>
+        <div class="col-md-3 animate__animated animate__fadeInUp animate__delay-3s">
+            <div class="card text-white bg-danger text-center p-3">
+                <h5 class="card-title">Late</h5>
+                <p class="display-6 fw-bold" th:text="${productivity.lateTasks}">0</p>
+            </div>
+        </div>
+        <div class="col-md-3 animate__animated animate__fadeInUp animate__delay-4s">
+            <div class="card text-white bg-dark text-center p-3">
+                <h5 class="card-title">Total Points</h5>
+                <p class="display-6 fw-bold" th:text="${productivity.points}">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Details Table -->
+    <h4 class="mt-4 animate__animated animate__fadeInLeft">Task Details</h4>
+    <table class="table table-bordered table-striped mt-3 animate__animated animate__fadeInUp">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>End Date</th>
+                <th>Completed Date</th>
+                <th>Status</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="task : ${productivity.taskDetails}">
+                <td th:text="${task.title}">Task Title</td>
+                <td th:text="${task.endDate}">End Date</td>
+                <td th:text="${task.completedDate}">Completed Date</td>
+                <td th:text="${task.status}">Status</td>
+                <td>
+                    <span th:text="${task.completedDate != null and task.endDate != null and task.completedDate <= T(java.time.LocalDate).parse(task.endDate) ? '+10' : '-5'}"></span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- No tasks message -->
+    <div th:if="${productivity.taskDetails.size() == 0}" 
+         class="text-center text-muted mt-3 no-tasks animate__animated animate__fadeIn">
+        No completed tasks to display.
+    </div>
+
+    <!-- Pie Chart Section -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-4 col-sm-6 text-center">
+                <h5 class="mb-3">Task Status - Pie Chart</h5>
+                <canvas id="productivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap & Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart Script -->
+<script>
+    const ctx = document.getElementById('productivityChart');
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['On Time', 'Late'],
+            datasets: [{
+                label: 'Productivity',
+                data: [
+                    /* Thymeleaf: Replace with actual values */
+                    /* e.g., */ [[${productivity.onTimeTasks}]], [[${productivity.lateTasks}]]
+                ],
+                backgroundColor: ['#2c3e50', '#8e44ad'],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#333',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

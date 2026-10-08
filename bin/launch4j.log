@@ -1,0 +1,20 @@
+
+
+Version:	3.50
+CmdLine:	C:\Users\admin\Desktop\HTML\SpringBoot\EMS\employee\bin\employee.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\admin\Desktop\HTML\SpringBoot\EMS\employee\bin\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+Substitute:	JAVA_HOME = C:\Program Files\Java\jdk-17
+Substitute:	PATH = C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\PuTTY\;C:\ProgramData\chocolatey\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.9\bin;C:\Program Files\Git\cmd;C:\Program Files\Redis;C:\Program Files\Java\jdk-17\bin;C:\terraform;C:\Users\admin\AppData\Local\Microsoft\WindowsApps;"%CLASSPATH%;%GSON_HOME%\gson-2.8.6.jar;:;";C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\admin\AppData\Roaming\npm;C:\Users\admin\AppData\Local\Pub\Cache\bin;C:\Windows\System32;C:\Program Files\WSL;C:\Windows\System32;C:\Windows\System32\lxss;C:\Program Files\nodejs\;C:\Users\admin\AppData\Local\Programs\Python\Python313;C:\Users\admin\AppData\Local\Microsoft\WindowsApps;"%CLASSPATH%;%GSON_HOME%\gson-2.8.6.jar;:;";C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.9\bin;C:\Users\admin\AppData\Local\Pub\Cache\bin;C:\Windows\System32;C:\Program Files\WSL;C:\terraform;C:\Users\admin\AppData\Roaming\npm;C:\Program Files\nodejs\node_modules\npm\bin;C:\Users\admin\AppData\Local\Programs\Python\Python313;;C:\Program Files\Java\jdk-17\bin
+JRE paths:	C:\Program Files\Java\jdk-17;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\PuTTY\;C:\ProgramData\chocolatey\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.9\bin;C:\Program Files\Git\cmd;C:\Program Files\Redis;C:\Program Files\Java\jdk-17\bin;C:\terraform;C:\Users\admin\AppData\Local\Microsoft\WindowsApps;"%CLASSPATH%;%GSON_HOME%\gson-2.8.6.jar;:;";C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\admin\AppData\Roaming\npm;C:\Users\admin\AppData\Local\Pub\Cache\bin;C:\Windows\System32;C:\Program Files\WSL;C:\Windows\System32;C:\Windows\System32\lxss;C:\Program Files\nodejs\;C:\Users\admin\AppData\Local\Programs\Python\Python313;C:\Users\admin\AppData\Local\Microsoft\WindowsApps;"%CLASSPATH%;%GSON_HOME%\gson-2.8.6.jar;:;";C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.9\bin;C:\Users\admin\AppData\Local\Pub\Cache\bin;C:\Windows\System32;C:\Program Files\WSL;C:\terraform;C:\Users\admin\AppData\Roaming\npm;C:\Program Files\nodejs\node_modules\npm\bin;C:\Users\admin\AppData\Local\Programs\Python\Python313;;C:\Program Files\Java\jdk-17\bin
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Version string: 1.017.000_012 / 64-Bit (OK)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-jar "C:\Users\admin\Desktop\HTML\SpringBoot\EMS\employee\bin\employee.exe"
+Args length:	75/32768 chars
+Exit code:	0

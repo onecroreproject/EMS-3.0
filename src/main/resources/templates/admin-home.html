@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Admin Dashboard | Employee Monitoring
+    </title>
+
+
+    <!-- =====================================================
+         GOOGLE FONT
+         ===================================================== -->
+
+    <link
+            href="https://fonts.googleapis.com/css2?family=Public+Sans&display=swap"
+            rel="stylesheet">
+
+
+    <!-- =====================================================
+         BOOTSTRAP
+         ===================================================== -->
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+
+
+    <!-- =====================================================
+         BOOTSTRAP ICONS
+         ===================================================== -->
+
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
+    <!-- =====================================================
+         FONT AWESOME
+         ===================================================== -->
+
+    <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+    <!-- =====================================================
+         EMS CSS
+         ===================================================== -->
+
+    <link
+            rel="stylesheet"
+            th:href="@{/css/styles.css}">
+
+
+    <!-- =====================================================
+         HIGHCHARTS
+         ===================================================== -->
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+
+    <!-- =====================================================
+         PAGE-SPECIFIC CSS
+         ===================================================== -->
+
+    <style>
+
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     EMS PAGE
+     ========================================================= -->
+
+<div class="ems-page">
+
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
+    <div th:replace="fragments/sidebar :: sidebar"></div>
+
+
+    <!-- =====================================================
+         MOBILE SIDEBAR OVERLAY
+         ===================================================== -->
+
+    <div
+            id="emsSidebarOverlay"
+            class="ems-sidebar-overlay">
+    </div>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+    <div class="ems-main-content">
+
+
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
+        <div th:replace="fragments/header :: header"></div>
+
+
+        <!-- =================================================
+             DASHBOARD CONTENT
+             ================================================= -->
+
+        <main class="ems-dashboard-content">
+
+
+            <!-- =================================================
+                 WELCOME CARD
+                 ================================================= -->
+
+            <div class="row animate-fadein">
+
+                <div class="col-12">
+
+                    <div class="dashboard-card
+                                bg-gradient-success
+                                text-white">
+
+                        <div class="card-body">
+
+                            <div class="row align-items-center">
+
+                                <div class="col-md-8">
+
+                                    <h3>
+                                        Welcome back,
+                                        Administrator!
+                                    </h3>
+
+                                    <p class="mb-0">
+                                        You have 5 new notifications
+                                        and 3 pending tasks to review
+                                        today.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 EMPLOYEE METRICS
+                 ================================================= -->
+
+            <div class="dashboard-grid-4">
+
+
+                <!-- Total Employees -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-primary"
+                                th:text="${employeeCount}"
+                                id="employeeCount">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Total Employees
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Present Today -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-success"
+                                th:text="${presentToday}"
+                                id="presentToday">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Present Today
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Absent Today -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-warning"
+                                th:text="${absentToday}"
+                                id="absentToday">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Absent Today
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Late Arrivals -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-danger"
+                                th:text="${lateArrivals}"
+                                id="lateArrivals">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Late Arrivals
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TASK METRICS
+                 ================================================= -->
+
+            <div class="dashboard-grid-3">
+
+
+                <!-- Total Tasks -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-info"
+                                th:text="${totalTasks}"
+                                id="totalTasks">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Total Tasks
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Pending Tasks -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-secondary"
+                                th:text="${pendingTasks}"
+                                id="pendingTasks">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Pending Tasks
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Completed Tasks -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-success"
+                                th:text="${completedTasks}"
+                                id="completedTasks">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Completed Tasks
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 ORGANIZATION METRICS
+                 ================================================= -->
+
+            <div class="dashboard-grid-3">
+
+
+                <!-- Organizations -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-dark"
+                                th:text="${totalOrganizations}"
+                                id="totalOrganizations">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Total Organizations
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Teams -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-primary"
+                                th:text="${totalTeams}"
+                                id="totalTeams">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Total Teams
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Departments -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-body text-center">
+
+                        <h2
+                                class="text-success"
+                                th:text="${totalDepartments}"
+                                id="totalDepartments">
+
+                            0
+
+                        </h2>
+
+                        <p class="mb-0">
+                            Total Departments
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CHARTS
+                 ================================================= -->
+
+            <div class="dashboard-grid-3">
+
+
+                <!-- Organization Structure -->
+
+                <div class="dashboard-card chart-container">
+
+                    <div class="card-body">
+
+                        <div
+                                class="chart-canvas"
+                                id="structurePieChart">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Attendance -->
+
+                <div class="dashboard-card chart-container">
+
+                    <div class="card-body">
+
+                        <div
+                                class="chart-canvas"
+                                id="attendancePieChart">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Tasks -->
+
+                <div class="dashboard-card chart-container">
+
+                    <div class="card-body">
+
+                        <div
+                                class="chart-canvas"
+                                id="taskPieChart">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 MODULES OVERVIEW
+                 ================================================= -->
+
+            <div class="row animate-fadein delay-3">
+
+                <div class="col-12">
+
+                    <div class="dashboard-card">
+
+
+                        <div class="card-header">
+
+                            <span>
+                                Modules Overview
+                            </span>
+
+                            <button
+                                    class="btn btn-sm btn-outline-primary">
+
+                                View All
+
+                            </button>
+
+                        </div>
+
+
+                        <div class="card-body">
+
+                            <div class="row">
+
+
+                                <!-- Organization -->
+
+                                <div class="col-md-3 text-center">
+
+                                    <div class="p-3">
+
+                                        <div
+                                                class="bg-primary
+                                                   bg-opacity-10
+                                                   p-3
+                                                   rounded-circle
+                                                   d-inline-block
+                                                   mb-3">
+
+                                            <i
+                                                    class="fas fa-sitemap
+                                                       fa-2x
+                                                       text-primary">
+                                            </i>
+
+                                        </div>
+
+
+                                        <h5>
+                                            Organization
+                                        </h5>
+
+
+                                        <p class="text-muted">
+
+                                            Manage departments,
+                                            teams and structure
+
+                                        </p>
+
+
+                                        <a
+                                                href="/organizations/list"
+                                                class="btn btn-sm btn-primary">
+
+                                            Access
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Employee Management -->
+
+                                <div class="col-md-3 text-center">
+
+                                    <div class="p-3">
+
+                                        <div
+                                                class="bg-success
+                                                   bg-opacity-10
+                                                   p-3
+                                                   rounded-circle
+                                                   d-inline-block
+                                                   mb-3">
+
+                                            <i
+                                                    class="fas fa-users-cog
+                                                       fa-2x
+                                                       text-success">
+                                            </i>
+
+                                        </div>
+
+
+                                        <h5>
+                                            Employee Management System
+                                        </h5>
+
+
+                                        <p class="text-muted">
+
+                                            Manage all employee records
+
+                                        </p>
+
+
+                                        <a
+                                                href="/employees/list"
+                                                class="btn btn-sm btn-success">
+
+                                            Access
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Time Tracking -->
+
+                                <div class="col-md-3 text-center">
+
+                                    <div class="p-3">
+
+                                        <div
+                                                class="bg-warning
+                                                   bg-opacity-10
+                                                   p-3
+                                                   rounded-circle
+                                                   d-inline-block
+                                                   mb-3">
+
+                                            <i
+                                                    class="fas fa-stopwatch
+                                                       fa-2x
+                                                       text-warning">
+                                            </i>
+
+                                        </div>
+
+
+                                        <h5>
+                                            Time Tracking
+                                            <br>
+                                            System
+                                        </h5>
+
+
+                                        <p class="text-muted">
+
+                                            Monitor attendance
+                                            and hours
+
+                                        </p>
+
+
+                                        <a
+                                                href="/admin/activity/graph"
+                                                class="btn btn-sm btn-warning">
+
+                                            Access
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Reports -->
+
+                                <div class="col-md-3 text-center">
+
+                                    <div class="p-3">
+
+                                        <div
+                                                class="bg-info
+                                                   bg-opacity-10
+                                                   p-3
+                                                   rounded-circle
+                                                   d-inline-block
+                                                   mb-3">
+
+                                            <i
+                                                    class="fas fa-chart-bar
+                                                       fa-2x
+                                                       text-info">
+                                            </i>
+
+                                        </div>
+
+
+                                        <h5>
+                                            Report Analysis
+                                            <br>
+                                            System
+                                        </h5>
+
+
+                                        <p class="text-muted">
+
+                                            Generate insights
+                                            and reports
+
+                                        </p>
+
+
+                                        <a
+                                                href="/admin/attendance/logs"
+                                                class="btn btn-sm btn-info">
+
+                                            Access
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </main>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     BOOTSTRAP JS
+     ========================================================= -->
+
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+
+
+<script>
+
+    /* =========================================================
+       THYMELEAF DATA
+       ========================================================= */
+
+    const structureData = {
+
+        departments:
+            [[${totalDepartments}]] || 0,
+
+        teams:
+            [[${totalTeams}]] || 0,
+
+        organizations:
+            [[${totalOrganizations}]] || 0
+    };
+
+
+    const attendanceData = {
+
+        present:
+            [[${presentToday}]] || 0,
+
+        absent:
+            [[${absentToday}]] || 0,
+
+        late:
+            [[${lateArrivals}]] || 0
+    };
+
+
+    const taskData = {
+
+        completed:
+            [[${completedTasks}]] || 0,
+
+        pending:
+            [[${pendingTasks}]] || 0
+    };
+
+
+    /* =========================================================
+       RESPONSIVE SIDEBAR
+       ========================================================= */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            const toggleButton =
+                document.getElementById(
+                    "emsSidebarToggle"
+                );
+
+            const sidebar =
+                document.getElementById(
+                    "sidebar"
+                );
+
+            const overlay =
+                document.getElementById(
+                    "emsSidebarOverlay"
+                );
+
+
+            if (
+                !toggleButton ||
+                !sidebar ||
+                !overlay
+            ) {
+                return;
+            }
+
+
+            /* ---------------------------------------------
+               OPEN / CLOSE SIDEBAR
+               --------------------------------------------- */
+
+            toggleButton.addEventListener(
+                "click",
+                function () {
+
+                    const isOpen =
+                        sidebar.classList.toggle(
+                            "mobile-open"
+                        );
+
+                    overlay.classList.toggle(
+                        "active",
+                        isOpen
+                    );
+
+                    toggleButton.setAttribute(
+                        "aria-expanded",
+                        String(isOpen)
+                    );
+
+                }
+            );
+
+
+            /* ---------------------------------------------
+               CLOSE USING OVERLAY
+               --------------------------------------------- */
+
+            overlay.addEventListener(
+                "click",
+                function () {
+
+                    sidebar.classList.remove(
+                        "mobile-open"
+                    );
+
+                    overlay.classList.remove(
+                        "active"
+                    );
+
+                    toggleButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                }
+            );
+
+
+            /* ---------------------------------------------
+               CLOSE AFTER NAVIGATION
+               --------------------------------------------- */
+
+            sidebar
+                .querySelectorAll("a")
+                .forEach(
+                    function (link) {
+
+                        link.addEventListener(
+                            "click",
+                            function () {
+
+                                if (
+                                    window.innerWidth <= 768
+                                ) {
+
+                                    sidebar.classList.remove(
+                                        "mobile-open"
+                                    );
+
+                                    overlay.classList.remove(
+                                        "active"
+                                    );
+
+                                    toggleButton.setAttribute(
+                                        "aria-expanded",
+                                        "false"
+                                    );
+
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+
+            /* ---------------------------------------------
+               RESIZE HANDLING
+               --------------------------------------------- */
+
+            window.addEventListener(
+                "resize",
+                function () {
+
+                    if (
+                        window.innerWidth > 768
+                    ) {
+
+                        sidebar.classList.remove(
+                            "mobile-open"
+                        );
+
+                        overlay.classList.remove(
+                            "active"
+                        );
+
+                        toggleButton.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       HIGHCHARTS
+       ========================================================= */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+
+            /* =============================================
+               ORGANIZATION STRUCTURE
+               ============================================= */
+
+            Highcharts.chart(
+                "structurePieChart",
+                {
+
+                    chart: {
+
+                        type: "pie",
+
+                        options3d: {
+
+                            enabled: true,
+
+                            alpha: 45,
+
+                            beta: 0
+
+                        }
+
+                    },
+
+
+                    title: {
+
+                        text:
+                            "Organization Structure"
+
+                    },
+
+
+                    tooltip: {
+
+                        pointFormat:
+                            "{series.name}: <b>{point.percentage:.1f}%</b>"
+
+                    },
+
+
+                    plotOptions: {
+
+                        pie: {
+
+                            allowPointSelect: true,
+
+                            cursor: "pointer",
+
+                            depth: 35,
+
+                            dataLabels: {
+
+                                enabled: true,
+
+                                format:
+                                    "{point.name}: {point.percentage:.1f}%"
+
+                            }
+
+                        }
+
+                    },
+
+
+                    colors: [
+                        "#0284C7",
+                        "#8B5CF6",
+                        "#14B8A6"
+                    ],
+
+
+                    series: [
+
+                        {
+
+                            name: "Count",
+
+                            data: [
+
+                                [
+                                    "Departments",
+                                    structureData.departments
+                                ],
+
+                                [
+                                    "Teams",
+                                    structureData.teams
+                                ],
+
+                                [
+                                    "Organizations",
+                                    structureData.organizations
+                                ]
+
+                            ]
+
+                        }
+
+                    ]
+
+                }
+            );
+
+
+            /* =============================================
+               ATTENDANCE
+               ============================================= */
+
+            Highcharts.chart(
+                "attendancePieChart",
+                {
+
+                    chart: {
+
+                        type: "pie",
+
+                        options3d: {
+
+                            enabled: true,
+
+                            alpha: 45,
+
+                            beta: 0
+
+                        }
+
+                    },
+
+
+                    title: {
+
+                        text:
+                            "Attendance Report"
+
+                    },
+
+
+                    tooltip: {
+
+                        pointFormat:
+                            "{series.name}: <b>{point.percentage:.1f}%</b>"
+
+                    },
+
+
+                    plotOptions: {
+
+                        pie: {
+
+                            allowPointSelect: true,
+
+                            cursor: "pointer",
+
+                            depth: 35,
+
+                            dataLabels: {
+
+                                enabled: true,
+
+                                format:
+                                    "{point.name}: {point.percentage:.1f}%"
+
+                            }
+
+                        }
+
+                    },
+
+
+                    colors: [
+                        "#28A745",
+                        "#FBBF24",
+                        "#DC2626"
+                    ],
+
+
+                    series: [
+
+                        {
+
+                            name: "Count",
+
+                            data: [
+
+                                [
+                                    "Present Today",
+                                    attendanceData.present
+                                ],
+
+                                [
+                                    "Absent Today",
+                                    attendanceData.absent
+                                ],
+
+                                [
+                                    "Late Arrivals",
+                                    attendanceData.late
+                                ]
+
+                            ]
+
+                        }
+
+                    ]
+
+                }
+            );
+
+
+            /* =============================================
+               TASKS
+               ============================================= */
+
+            Highcharts.chart(
+                "taskPieChart",
+                {
+
+                    chart: {
+
+                        type: "pie",
+
+                        options3d: {
+
+                            enabled: true,
+
+                            alpha: 45,
+
+                            beta: 0
+
+                        }
+
+                    },
+
+
+                    title: {
+
+                        text:
+                            "Task Report"
+
+                    },
+
+
+                    tooltip: {
+
+                        pointFormat:
+                            "{series.name}: <b>{point.percentage:.1f}%</b>"
+
+                    },
+
+
+                    plotOptions: {
+
+                        pie: {
+
+                            allowPointSelect: true,
+
+                            cursor: "pointer",
+
+                            depth: 45,
+
+                            dataLabels: {
+
+                                enabled: true,
+
+                                format:
+                                    "{point.name}: {point.percentage:.1f}%"
+
+                            }
+
+                        }
+
+                    },
+
+
+                    colors: [
+                        "#34D399",
+                        "#6B7280"
+                    ],
+
+
+                    series: [
+
+                        {
+
+                            name: "Count",
+
+                            data: [
+
+                                [
+                                    "Completed Tasks",
+                                    taskData.completed
+                                ],
+
+                                [
+                                    "Pending Tasks",
+                                    taskData.pending
+                                ]
+
+                            ]
+
+                        }
+
+                    ]
+
+                }
+            );
+
+
+            /* =============================================
+               FALLBACK VALUES
+               ============================================= */
+
+            document.getElementById(
+                "employeeCount"
+            ).textContent =
+                document.getElementById(
+                    "employeeCount"
+                ).textContent || 150;
+
+
+            document.getElementById(
+                "presentToday"
+            ).textContent =
+                document.getElementById(
+                    "presentToday"
+                ).textContent || 120;
+
+
+            document.getElementById(
+                "absentToday"
+            ).textContent =
+                document.getElementById(
+                    "absentToday"
+                ).textContent || 30;
+
+
+            document.getElementById(
+                "lateArrivals"
+            ).textContent =
+                document.getElementById(
+                    "lateArrivals"
+                ).textContent || 10;
+
+
+            document.getElementById(
+                "totalTasks"
+            ).textContent =
+                document.getElementById(
+                    "totalTasks"
+                ).textContent || 80;
+
+
+            document.getElementById(
+                "pendingTasks"
+            ).textContent =
+                document.getElementById(
+                    "pendingTasks"
+                ).textContent || 30;
+
+
+            document.getElementById(
+                "completedTasks"
+            ).textContent =
+                document.getElementById(
+                    "completedTasks"
+                ).textContent || 50;
+
+
+            document.getElementById(
+                "totalOrganizations"
+            ).textContent =
+                document.getElementById(
+                    "totalOrganizations"
+                ).textContent || 5;
+
+
+            document.getElementById(
+                "totalTeams"
+            ).textContent =
+                document.getElementById(
+                    "totalTeams"
+                ).textContent || 20;
+
+
+            document.getElementById(
+                "totalDepartments"
+            ).textContent =
+                document.getElementById(
+                    "totalDepartments"
+                ).textContent || 10;
+
+        }
+    );
+
+</script>
+
+
+</body>
+
+</html>

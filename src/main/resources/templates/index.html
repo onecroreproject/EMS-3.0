@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Monitoring System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --success: #4cc9f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+/* Background image container */
+.image-background {
+    position: fixed;
+    top: 0;
+    left: -20px;
+    width: 105%;
+    height: 100%;
+    z-index: -2;
+    overflow: hidden;
+    background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-position: center;
+    animation: zoomEffect 20s infinite alternate;
+}
+
+
+        @keyframes zoomEffect {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* Overlay for better text visibility */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 32px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            border: none;
+            margin-left: 30px;
+            text-decoration: none;
+        }
+
+        .btn-login {
+            background-color: transparent;
+            color: var(--dark);
+            border: 2px solid var(--dark);
+        }
+
+        .btn-login:hover {
+            background-color: var(--dark);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(43, 45, 66, 0.2);
+        }
+
+        .btn-signup {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+
+        /* Main content */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 150px 100px 100px;
+            min-height: 100vh;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            animation: fadeInLeft 1s ease-out;
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Right side image container */
+        .image-container {
+            width: 500px;
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: fadeInRight 1s ease-out;
+        }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .image-container:hover img {
+            transform: scale(1.05);
+        }
+
+        .hero-title {
+            font-size: 52px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 25px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-cta {
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--dark);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Features section */
+        .features {
+            display: flex;
+            gap: 30px;
+            margin-top: 80px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            width: 220px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .feature-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 150px 30px 80px;
+            }
+
+            .hero-content {
+                max-width: 100%;
+                margin-bottom: 50px;
+            }
+
+            .image-container {
+                width: 100%;
+                max-width: 500px;
+                height: 400px;
+                margin-top: 10px;
+            }
+
+            .cta-buttons {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .logo {
+                font-size: 22px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                margin-left: 15px;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 16px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .btn-cta {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .feature {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Image background -->
+    <div class="image-background"></div>
+
+    <!-- Overlay -->
+    <div class="overlay"></div>
+
+    <!-- Header with login button -->
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            <span>EmployeeMonitor</span>
+        </div>
+        <div class="auth-buttons">
+            <!-- <a th:href="@{/login}" class="btn btn-login">Login</a> -->
+            <a th:href="@{/login}" class="btn btn-signup">Login</a>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title"> <span>Employee Monitoring</span> Platform</h1>
+            <p class="hero-subtitle">
+                Revolutionize your workforce management with our AI-powered employee monitoring solution.
+                Gain real-time insights, boost productivity, and optimize your team's performance.
+            </p>
+            <div class="cta-buttons">
+                <button class="btn btn-cta btn-primary">
+                    <i class="fas fa-play"></i> Watch Demo
+                </button>
+                <button class="btn btn-cta btn-secondary">
+                    <i class="fas fa-book"></i> Learn More
+                </button>
+            </div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon"><i class="fas fa-stopwatch"></i></div>
+                    <h3 class="feature-title">Time Tracking</h3>
+                    <p class="feature-desc">Precision monitoring of work hours with automated reports</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                    <h3 class="feature-title">Productivity Analytics</h3>
+                    <p class="feature-desc">AI-powered insights into team performance</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side image -->
+        <div class="image-container">
+            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" alt="Team working together">
+        </div>
+    </div>
+
+    <script>
+        // Simple animation trigger for elements when they come into view
+        document.addEventListener('DOMContentLoaded', function() {
+            const features = document.querySelectorAll('.feature');
+            
+            features.forEach((feature, index) => {
+                // Add delay to each feature animation
+                feature.style.animationDelay = `${index * 0.1}s`;
+                feature.style.opacity = '0';
+                feature.style.transform = 'translateY(20px)';
+                
+                // Intersection Observer to trigger animations when scrolling
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }
+                    });
+                }, { threshold: 0.1 });
+                
+                observer.observe(feature);
+            });
+        });
+    </script>
+</body>
+</html>

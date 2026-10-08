@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Activity Logs</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Public Sans Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+  <style>
+    body {
+      font-family: 'Public Sans', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4eaf1 100%);
+      color: var(--dark-text);
+      padding-bottom: 2rem;
+      min-height: 100vh;
+    }
+    
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --success-color: #38bd77;
+      --warning-color: #ff9e00;
+      --danger-color: #f72585;
+      --light-bg: #f8f9fa;
+      --dark-text: #212529;
+    }
+
+    .container-fluid {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-header {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .page-header h2 {
+      font-weight: 700;
+      color: var(--primary-color);
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .page-header h2 i {
+      margin-right: 12px;
+      font-size: 1.8rem;
+    }
+
+    .btn-export {
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+      color: white;
+    }
+
+    .filter-section {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .filter-title {
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #eaeaea;
+    }
+    
+    .filter-title i {
+      margin-right: 0.5rem;
+    }
+
+    .filter-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .filter-item label {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .filter-item select, .filter-item input {
+      padding: 0.75rem 1rem;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      font-family: 'Public Sans', sans-serif;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-item select:focus, .filter-item input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+      outline: none;
+    }
+
+    .employee-info {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .employee-info h4 {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .employee-info h4 i {
+      margin-right: 0.5rem;
+    }
+    
+    .employee-detail {
+      display: flex;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: var(--light-bg);
+      border-radius: 8px;
+    }
+    
+    .employee-detail label {
+      font-weight: 600;
+      min-width: 120px;
+      color: var(--primary-color);
+      margin-bottom: 0;
+    }
+    
+    .employee-detail span {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stat-card i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    
+    .stat-card.active i {
+      color: var(--success-color);
+    }
+    
+    .stat-card.idle i {
+      color: var(--warning-color);
+    }
+    
+    .stat-card.apps i {
+      color: var(--primary-color);
+    }
+    
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .chart-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      min-height: 350px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chart-container h5 {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .chart-canvas-container {
+      flex: 1;
+      position: relative;
+    }
+
+    .chart-canvas-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+      
+      .filter-group {
+        grid-template-columns: 1fr;
+      }
+      
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-container {
+        min-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div th:replace="fragments/sidebar :: sidebar"></div>
+    <div class="sidebar-page-content">
+
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="page-header">
+    <h2><i class="fas fa-chart-line"></i> Admin: Employee Activity Dashboard</h2>
+    <div>
+      <a href="/admin/home" class="btn btn-outline-secondary me-2">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <button class="btn btn-export" onclick="exportToCSV()">
+        <i class="fas fa-file-excel me-1"></i> Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="filter-title">
+      <i class="fas fa-filter"></i> Employee Activity Filters
+    </div>
+    <form th:action="@{/admin/activity/graph}" method="get" class="filter-group">
+      <div class="filter-item">
+        <label for="deptSelect">Department</label>
+        <select id="deptSelect" name="departmentId" class="form-select">
+          <option value="">-- All Departments --</option>
+          <option th:each="d : ${departments}" 
+                  th:value="${d.id}" 
+                  th:text="${d.name}" 
+                  th:selected="${d.id == selectedDepartment}"></option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="teamSelect">Team</label>
+        <select id="teamSelect" name="teamId" class="form-select">
+          <option value="">-- All Teams --</option>
+          <option th:each="t : ${teams}" 
+                  th:value="${t.id}" 
+                  th:text="${t.name}" 
+                  th:selected="${t.id == selectedTeam}"></option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="empSelect">Employee</label>
+        <select id="empSelect" name="employeeCode" class="form-select">
+          <option value="">-- Select Employee --</option>
+          <option th:each="e : ${employees}" 
+                  th:value="${e.employeeCode}" 
+                  th:text="${e.name}"
+                  th:attr="data-email=${e.email}, data-code=${e.employeeCode}"
+                  th:selected="${e.employeeCode == selectedEmployee}"></option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="empEmail">Email</label>
+        <input type="text" id="empEmail" name="email" class="form-control" readonly th:value="${employeeInfoMap[selectedEmployee]?.get('email')}">
+      </div>
+      <div class="filter-item">
+        <label for="empCode">Employee Code</label>
+        <input type="text" id="empCode" name="code" class="form-control" readonly th:value="${employeeInfoMap[selectedEmployee]?.get('code')}">
+      </div>
+      <div class="filter-item">
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate" name="startDate" th:value="${startDate}" class="form-control">
+      </div>
+      <div class="filter-item">
+        <label for="endDate">End Date</label>
+        <input type="date" id="endDate" name="endDate" th:value="${endDate}" class="form-control">
+      </div>
+      <div class="filter-item" style="align-self: end;">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-filter me-1"></i> Filter
+        </button>
+      </div>
+      <div class="filter-item" style="align-self: end;">
+        <a th:href="@{/admin/activity/graph}" class="btn btn-secondary w-100">
+          <i class="fas fa-sync-alt me-1"></i> Reset
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Employee Info Display -->
+  <div th:if="${selectedEmployee != null and employeeInfoMap != null and employeeInfoMap[selectedEmployee] != null}" class="employee-info">
+    <h4><i class="fas fa-user"></i> Employee Information</h4>
+    <div class="employee-detail">
+      <label>Name:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('name') ?: 'N/A'}">Employee Name</span>
+    </div>
+    <div class="employee-detail">
+      <label>Email:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('email') ?: 'N/A'}">employee@example.com</span>
+    </div>
+    <div class="employee-detail">
+      <label>Employee Code:</label>
+      <span th:text="${employeeInfoMap[selectedEmployee]?.get('code') ?: 'N/A'}">EMP001</span>
+    </div>
+  </div>
+
+  <!-- Overall Stats Cards -->
+  <div th:if="${structuredLogs != null and !structuredLogs.isEmpty()}" class="stats-cards">
+    <div class="stat-card active">
+      <i class="fas fa-clock"></i>
+      <div class="stat-value" id="totalActive">0h 0m</div>
+      <div class="stat-label">Total Active Time</div>
+    </div>
+    <div class="stat-card idle">
+      <i class="fas fa-pause"></i>
+      <div class="stat-value" id="totalIdle">0h 0m</div>
+      <div class="stat-label">Total Idle Time</div>
+    </div>
+    <div class="stat-card apps">
+      <i class="fas fa-laptop-code"></i>
+      <div class="stat-value" id="totalApps">0</div>
+      <div class="stat-label">Unique Apps</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-file-alt"></i>
+      <div class="stat-value" id="totalLogs">0</div>
+      <div class="stat-label">Log Sessions</div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div th:if="${structuredLogs != null and !structuredLogs.isEmpty()}" class="charts-section">
+    <!-- Activity Distribution Pie Chart -->
+    <div class="chart-container">
+      <h5 th:text="${employeeInfoMap[selectedEmployee]?.get('name') != null} ? ${'Activity Distribution for ' + employeeInfoMap[selectedEmployee]?.get('name')} : 'Activity Distribution'">
+        <i class="fas fa-chart-pie me-2"></i>Activity Distribution
+      </h5>
+      <div class="chart-canvas-container">
+        <canvas id="activityPieChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Top Applications Bar Chart -->
+    <div class="chart-container">
+      <h5 th:text="${employeeInfoMap[selectedEmployee]?.get('name') != null} ? ${'Top Applications for ' + employeeInfoMap[selectedEmployee]?.get('name')} : 'Top Applications'">
+        <i class="fas fa-chart-bar me-2"></i>Top Applications
+      </h5>
+      <div class="chart-canvas-container">
+        <canvas id="appBarChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Active Time Trend Line Chart -->
+    <div class="chart-container">
+      <h5 th:text="${employeeInfoMap[selectedEmployee]?.get('name') != null} ? ${'Active Time Trend for ' + employeeInfoMap[selectedEmployee]?.get('name')} : 'Active Time Trend'">
+        <i class="fas fa-chart-line me-2"></i>Active Time Trend
+      </h5>
+      <div class="chart-canvas-container">
+        <canvas id="activeTimeLineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data Message -->
+  <div th:if="${structuredLogs == null or structuredLogs.isEmpty() or (selectedEmployee != null and filteredLogs.size() == 0)}" class="no-data">
+    <i class="fas fa-info-circle" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
+    <h4>No Activity Logs Found</h4>
+    <p th:text="${employeeInfoMap[selectedEmployee]?.get('name') != null} ? ${'No activity logs found for ' + employeeInfoMap[selectedEmployee]?.get('name') + '. Try adjusting your search criteria.'} : 'No activity logs match the selected filters. Try adjusting your search criteria.'"></p>
+  </div>
+</div>
+
+<!-- JS Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script th:inline="javascript">
+  window.selectedDepartment = /*[[${selectedDepartment}]]*/ '';
+  window.selectedTeam = /*[[${selectedTeam}]]*/ '';
+  window.selectedEmployee = /*[[${selectedEmployee}]]*/ '';
+  window.employeeInfoMap = /*[[${employeeInfoMap}]]*/ {};
+  window.structuredLogs = /*[[${structuredLogs}]]*/ [];
+  window.filteredLogs = [];
+</script>
+
+<script>
+  // Global variables
+  let activityPieChart, appBarChart, activeTimeLineChart;
+
+  // Filter logs for the specific employee (exact match)
+  if (window.structuredLogs && window.selectedEmployee) {
+    window.filteredLogs = window.structuredLogs.filter(log => 
+      log.employeeCode && log.employeeCode === window.selectedEmployee
+    );
+  } else {
+    window.filteredLogs = window.structuredLogs || [];
+  }
+
+  // Debug logging
+  console.log('structuredLogs:', window.structuredLogs);
+  console.log('selectedEmployee:', window.selectedEmployee);
+  console.log('filteredLogs:', window.filteredLogs);
+
+  // Update employee info when selection changes
+  document.addEventListener('DOMContentLoaded', function() {
+    const empSelect = document.getElementById('empSelect');
+    if (empSelect && window.selectedEmployee) {
+      const selectedOption = Array.from(empSelect.options).find(option => 
+        option.value === window.selectedEmployee
+      );
+      if (selectedOption) {
+        const email = selectedOption.getAttribute('data-email');
+        const code = selectedOption.getAttribute('data-code');
+        document.getElementById('empEmail').value = email || '';
+        document.getElementById('empCode').value = code || '';
+      }
+    }
+
+    // Initialize charts and stats if logs exist
+    if (window.filteredLogs && window.filteredLogs.length > 0) {
+      initializeCharts();
+      updateStatsCards();
+    }
+  });
+
+  // Dynamic dropdown logic
+  const deptSelect = document.getElementById('deptSelect');
+  const teamSelect = document.getElementById('teamSelect');
+  const empSelect = document.getElementById('empSelect');
+
+  if (empSelect) {
+    empSelect.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const email = selectedOption.getAttribute('data-email');
+      const code = selectedOption.getAttribute('data-code');
+      document.getElementById('empEmail').value = email || '';
+      document.getElementById('empCode').value = code || '';
+    });
+  }
+
+  function loadTeams(deptId, selectedTeamId = null) {
+    if (!deptId) {
+      if (teamSelect) teamSelect.innerHTML = '<option value="">-- All Teams --</option>';
+      if (empSelect) empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+      if (document.getElementById('empEmail')) document.getElementById('empEmail').value = '';
+      if (document.getElementById('empCode')) document.getElementById('empCode').value = '';
+      return;
+    }
+
+    if (teamSelect) {
+      teamSelect.innerHTML = '<option>Loading...</option>';
+      fetch(`/api/teams?departmentId=${deptId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+        }
+      })
+        .then(res => {
+          if (res.status === 401 || res.status === 403) {
+            console.error('Authentication error: Redirecting to login');
+            window.location.href = '/login';
+            return Promise.reject('Unauthorized');
+          }
+          return res.json();
+        })
+        .then(data => {
+          teamSelect.innerHTML = '<option value="">-- All Teams --</option>';
+          data.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = t.name;
+            if (t.id === selectedTeamId) option.selected = true;
+            teamSelect.appendChild(option);
+          });
+
+          if (selectedTeamId) {
+            loadEmployees(selectedTeamId, window.selectedEmployee);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching teams:', err);
+          teamSelect.innerHTML = '<option value="">-- Error loading teams --</option>';
+        });
+    }
+  }
+
+  function loadEmployees(teamId, selectedEmpCode = null) {
+    if (!teamId) {
+      if (empSelect) empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+      if (document.getElementById('empEmail')) document.getElementById('empEmail').value = '';
+      if (document.getElementById('empCode')) document.getElementById('empCode').value = '';
+      return;
+    }
+
+    if (empSelect) {
+      empSelect.innerHTML = '<option>Loading...</option>';
+      fetch(`/api/employees?teamId=${teamId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+        }
+      })
+        .then(res => {
+          if (res.status === 401 || res.status === 403) {
+            console.error('Authentication error: Redirecting to login');
+            window.location.href = '/login';
+            return Promise.reject('Unauthorized');
+          }
+          return res.json();
+        })
+        .then(data => {
+          empSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+          data.forEach(emp => {
+            const option = document.createElement('option');
+            option.value = emp.employeeCode;
+            option.textContent = emp.name;
+            option.setAttribute('data-email', emp.email);
+            option.setAttribute('data-code', emp.employeeCode);
+            if (emp.employeeCode === selectedEmpCode) option.selected = true;
+            empSelect.appendChild(option);
+          });
+
+          if (selectedEmpCode) {
+            const selectedOption = Array.from(empSelect.options).find(option => 
+              option.value === selectedEmpCode
+            );
+            if (selectedOption) {
+              const email = selectedOption.getAttribute('data-email');
+              const code = selectedOption.getAttribute('data-code');
+              document.getElementById('empEmail').value = email || '';
+              document.getElementById('empCode').value = code || '';
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching employees:', err);
+          empSelect.innerHTML = '<option value="">-- Error loading employees --</option>';
+        });
+    }
+  }
+
+  if (deptSelect) {
+    deptSelect.addEventListener('change', () => loadTeams(deptSelect.value));
+  }
+  if (teamSelect) {
+    teamSelect.addEventListener('change', () => loadEmployees(teamSelect.value));
+  }
+  if (window.selectedDepartment) {
+    loadTeams(window.selectedDepartment, window.selectedTeam);
+  } else if (window.selectedTeam) {
+    loadEmployees(window.selectedTeam, window.selectedEmployee);
+  }
+
+  // Initialize Charts
+  function initializeCharts() {
+    if (!window.filteredLogs || window.filteredLogs.length === 0) {
+      console.warn('No logs available for charts');
+      return;
+    }
+
+    // Prepare data for charts using filteredLogs
+    const totalActive = window.filteredLogs.reduce((sum, log) => sum + parseTimeToSeconds(log.lastActiveTime || '0h 0m 0s'), 0);
+    const totalIdle = window.filteredLogs.reduce((sum, log) => sum + parseTimeToSeconds(log.lastIdleTime || '0h 0m 0s'), 0);
+    const totalTime = totalActive + totalIdle;
+
+    // Activity Pie Chart
+    const activityCtx = document.getElementById('activityPieChart').getContext('2d');
+    activityPieChart = new Chart(activityCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Active Time', 'Idle Time'],
+        datasets: [{
+          data: [totalActive, totalIdle],
+          backgroundColor: [
+            'rgba(56, 189, 119, 0.8)',  // Success green
+            'rgba(255, 158, 0, 0.8)'   // Warning orange
+          ],
+          borderColor: [
+            'rgba(56, 189, 119, 1)',
+            'rgba(255, 158, 0, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      plugins: [ChartDataLabels],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12, family: "'Public Sans', sans-serif" },
+              padding: 15,
+              usePointStyle: true
+            }
+          },
+          datalabels: {
+            formatter: (value, ctx) => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+              return total > 0 ? `${percentage}%` : '';
+            },
+            color: '#fff',
+            font: {
+              weight: 'bold',
+              size: 10,
+              family: "'Public Sans', sans-serif"
+            },
+            textShadow: '0 0 2px rgba(0,0,0,0.5)',
+            anchor: 'center',
+            align: 'center'
+          },
+          tooltip: {
+            bodyFont: { size: 11, family: "'Public Sans', sans-serif" },
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                const time = secondsToTime(context.parsed);
+                return `${context.label}: ${time} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        layout: {
+          padding: 10
+        }
+      }
+    });
+
+    // Top Applications Bar Chart
+    const allApps = {};
+    window.filteredLogs.forEach(log => {
+      Object.entries(log.exeAppCount || {}).forEach(([app, count]) => {
+        if (!allApps[app]) allApps[app] = { count: 0, time: 0 };
+        allApps[app].count += count;
+        allApps[app].time += parseTimeToSeconds(log.exeAppTotalTime ? log.exeAppTotalTime[app] || '0h 0m 0s' : '0h 0m 0s');
+      });
+    });
+
+    const sortedApps = Object.entries(allApps)
+      .sort(([,a], [,b]) => b.count - a.count)
+      .slice(0, 10)
+      .map(([app, data]) => ({ app, count: data.count, time: data.time }));
+
+    const appCtx = document.getElementById('appBarChart').getContext('2d');
+    appBarChart = new Chart(appCtx, {
+      type: 'bar',
+      data: {
+        labels: sortedApps.map(item => item.app.length > 12 ? item.app.substring(0, 9) + '...' : item.app),
+        datasets: [{
+          label: 'Usage Count',
+          data: sortedApps.map(item => item.count),
+          backgroundColor: sortedApps.map((_, i) => 
+            `rgba(${50 + i * 20}, ${100 + i * 30}, 238, 0.7)`
+          ),
+          borderColor: sortedApps.map((_, i) => 
+            `rgba(${50 + i * 20}, ${100 + i * 30}, 238, 1)`
+          ),
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { 
+              font: { size: 10, family: "'Public Sans', sans-serif" },
+              stepSize: Math.ceil(Math.max(...sortedApps.map(item => item.count)) / 5) || 1
+            },
+            grid: { color: 'rgba(0,0,0,0.1)' },
+            title: {
+              display: true,
+              text: 'Session Count',
+              font: { size: 12, family: "'Public Sans', sans-serif" }
+            }
+          },
+          x: {
+            ticks: { 
+              font: { size: 9, family: "'Public Sans', sans-serif" },
+              maxRotation: 30,
+              minRotation: 0
+            },
+            grid: { display: false },
+            title: {
+              display: true,
+              text: 'Applications',
+              font: { size: 12, family: "'Public Sans', sans-serif" }
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            bodyFont: { size: 11, family: "'Public Sans', sans-serif" },
+            callbacks: {
+              title: function(context) {
+                return sortedApps[context[0].dataIndex].app;
+              },
+              label: function(context) {
+                const data = sortedApps[context[0].dataIndex];
+                return [
+                  `Sessions: ${data.count}`,
+                  `Total Time: ${secondsToTime(data.time)}`
+                ];
+              }
+            }
+          }
+        },
+        layout: {
+          padding: 10
+        }
+      }
+    });
+
+    // Active Time Trend Line Chart
+    const sortedLogs = window.filteredLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const activeTimeData = sortedLogs.map(log => ({
+      x: new Date(log.timestamp).toLocaleDateString(),
+      y: parseTimeToSeconds(log.lastActiveTime || '0h 0m 0s')
+    }));
+
+    const lineCtx = document.getElementById('activeTimeLineChart').getContext('2d');
+    activeTimeLineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Active Time',
+          data: activeTimeData,
+          borderColor: 'rgba(56, 189, 119, 1)',
+          backgroundColor: 'rgba(56, 189, 119, 0.2)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: 'rgba(56, 189, 119, 1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'category',
+            ticks: {
+              font: { size: 9, family: "'Public Sans', sans-serif" },
+              maxRotation: 45,
+              minRotation: 45
+            },
+            grid: { display: false },
+            title: {
+              display: true,
+              text: 'Session Date',
+              font: { size: 12, family: "'Public Sans', sans-serif" }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              font: { size: 10, family: "'Public Sans', sans-serif" },
+              callback: function(value) {
+                return secondsToTime(value);
+              }
+            },
+            grid: { color: 'rgba(0,0,0,0.1)' },
+            title: {
+              display: true,
+              text: 'Active Time',
+              font: { size: 12, family: "'Public Sans', sans-serif" }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12, family: "'Public Sans', sans-serif" },
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            bodyFont: { size: 11, family: "'Public Sans', sans-serif" },
+            callbacks: {
+              label: function(context) {
+                return `Active Time: ${secondsToTime(context.parsed.y)}`;
+              }
+            }
+          }
+        },
+        layout: {
+          padding: 10
+        }
+      }
+    });
+  }
+
+  // Update Stats Cards
+  function updateStatsCards() {
+    if (!window.filteredLogs || window.filteredLogs.length === 0) {
+      console.warn('No logs available for stats cards');
+      return;
+    }
+
+    let totalActive = 0, totalIdle = 0, totalApps = 0, totalLogs = window.filteredLogs.length;
+
+    window.filteredLogs.forEach(log => {
+      totalActive += parseTimeToSeconds(log.lastActiveTime || '0h 0m 0s');
+      totalIdle += parseTimeToSeconds(log.lastIdleTime || '0h 0m 0s');
+      totalApps += Object.keys(log.exeAppCount || {}).length;
+    });
+
+    document.getElementById('totalActive').textContent = secondsToTime(totalActive);
+    document.getElementById('totalIdle').textContent = secondsToTime(totalIdle);
+    document.getElementById('totalApps').textContent = new Set(
+      window.filteredLogs.flatMap(log => Object.keys(log.exeAppCount || {}))
+    ).size;
+    document.getElementById('totalLogs').textContent = totalLogs;
+  }
+
+  // Utility functions for time conversion
+  function parseTimeToSeconds(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.match(/(\d+)h\s*(\d+)m\s*(\d+)s?/);
+    if (parts) {
+      return parseInt(parts[1]) * 3600 + parseInt(parts[2]) * 60 + parseInt(parts[3]);
+    }
+    return 0;
+  }
+
+  function secondsToTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  }
+
+  // Export to Excel/CSV
+  function exportToCSV() {
+    let csv = [];
+    
+    // Header for summary data
+    csv.push(['Employee', 'Email', 'Employee Code', 'Session Date', 'Active Time', 'Idle Time', 'Applications']);
+    
+    // Add data rows for filtered logs
+    window.filteredLogs.forEach(log => {
+      const apps = Object.entries(log.exeAppCount || {}).map(([app, count]) => 
+        `${app}: ${count} sessions (${log.exeAppTotalTime ? log.exeAppTotalTime[app] || '0h 0m 0s' : '0h 0m 0s'})`
+      ).join('; ');
+      
+      csv.push([
+        window.employeeInfoMap[window.selectedEmployee]?.name || 'N/A',
+        log.employeeEmail || '',
+        log.employeeCode || '',
+        new Date(log.timestamp).toLocaleString(),
+        log.lastActiveTime || '00h 00m 00s',
+        log.lastIdleTime || '00h 00m 00s',
+        apps
+      ]);
+    });
+
+    // Add chart summary data
+    const totalActive = window.filteredLogs.reduce((sum, log) => sum + parseTimeToSeconds(log.lastActiveTime || '0h 0m 0s'), 0);
+    const totalIdle = window.filteredLogs.reduce((sum, log) => sum + parseTimeToSeconds(log.lastIdleTime || '0h 0m 0s'), 0);
+    const allApps = {};
+    window.filteredLogs.forEach(log => {
+      Object.entries(log.exeAppCount || {}).forEach(([app, count]) => {
+        if (!allApps[app]) allApps[app] = { count: 0, time: 0 };
+        allApps[app].count += count;
+        allApps[app].time += parseTimeToSeconds(log.exeAppTotalTime ? log.exeAppTotalTime[app] || '0h 0m 0s' : '0h 0m 0s');
+      });
+    });
+    const topApps = Object.entries(allApps)
+      .sort(([,a], [,b]) => b.count - a.count)
+      .slice(0, 10)
+      .map(([app, data]) => `${app}: ${data.count} sessions (${secondsToTime(data.time)})`).join('; ');
+
+    csv.push([]);
+    csv.push(['Chart Summary']);
+    csv.push(['Employee', window.employeeInfoMap[window.selectedEmployee]?.name || 'N/A']);
+    csv.push(['Active Time', secondsToTime(totalActive)]);
+    csv.push(['Idle Time', secondsToTime(totalIdle)]);
+    csv.push(['Top Applications', topApps]);
+
+    // Add line chart data
+    csv.push([]);
+    csv.push(['Active Time Trend']);
+    csv.push(['Session Date', 'Active Time']);
+    const sortedLogs = window.filteredLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    sortedLogs.forEach(log => {
+      csv.push([new Date(log.timestamp).toLocaleString(), log.lastActiveTime || '00h 00m 00s']);
+    });
+
+    const csvContent = csv.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ActivityLogs_${window.employeeInfoMap[window.selectedEmployee]?.name || 'Employee'}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+
+</div>
+</div>
+</body>
+</html>

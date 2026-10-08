@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Screenshots</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    .thumbnail-img {
+      height: 180px;
+      object-fit: cover;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .thumbnail-img:hover {
+      transform: scale(1.03);
+    }
+
+    .modal-img {
+      width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+    }
+
+    .card {
+      border-radius: 0.75rem;
+    }
+
+    .card-body {
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+<div th:replace="fragments/sidebar :: sidebar"></div>
+<div class="sidebar-page-content">
+<div class="container py-5">
+  <div class="d-flex align-items-center mb-4">
+    <a href="/admin/screenshots" class="btn btn-outline-secondary me-3">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h3 class="mb-0">Screenshots for <span th:text="${employeeName}">Employee Name</span></h3>
+  </div>
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+    <div th:if="${#lists.isEmpty(screenshots)}" class="col-12">
+      <div class="alert alert-info">No screenshots available for this employee.</div>
+    </div>
+
+    <div th:each="shot : ${screenshots}" class="col">
+      <div class="card h-100 shadow-sm">
+        <img th:src="'data:image/png;base64,' + ${shot.image}"
+             alt="Screenshot"
+             class="thumbnail-img card-img-top"
+             th:attr="data-bs-toggle='modal', data-bs-target='#imageModal', data-image='data:image/png;base64,' + ${shot.image}" />
+        <div class="card-body">
+          <p class="card-text mb-1">
+            <strong>Employee ID:</strong> <span th:text="${shot.employeeId}"></span><br/>
+            <strong>Captured at:</strong> <span th:text="${shot.time}"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for full image zoom -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="zoomedImage" src="" alt="Zoomed Screenshot" class="modal-img rounded" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Modal zoom script
+  document.addEventListener("DOMContentLoaded", function () {
+    const imageModal = document.getElementById('imageModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    imageModal.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const imageUrl = trigger.getAttribute('data-image');
+      zoomedImage.src = imageUrl;
+    });
+  });
+</script>
+</div>
+</div>
+</body>
+</html>

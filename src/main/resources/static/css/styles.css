@@ -1,0 +1,3064 @@
+/* =========================================================
+   EMS COMMON ADMIN STYLES
+   CORPORATE EMPLOYEE MONITORING SYSTEM
+   FINAL CONSOLIDATED VERSION
+   ========================================================= */
+
+
+/* =========================================================
+   GLOBAL VARIABLES
+   ========================================================= */
+
+:root {
+
+    --ems-orange: #ff5a00;
+    --ems-orange-dark: #e84f00;
+
+    --ems-sidebar: #101820;
+    --ems-sidebar-2: #151f29;
+
+    --ems-text: #e8edf2;
+    --ems-muted: #94a3b8;
+
+    --ems-border:
+        rgba(255, 255, 255, 0.07);
+
+    --ems-content-bg: #f5f7fa;
+
+    --ems-sidebar-width: 298px;
+
+    /* ONE HEADER HEIGHT ONLY */
+    --ems-header-height: 60px;
+
+    /* Subtle frame gap to keep header/sidebar visually separated without changing hover styles */
+    --ems-layout-gap: 8px;
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+html,
+body {
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    width: 100%;
+
+    min-height: 100%;
+
+    background:
+        var(--ems-content-bg);
+
+    color: #1f2937;
+
+    font-family:
+        "Public Sans",
+        sans-serif;
+
+    font-size: 1rem;
+
+    font-weight: 500;
+
+    line-height: 1.57;
+
+    overflow-x: hidden;
+}
+
+
+*,
+*::before,
+*::after {
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.ems-page {
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+/* =========================================================
+   IMPORTANT
+   REMOVE OLD NAVIGATION BAR
+   ========================================================= */
+
+/*
+   Old dashboard pages still contain:
+
+       .topbar
+       .toggle-btn
+
+   The new EMS header replaces them.
+
+   We hide them instead of deleting the HTML so
+   existing JavaScript does not immediately break.
+*/
+
+.topbar {
+
+    display: none !important;
+
+    height: 0 !important;
+
+    min-height: 0 !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    border: 0 !important;
+
+    box-shadow: none !important;
+}
+
+
+.toggle-btn {
+
+    display: none !important;
+}
+
+
+/* =========================================================
+   OLD MAIN CONTENT COMPATIBILITY
+   ========================================================= */
+
+.main-content {
+
+    margin-left:
+        calc(var(--ems-sidebar-width) + var(--ems-layout-gap)) !important;
+
+    padding-top:
+        calc(var(--ems-header-height) + var(--ems-layout-gap)) !important;
+
+    min-height: 100vh;
+
+    width: auto;
+
+    background:
+        var(--ems-content-bg);
+
+    box-sizing: border-box;
+}
+
+
+.main-content.content-expanded {
+
+    margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   EMS MAIN CONTENT
+   ========================================================= */
+
+.ems-main-content {
+
+    margin-left:
+        calc(var(--ems-sidebar-width) + var(--ems-layout-gap)) !important;
+
+    /* padding-top must equal exactly the fixed header height so dashboard
+       content begins immediately below the orange header with no blank gap. */
+    padding-top:
+        var(--ems-header-height) !important;
+
+    min-height: 100vh;
+
+    width: auto;
+
+    background:
+        var(--ems-content-bg);
+
+    box-sizing: border-box;
+}
+
+
+.ems-main-content.content-expanded {
+
+    margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   TOP HEADER
+   FULL WIDTH
+   ========================================================= */
+
+.ems-top-header {
+
+    position: fixed !important;
+
+    top: 0 !important;
+
+    left: var(--ems-layout-gap) !important;
+
+    right: var(--ems-layout-gap) !important;
+
+    width: auto !important;
+
+    height:
+        var(--ems-header-height) !important;
+
+    min-height:
+        var(--ems-header-height) !important;
+
+    max-height:
+        var(--ems-header-height) !important;
+
+    margin: 0 !important;
+
+    padding:
+        0 22px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    background:
+        linear-gradient(90deg,
+            #ff4b18 0%,
+            #ff5a1f 45%,
+            #ff641f 100%) !important;
+
+    color: #ffffff !important;
+
+    border: none !important;
+
+    border-radius: 0 !important;
+
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.15) !important;
+
+    z-index: 1100 !important;
+
+    overflow: visible;
+}
+
+
+/* =========================================================
+   HEADER LEFT
+   ========================================================= */
+
+.ems-header-left {
+
+    height:
+        var(--ems-header-height);
+
+    min-width: 390px;
+
+    display: flex;
+
+    align-items: center;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   HEADER BRAND
+   ========================================================= */
+
+.ems-header-brand {
+
+    display: flex;
+
+    align-items: center;
+
+    height: 100%;
+}
+
+
+.ems-header-brand-link {
+
+    height:
+        var(--ems-header-height);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    margin: 0;
+
+    padding: 0;
+}
+
+
+/*
+   KEEP BRAND HOVER
+*/
+
+.ems-header-brand-link:hover {
+
+    color: #ffffff;
+
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   HEADER LOGO
+   ========================================================= */
+
+.ems-header-logo {
+
+    width: 40px;
+
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border:
+        2px solid rgba(255, 255, 255, 0.95);
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, 0.04);
+
+    color: #ffffff;
+
+    font-size: 17px;
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+
+/* =========================================================
+   HEADER BRAND CONTENT
+   ========================================================= */
+
+.ems-header-brand-content {
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    min-width: 0;
+}
+
+
+.ems-header-brand-name {
+
+    color: #ffffff;
+
+    font-size: 21px;
+
+    line-height: 1;
+
+    font-weight: 700;
+
+    letter-spacing: -0.4px;
+
+    white-space: nowrap;
+}
+
+
+.ems-header-brand-subtitle {
+
+    margin-top: 3px;
+
+    color:
+        rgba(255, 255, 255, 0.95);
+
+    font-size: 11px;
+
+    line-height: 1;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.ems-header-brand-tagline {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-top: 3px;
+
+    color:
+        rgba(255, 255, 255, 0.85);
+
+    font-size: 9px;
+
+    line-height: 1;
+
+    white-space: nowrap;
+}
+
+
+.ems-header-dot {
+
+    color:
+        rgba(255, 255, 255, 0.60);
+}
+
+
+/* =========================================================
+   HEADER SEARCH
+   ========================================================= */
+
+.ems-global-search {
+
+    position: absolute;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    width: 310px;
+
+    max-width: 30vw;
+
+    margin: 0;
+
+    z-index: 2;
+}
+
+
+.ems-search-icon {
+
+    position: absolute;
+
+    left: 13px;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    color: #526277;
+
+    pointer-events: none;
+
+    font-size: 13px;
+
+    z-index: 2;
+}
+
+
+.ems-global-search-input {
+
+    width: 100%;
+
+    height: 37px;
+
+    padding:
+        0 14px 0 36px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.30);
+
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    outline: none;
+
+    font-family: inherit;
+
+    font-size: 12px;
+
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.10);
+}
+
+
+.ems-global-search-input::placeholder {
+
+    color: #718096;
+
+    opacity: 1;
+}
+
+
+.ems-global-search-input:focus {
+
+    border-color:
+        rgba(255, 255, 255, 0.80);
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.20);
+}
+
+
+/* =========================================================
+   SEARCH RESULTS
+   ========================================================= */
+
+.ems-search-results {
+
+    position: absolute;
+
+    top:
+        calc(100% + 7px);
+
+    left: 0;
+
+    right: 0;
+
+    background: #ffffff;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 8px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.15);
+
+    display: none;
+
+    z-index: 1200;
+}
+
+
+/* =========================================================
+   HEADER RIGHT
+   ========================================================= */
+
+.ems-header-right {
+
+    height:
+        var(--ems-header-height);
+
+    margin-left: auto;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   NOTIFICATION BUTTON
+   ========================================================= */
+
+.ems-header-icon-button {
+
+    position: relative;
+
+    width: 38px;
+
+    height: 38px;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 17px;
+}
+
+
+/*
+   KEEP EXISTING HOVER EFFECT
+*/
+
+.ems-header-icon-button:hover {
+
+    background:
+        rgba(255, 255, 255, 0.12);
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   NOTIFICATION BADGE
+   ========================================================= */
+
+.ems-notification-badge {
+
+    position: absolute;
+
+    top: 0;
+
+    right: 0;
+
+    min-width: 16px;
+
+    height: 16px;
+
+    padding: 0 4px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background: #dc2626;
+
+    color: #ffffff;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+    line-height: 16px;
+
+    text-align: center;
+
+    border:
+        2px solid #ff5a1f;
+}
+
+
+/* =========================================================
+   ADMIN PROFILE
+   ========================================================= */
+
+.ems-admin-profile {
+
+    min-height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding:
+        3px 5px 3px 6px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    text-align: left;
+}
+
+
+/*
+   KEEP EXISTING HOVER EFFECT
+*/
+
+.ems-admin-profile:hover {
+
+    background:
+        rgba(255, 255, 255, 0.10);
+}
+
+
+.ems-admin-avatar {
+
+    width: 36px;
+
+    height: 36px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f5f9;
+
+    color: #526277;
+
+    font-size: 14px;
+
+    border:
+        2px solid rgba(255, 255, 255, 0.48);
+}
+
+
+.ems-admin-info {
+
+    min-width: 70px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    text-align: left;
+}
+
+
+.ems-admin-name {
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    line-height: 1.15;
+
+    font-weight: 600;
+}
+
+
+.ems-admin-role {
+
+    margin-top: 2px;
+
+    color:
+        rgba(255, 255, 255, 0.80);
+
+    font-size: 9px;
+
+    line-height: 1.15;
+}
+
+
+.ems-admin-chevron {
+
+    margin-left: 2px;
+
+    color:
+        rgba(255, 255, 255, 0.85);
+
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   STARTS EXACTLY UNDER HEADER
+   ========================================================= */
+
+.ems-sidebar {
+
+    position: fixed !important;
+
+    top:
+        calc(var(--ems-header-height) + var(--ems-layout-gap)) !important;
+
+    left: var(--ems-layout-gap) !important;
+
+    right: auto !important;
+
+    bottom: var(--ems-layout-gap) !important;
+
+    width:
+        var(--ems-sidebar-width) !important;
+
+    height:
+        calc(100vh - var(--ems-header-height) - (var(--ems-layout-gap) * 2)) !important;
+
+    min-height: 0 !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    box-sizing: border-box;
+
+    background:
+        linear-gradient(180deg,
+            #111820 0%,
+            #121b24 55%,
+            #10171e 100%);
+
+    color: var(--ems-text);
+
+    display: flex;
+
+    flex-direction: column;
+
+    z-index: 1050;
+
+    border-top: 0 !important;
+
+    border-right:
+        1px solid rgba(255, 255, 255, 0.06);
+
+    border-bottom: 0 !important;
+
+    border-left: 0 !important;
+
+    border-radius: 0 !important;
+
+    box-shadow:
+        5px 0 25px rgba(0, 0, 0, 0.12);
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   SIDEBAR CONTENT
+   ========================================================= */
+
+.ems-sidebar-content {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    overflow-x: hidden;
+
+    padding:
+        12px 11px 18px;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.12) transparent;
+}
+
+
+.ems-sidebar-content::-webkit-scrollbar {
+
+    width: 5px;
+}
+
+
+.ems-sidebar-content::-webkit-scrollbar-track {
+
+    background: transparent;
+}
+
+
+.ems-sidebar-content::-webkit-scrollbar-thumb {
+
+    background:
+        rgba(255, 255, 255, 0.12);
+
+    border-radius: 10px;
+}
+
+
+.ems-sidebar-content::-webkit-scrollbar-thumb:hover {
+
+    background:
+        rgba(255, 90, 31, 0.45);
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.ems-nav-list {
+
+    list-style: none;
+
+    padding: 0;
+
+    margin: 0;
+}
+
+
+.ems-nav-item {
+
+    list-style: none;
+
+    margin: 2px 0;
+}
+
+
+/* =========================================================
+   SECTION TITLE
+   ========================================================= */
+
+.ems-section-title {
+
+    list-style: none;
+
+    margin:
+        22px 13px 7px;
+
+    padding: 0;
+
+    color: #697786;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+    line-height: 1.2;
+}
+
+
+/* =========================================================
+   NAV LINK
+   DO NOT CHANGE HOVER
+   ========================================================= */
+
+.ems-nav-link {
+
+    position: relative;
+
+    min-height: 44px;
+
+    padding:
+        9px 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    border-radius: 7px;
+
+    color: #a9b4c0;
+
+    text-decoration: none;
+
+    font-size: 13.5px;
+
+    font-weight: 500;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+/* =========================================================
+   EXISTING HOVER EFFECT — UNCHANGED
+   ========================================================= */
+
+.ems-nav-link:hover {
+
+    background:
+        rgba(255, 255, 255, 0.055);
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    transform: translateX(2px);
+}
+
+
+.ems-nav-link:hover .ems-nav-icon {
+
+    color: var(--ems-orange);
+}
+
+
+.ems-nav-link:hover .ems-nav-icon {
+
+    transform: scale(1.06);
+}
+
+
+.ems-nav-link:hover .ems-link-arrow {
+
+    color: #ffffff;
+
+    transform: translateX(2px);
+}
+
+
+/* =========================================================
+   ACTIVE NAV
+   ========================================================= */
+
+.ems-nav-link.active {
+
+    background:
+        linear-gradient(90deg,
+            #ff5a1f 0%,
+            #ff6327 100%);
+
+    color: #ffffff;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 5px 14px rgba(255, 90, 31, 0.20);
+
+    transform: translateX(0);
+}
+
+
+.ems-nav-link.active:hover {
+
+    background:
+        linear-gradient(90deg,
+            #ff5a1f 0%,
+            #ff6b2c 100%);
+
+    transform: translateX(0);
+}
+
+
+.ems-nav-link.active .ems-nav-icon {
+
+    color: #ffffff;
+}
+
+
+.ems-nav-link.active::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: -11px;
+
+    top: 8px;
+
+    bottom: 8px;
+
+    width: 3px;
+
+    border-radius:
+        0 4px 4px 0;
+
+    background:
+        var(--ems-orange);
+}
+
+
+/* =========================================================
+   NAV LEFT
+   ========================================================= */
+
+.ems-nav-left {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+
+/* =========================================================
+   NAV ICON
+   ========================================================= */
+
+.ems-nav-icon {
+
+    width: 21px;
+
+    min-width: 21px;
+
+    height: 21px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #9aa7b5;
+
+    font-size: 14px;
+
+    transition:
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+/* =========================================================
+   NAV TEXT
+   ========================================================= */
+
+.ems-nav-text {
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    line-height: 1.2;
+}
+
+
+/* =========================================================
+   CHEVRON
+   ========================================================= */
+
+.ems-chevron {
+
+    flex-shrink: 0;
+
+    color: #687789;
+
+    font-size: 9px;
+
+    transition:
+        transform 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.ems-parent-link:hover .ems-chevron {
+
+    color: #ffffff;
+}
+
+
+.ems-parent-link[aria-expanded="true"] .ems-chevron {
+
+    transform: rotate(90deg);
+
+    color: var(--ems-orange);
+}
+
+
+.ems-parent-link[aria-expanded="true"] {
+
+    color: #ffffff;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+}
+
+
+/* =========================================================
+   SUBMENU
+   ========================================================= */
+
+.ems-submenu {
+
+    padding:
+        4px 0 5px 31px;
+}
+
+
+.ems-submenu-link {
+
+    position: relative;
+
+    min-height: 36px;
+
+    padding:
+        7px 11px;
+
+    margin: 2px 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    border-radius: 6px;
+
+    color: #8f9dac;
+
+    text-decoration: none;
+
+    font-size: 12.5px;
+
+    font-weight: 450;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        padding-left 0.18s ease;
+}
+
+
+.ems-submenu-link:hover {
+
+    background:
+        rgba(255, 255, 255, 0.045);
+
+    color: #ffffff;
+
+    padding-left: 15px;
+
+    text-decoration: none;
+}
+
+
+.ems-submenu-link i {
+
+    width: 16px;
+
+    min-width: 16px;
+
+    text-align: center;
+
+    font-size: 11px;
+
+    color: #667587;
+
+    transition:
+        color 0.18s ease;
+}
+
+
+.ems-submenu-link:hover i {
+
+    color: var(--ems-orange);
+}
+
+
+.ems-submenu-link.active {
+
+    background:
+        rgba(255, 90, 31, 0.10);
+
+    color: #ffffff;
+
+    font-weight: 600;
+}
+
+
+.ems-submenu-link.active::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+
+    top: 7px;
+
+    bottom: 7px;
+
+    width: 2px;
+
+    border-radius: 3px;
+
+    background:
+        var(--ems-orange);
+}
+
+
+.ems-submenu-link.active i {
+
+    color: var(--ems-orange);
+}
+
+
+/* =========================================================
+   DASHBOARD LINK
+   ========================================================= */
+
+.ems-dashboard-link {
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: flex-start !important;
+
+    gap: 11px !important;
+
+    width: 100% !important;
+
+    box-sizing: border-box !important;
+}
+
+
+.ems-dashboard-link .ems-nav-icon {
+
+    width: 21px !important;
+
+    min-width: 21px !important;
+
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    margin: 0 !important;
+}
+
+
+.ems-dashboard-link .ems-nav-text {
+
+    display: inline-block !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    white-space: nowrap !important;
+}
+
+
+/* =========================================================
+   RIGHT ARROW
+   ========================================================= */
+
+.ems-link-arrow {
+
+    color: #657487;
+
+    font-size: 8px;
+
+    transition:
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+/* =========================================================
+   SIDEBAR FOOTER
+   ========================================================= */
+
+.ems-sidebar-footer {
+
+    flex-shrink: 0;
+
+    padding:
+        10px 11px 12px;
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.06);
+
+    background:
+        rgba(0, 0, 0, 0.08);
+}
+
+
+.ems-support-card {
+
+    padding: 13px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 9px;
+
+    background:
+        rgba(255, 255, 255, 0.025);
+}
+
+
+.ems-support-icon {
+
+    width: 31px;
+
+    height: 31px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 7px;
+
+    background:
+        rgba(255, 90, 31, 0.12);
+
+    color:
+        var(--ems-orange);
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+}
+
+
+.ems-support-title {
+
+    color: #ffffff;
+
+    font-size: 12.5px;
+
+    font-weight: 600;
+}
+
+
+.ems-support-text {
+
+    margin-top: 4px;
+
+    color: #82909f;
+
+    font-size: 10.5px;
+
+    line-height: 1.45;
+}
+
+
+.ems-support-button {
+
+    width: 100%;
+
+    margin-top: 9px;
+
+    padding:
+        8px 10px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.12);
+
+    border-radius: 6px;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+
+    color: #d9e0e7;
+
+    font-size: 11px;
+
+    font-weight: 500;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+}
+
+
+.ems-support-button:hover {
+
+    background:
+        var(--ems-orange);
+
+    border-color:
+        var(--ems-orange);
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   DASHBOARD CONTENT
+   ========================================================= */
+
+.ems-dashboard-content {
+
+    width: 100%;
+
+    margin: 0 !important;
+
+    padding: 20px 24px 24px;
+
+    box-sizing: border-box;
+}
+
+.dashboard-grid-4 {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.dashboard-grid-3 {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/*
+   OLD BOOTSTRAP CONTAINER INSIDE MAIN CONTENT
+
+   Remove unwanted top spacing.
+*/
+
+.main-content>.container-fluid {
+
+    margin-top: 0 !important;
+}
+
+
+/* =========================================================
+   DASHBOARD CARDS
+   ========================================================= */
+
+.dashboard-card {
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 5px 25px rgba(0, 0, 0, 0.05);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+
+    overflow: hidden;
+
+    margin-bottom: 20px;
+}
+
+
+.dashboard-card:hover {
+
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.10);
+}
+
+
+.card-header {
+
+    background-color: #ffffff;
+
+    border-bottom:
+        1px solid rgba(0, 0, 0, 0.05);
+
+    padding: 20px;
+
+    font-weight: 600;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+.card-body {
+
+    padding: 25px;
+}
+
+
+/* =========================================================
+   WELCOME / SUCCESS
+   ========================================================= */
+
+.bg-gradient-success {
+
+    background:
+        linear-gradient(135deg,
+            #28a745,
+            #34d399);
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   DASHBOARD GRIDS
+   ========================================================= */
+
+.dashboard-grid-4 {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 20px;
+
+    width: 100%;
+}
+
+
+.dashboard-grid-3 {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+
+    width: 100%;
+}
+
+
+/* =========================================================
+   CHARTS
+   ========================================================= */
+
+.chart-container {
+
+    filter:
+        drop-shadow(0 6px 12px rgba(0, 0, 0, 0.08));
+}
+
+
+.chart-canvas {
+
+    background:
+        linear-gradient(135deg,
+            #f5f7fa,
+            #e4e7eb);
+
+    border-radius: 10px;
+
+    height: 200px;
+
+    min-width: 0;
+
+    width: 100%;
+}
+
+
+/* =========================================================
+   TOOL BADGE
+   ========================================================= */
+
+.tool-badge {
+
+    position: absolute;
+
+    top: -8px;
+
+    right: -8px;
+
+    background:
+        var(--ems-orange);
+
+    color: #ffffff;
+
+    border-radius: 50%;
+
+    width: 24px;
+
+    height: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes fadeIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(20px);
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+
+.animate-fadein {
+
+    animation:
+        fadeIn 0.6s ease-out forwards;
+}
+
+
+.delay-1 {
+
+    animation-delay:
+        0.1s;
+}
+
+
+.delay-2 {
+
+    animation-delay:
+        0.2s;
+}
+
+
+.delay-3 {
+
+    animation-delay:
+        0.3s;
+}
+
+
+/* =========================================================
+   SIDEBAR COLLAPSE
+   ========================================================= */
+
+.ems-sidebar.sidebar-collapsed {
+
+    transform:
+        translateX(calc(-1 * var(--ems-sidebar-width)));
+}
+
+
+.main-content.content-expanded,
+.ems-main-content.content-expanded {
+
+    margin-left: 0 !important;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) and (min-width: 769px) {
+
+    :root {
+
+        --ems-sidebar-width: 270px;
+    }
+
+
+    .ems-sidebar {
+
+        width: 270px !important;
+    }
+
+
+    .main-content,
+    .ems-main-content {
+
+        margin-left: 270px !important;
+    }
+
+
+    .ems-header-left {
+
+        min-width: 330px;
+    }
+
+
+    .ems-global-search {
+
+        width: 280px;
+
+        max-width: 28vw;
+    }
+
+
+    .dashboard-grid-4 {
+
+        grid-template-columns:
+            repeat(2,
+                minmax(0, 1fr));
+    }
+
+
+    .dashboard-grid-3 {
+
+        grid-template-columns:
+            repeat(2,
+                minmax(0, 1fr));
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    :root {
+
+        --ems-sidebar-width: 0px;
+
+        --ems-header-height: 60px;
+    }
+
+
+    /* ---------------------------------------------
+       HEADER
+       --------------------------------------------- */
+
+    .ems-top-header {
+
+        height: 60px !important;
+
+        min-height: 60px !important;
+
+        padding:
+            0 12px !important;
+    }
+
+
+    .ems-header-left {
+
+        min-width: 0;
+
+        flex: 1;
+
+        height: 60px;
+    }
+
+
+    .ems-header-menu-button {
+
+        display: flex;
+    }
+
+
+    .ems-header-brand-link {
+
+        height: 60px;
+
+        gap: 7px;
+    }
+
+
+    .ems-header-logo {
+
+        width: 34px;
+
+        height: 34px;
+
+        font-size: 14px;
+    }
+
+
+    .ems-header-brand-name {
+
+        font-size: 17px;
+    }
+
+
+    .ems-header-brand-subtitle {
+
+        font-size: 9px;
+    }
+
+
+    .ems-header-brand-tagline {
+
+        display: none;
+    }
+
+
+    .ems-global-search {
+
+        display: none;
+    }
+
+
+    /* ---------------------------------------------
+       MOBILE SIDEBAR
+       --------------------------------------------- */
+
+    .ems-sidebar {
+
+        top: 60px !important;
+
+        bottom: 0 !important;
+
+        width: 298px !important;
+
+        max-width: 85vw;
+
+        height:
+            calc(100vh - 60px) !important;
+
+        transform:
+            translateX(-100%);
+
+        transition:
+            transform 0.25s ease;
+
+        box-shadow:
+            5px 0 25px rgba(0, 0, 0, 0.25);
+    }
+
+
+    .ems-sidebar.mobile-open {
+
+        transform:
+            translateX(0);
+    }
+
+
+    .ems-sidebar.sidebar-collapsed {
+
+        transform:
+            translateX(-100%);
+    }
+
+
+    /* ---------------------------------------------
+       MOBILE MAIN
+       --------------------------------------------- */
+
+    .main-content,
+    .ems-main-content {
+
+        margin-left: 0 !important;
+
+        padding-top: 60px !important;
+
+        width: 100%;
+
+        min-height:
+            calc(100vh - 60px);
+    }
+
+
+    .ems-dashboard-content {
+
+        padding:
+            16px;
+    }
+
+
+    /* ---------------------------------------------
+       HEADER RIGHT
+       --------------------------------------------- */
+
+    .ems-header-right {
+
+        gap: 4px;
+
+        height: 60px;
+    }
+
+
+    .ems-admin-info,
+    .ems-admin-chevron {
+
+        display: none;
+    }
+
+
+    .ems-admin-profile {
+
+        padding: 2px;
+    }
+
+
+    .ems-admin-avatar {
+
+        width: 34px;
+
+        height: 34px;
+    }
+
+
+    .ems-header-icon-button {
+
+        width: 34px;
+
+        height: 34px;
+    }
+
+
+    /* ---------------------------------------------
+       DASHBOARD GRIDS
+       --------------------------------------------- */
+
+    .dashboard-grid-4,
+    .dashboard-grid-3 {
+
+        grid-template-columns:
+            1fr;
+
+        gap: 14px;
+    }
+
+
+    /* ---------------------------------------------
+       CARDS
+       --------------------------------------------- */
+
+    .card-body {
+
+        padding: 20px;
+    }
+
+
+    .chart-canvas {
+
+        min-width: 0;
+
+        height: 220px;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .ems-sidebar {
+
+        width: 280px !important;
+
+        max-width: 88vw;
+    }
+
+
+    .ems-top-header {
+
+        padding:
+            0 10px !important;
+    }
+
+
+    .ems-header-brand-name {
+
+        font-size: 15px;
+    }
+
+
+    .ems-header-brand-subtitle {
+
+        display: none;
+    }
+
+
+    .ems-header-logo {
+
+        width: 32px;
+
+        height: 32px;
+    }
+
+
+    .ems-header-menu-button {
+
+        width: 34px;
+
+        height: 34px;
+
+        margin-right: 6px;
+    }
+
+
+    .ems-header-icon-button {
+
+        width: 32px;
+
+        height: 32px;
+
+        font-size: 14px;
+    }
+
+
+    .ems-admin-avatar {
+
+        width: 32px;
+
+        height: 32px;
+
+        font-size: 12px;
+    }
+
+
+    .ems-dashboard-content {
+
+        padding: 12px;
+    }
+
+
+    .dashboard-card {
+
+        margin-bottom: 14px;
+    }
+
+
+    .chart-canvas {
+
+        height: 200px;
+    }
+}
+
+
+/* =========================================================
+   FINAL GAP PROTECTION
+   ========================================================= */
+
+/*
+   These rules are intentionally at the very bottom.
+   They prevent older CSS blocks from recreating the gap.
+*/
+
+body>.ems-top-header {
+
+    margin: 0 !important;
+}
+
+
+body>.ems-sidebar {
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+.ems-page>.ems-sidebar {
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+.ems-page>aside {
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+.main-content>.topbar {
+
+    display: none !important;
+
+    height: 0 !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+.ems-main-content>.topbar {
+
+    display: none !important;
+
+    height: 0 !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    /* =========================================================
+       EMS PROFESSIONAL HEADER + SIDEBAR LAYOUT
+       FINAL VISUAL SPACING OVERRIDE
+       ========================================================= */
+
+    /* ---------------------------------------------------------
+       ROOT LAYOUT
+       --------------------------------------------------------- */
+
+    :root {
+        --ems-header-height: 64px;
+        --ems-sidebar-width: 298px;
+    }
+
+
+    /* ---------------------------------------------------------
+       HEADER
+       --------------------------------------------------------- */
+
+    .ems-top-header {
+        position: fixed !important;
+
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+
+        width: 100% !important;
+        height: 64px !important;
+        min-height: 64px !important;
+        max-height: 64px !important;
+
+        margin: 0 !important;
+        padding: 0 22px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        background:
+                linear-gradient(
+                        90deg,
+                        #ff4b18 0%,
+                        #ff5a1f 50%,
+                        #ff641f 100%
+                ) !important;
+
+        border: none !important;
+        border-radius: 0 !important;
+
+        box-shadow:
+                0 2px 10px rgba(0, 0, 0, 0.14) !important;
+
+        z-index: 1100 !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       DESKTOP MENU BUTTON
+       HAMBURGER MUST NOT SHOW ON DESKTOP
+       --------------------------------------------------------- */
+
+    .ems-header-menu-button {
+        display: none !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       HEADER LEFT
+       --------------------------------------------------------- */
+
+    .ems-header-left {
+        height: 64px !important;
+
+        min-width: 300px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        flex-shrink: 0 !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       HEADER BRAND
+       --------------------------------------------------------- */
+
+    .ems-header-brand {
+        height: 64px !important;
+
+        display: flex !important;
+        align-items: center !important;
+    }
+
+
+    .ems-header-brand-link {
+        height: 64px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 10px !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        color: #ffffff !important;
+        text-decoration: none !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       LOGO
+       --------------------------------------------------------- */
+
+    .ems-header-logo {
+        width: 38px !important;
+        height: 38px !important;
+
+        flex: 0 0 38px !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        border: 2px solid rgba(255,255,255,0.95) !important;
+        border-radius: 50% !important;
+
+        background: rgba(255,255,255,0.05) !important;
+
+        color: #ffffff !important;
+
+        font-size: 16px !important;
+
+        box-shadow:
+                0 0 0 3px rgba(255,255,255,0.05) !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       BRAND TEXT
+       --------------------------------------------------------- */
+
+    .ems-header-brand-content {
+        height: 64px !important;
+
+        display: flex !important;
+        flex-direction: column !important;
+
+        justify-content: center !important;
+
+        min-width: 0 !important;
+    }
+
+
+    .ems-header-brand-name {
+        font-size: 20px !important;
+        line-height: 1 !important;
+
+        font-weight: 700 !important;
+
+        letter-spacing: -0.35px !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .ems-header-brand-subtitle {
+        margin-top: 4px !important;
+
+        font-size: 10px !important;
+        line-height: 1 !important;
+
+        font-weight: 600 !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    .ems-header-brand-tagline {
+        margin-top: 3px !important;
+
+        font-size: 8px !important;
+
+        line-height: 1 !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 6px !important;
+
+        white-space: nowrap !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       SEARCH
+       --------------------------------------------------------- */
+
+    .ems-global-search {
+        position: absolute !important;
+
+        top: 50% !important;
+        left: 50% !important;
+
+        transform: translate(-50%, -50%) !important;
+
+        width: 340px !important;
+        max-width: 34vw !important;
+
+        margin: 0 !important;
+    }
+
+
+    .ems-global-search-input {
+        width: 100% !important;
+
+        height: 38px !important;
+
+        padding:
+                0 14px 0 38px !important;
+
+        border:
+                1px solid rgba(255,255,255,0.30) !important;
+
+        border-radius: 9px !important;
+
+        background: #ffffff !important;
+
+        color: #1e293b !important;
+
+        font-size: 12px !important;
+
+        box-shadow:
+                0 2px 7px rgba(0,0,0,0.10) !important;
+    }
+
+
+    .ems-search-icon {
+        left: 13px !important;
+
+        font-size: 13px !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       HEADER RIGHT
+       --------------------------------------------------------- */
+
+    .ems-header-right {
+        height: 64px !important;
+
+        margin-left: auto !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 8px !important;
+
+        flex-shrink: 0 !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       NOTIFICATION
+       --------------------------------------------------------- */
+
+    .ems-header-icon-button {
+        width: 38px !important;
+        height: 38px !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        padding: 0 !important;
+
+        border: none !important;
+        border-radius: 50% !important;
+
+        background: transparent !important;
+
+        color: #ffffff !important;
+
+        cursor: pointer !important;
+    }
+
+
+    /*
+       IMPORTANT:
+       Existing hover effect preserved.
+    */
+
+    .ems-header-icon-button:hover {
+        background:
+                rgba(255, 255, 255, 0.12) !important;
+
+        color: #ffffff !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       ADMIN PROFILE
+       --------------------------------------------------------- */
+
+    .ems-admin-profile {
+        min-height: 42px !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        gap: 8px !important;
+
+        padding:
+                3px 6px !important;
+
+        border: none !important;
+
+        border-radius: 9px !important;
+
+        background: transparent !important;
+
+        color: #ffffff !important;
+
+        cursor: pointer !important;
+    }
+
+
+    /*
+       Existing hover effect preserved.
+    */
+
+    .ems-admin-profile:hover {
+        background:
+                rgba(255, 255, 255, 0.10) !important;
+    }
+
+
+    .ems-admin-avatar {
+        width: 36px !important;
+        height: 36px !important;
+
+        flex: 0 0 36px !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        border-radius: 50% !important;
+
+        background: #f1f5f9 !important;
+
+        color: #526277 !important;
+
+        font-size: 14px !important;
+    }
+
+
+    .ems-admin-info {
+        min-width: 72px !important;
+
+        display: flex !important;
+        flex-direction: column !important;
+
+        justify-content: center !important;
+
+        text-align: left !important;
+    }
+
+
+    .ems-admin-name {
+        font-size: 13px !important;
+        line-height: 1.15 !important;
+
+        font-weight: 600 !important;
+    }
+
+
+    .ems-admin-role {
+        margin-top: 2px !important;
+
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+    }
+
+
+    .ems-admin-chevron {
+        margin-left: 2px !important;
+
+        font-size: 9px !important;
+    }
+
+
+    /* =========================================================
+       SIDEBAR
+       ========================================================= */
+
+    .ems-sidebar {
+        position: fixed !important;
+
+        top: 64px !important;
+        left: 0 !important;
+
+        right: auto !important;
+        bottom: 0 !important;
+
+        width: 298px !important;
+
+        height:
+                calc(100vh - 64px) !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        border: none !important;
+        border-radius: 0 !important;
+
+        background:
+                linear-gradient(
+                        180deg,
+                        #111820 0%,
+                        #121b24 55%,
+                        #10171e 100%
+                ) !important;
+
+        box-shadow:
+                4px 0 18px rgba(0,0,0,0.10) !important;
+
+        z-index: 1050 !important;
+
+        overflow: hidden !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       SIDEBAR CONTENT
+       --------------------------------------------------------- */
+
+    .ems-sidebar-content {
+        flex: 1 !important;
+
+        min-height: 0 !important;
+
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+
+        padding:
+                14px 12px 18px !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       NAV LIST
+       --------------------------------------------------------- */
+
+    .ems-nav-list {
+        margin: 0 !important;
+        padding: 0 !important;
+
+        list-style: none !important;
+    }
+
+
+    .ems-nav-item {
+        margin:
+                2px 0 !important;
+
+        list-style: none !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       SECTION TITLES
+       --------------------------------------------------------- */
+
+    .ems-section-title {
+        margin:
+                20px 13px 7px !important;
+
+        padding: 0 !important;
+
+        font-size: 10px !important;
+
+        font-weight: 700 !important;
+
+        letter-spacing: 1px !important;
+
+        line-height: 1.2 !important;
+
+        color: #697786 !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       NAV LINKS
+       --------------------------------------------------------- */
+
+    .ems-nav-link {
+        min-height: 42px !important;
+
+        padding:
+                8px 13px !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: space-between !important;
+
+        gap: 10px !important;
+
+        border-radius: 7px !important;
+
+        font-size: 13.5px !important;
+
+        line-height: 1.2 !important;
+    }
+
+
+    /*
+    ===========================================================
+    DO NOT CHANGE YOUR EXISTING HOVER EFFECT
+    ===========================================================
+    */
+
+    .ems-nav-link:hover {
+        background:
+                rgba(255, 255, 255, 0.055);
+
+        color: #ffffff;
+
+        text-decoration: none;
+
+        transform: translateX(2px);
+    }
+
+
+    /* ---------------------------------------------------------
+       NAV ICON
+       --------------------------------------------------------- */
+
+    .ems-nav-left {
+        display: flex !important;
+
+        align-items: center !important;
+
+        gap: 11px !important;
+
+        min-width: 0 !important;
+    }
+
+
+    .ems-nav-icon {
+        width: 21px !important;
+        min-width: 21px !important;
+
+        height: 21px !important;
+
+        display: inline-flex !important;
+
+        align-items: center !important;
+        justify-content: center !important;
+
+        font-size: 14px !important;
+    }
+
+
+    .ems-nav-text {
+        line-height: 1.2 !important;
+
+        white-space: nowrap !important;
+
+        overflow: hidden !important;
+
+        text-overflow: ellipsis !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       MAIN CONTENT
+       --------------------------------------------------------- */
+
+    .ems-main-content {
+        margin-left:
+                298px !important;
+
+        padding-top:
+                64px !important;
+
+        min-height: 100vh !important;
+
+        width: auto !important;
+
+        background:
+                #f5f7fa !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       DASHBOARD CONTENT
+       --------------------------------------------------------- */
+
+    .ems-dashboard-content {
+        width: 100% !important;
+
+        margin: 0 !important;
+
+        padding:
+                22px 28px 28px !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       WELCOME CARD
+       --------------------------------------------------------- */
+
+    .ems-dashboard-content
+    .dashboard-card.bg-gradient-success {
+        margin-bottom: 20px !important;
+
+        border-radius: 12px !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       DASHBOARD GRID SPACING
+       --------------------------------------------------------- */
+
+    .dashboard-grid-4 {
+        gap: 18px !important;
+
+        margin-bottom: 20px !important;
+    }
+
+
+    .dashboard-grid-3 {
+        gap: 18px !important;
+
+        margin-bottom: 20px !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       DASHBOARD CARD
+       --------------------------------------------------------- */
+
+    .dashboard-card {
+        border-radius: 12px !important;
+
+        margin-bottom: 0 !important;
+
+        box-shadow:
+                0 4px 18px rgba(15,23,42,0.055) !important;
+    }
+
+
+    .dashboard-card:hover {
+        transform:
+                translateY(-2px);
+
+        box-shadow:
+                0 8px 24px rgba(15,23,42,0.08) !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       CARD BODY
+       --------------------------------------------------------- */
+
+    .dashboard-grid-4 .card-body,
+    .dashboard-grid-3 .card-body {
+        padding:
+                22px !important;
+    }
+
+
+    /* ---------------------------------------------------------
+       CHART ROW
+       --------------------------------------------------------- */
+
+    .chart-container {
+        margin-bottom: 0 !important;
+    }
+
+
+    /* =========================================================
+       TABLET
+       ========================================================= */
+
+    @media (max-width: 1100px) and (min-width: 769px) {
+
+        :root {
+            --ems-sidebar-width: 270px;
+        }
+
+        .ems-sidebar {
+            width: 270px !important;
+        }
+
+        .ems-main-content {
+            margin-left: 270px !important;
+        }
+
+        .ems-header-left {
+            min-width: 270px !important;
+        }
+
+        .ems-global-search {
+            width: 280px !important;
+            max-width: 30vw !important;
+        }
+    }
+
+
+    /* =========================================================
+       MOBILE
+       ========================================================= */
+
+    @media (max-width: 768px) {
+
+        :root {
+            --ems-sidebar-width: 0px;
+            --ems-header-height: 60px;
+        }
+
+        .ems-top-header {
+            height: 60px !important;
+            min-height: 60px !important;
+            padding: 0 12px !important;
+        }
+
+        .ems-header-left {
+            min-width: 0 !important;
+            flex: 1 !important;
+            height: 60px !important;
+        }
+
+        .ems-header-menu-button {
+            display: flex !important;
+
+            width: 36px !important;
+            height: 36px !important;
+
+            margin-right: 7px !important;
+
+            align-items: center !important;
+            justify-content: center !important;
+
+            border: none !important;
+            border-radius: 7px !important;
+
+            background:
+                    rgba(255,255,255,0.12) !important;
+
+            color: #ffffff !important;
+
+            cursor: pointer !important;
+        }
+
+        .ems-header-brand-link {
+            height: 60px !important;
+        }
+
+        .ems-header-logo {
+            width: 34px !important;
+            height: 34px !important;
+        }
+
+        .ems-header-brand-name {
+            font-size: 17px !important;
+        }
+
+        .ems-header-brand-subtitle {
+            font-size: 9px !important;
+        }
+
+        .ems-header-brand-tagline {
+            display: none !important;
+        }
+
+        .ems-global-search {
+            display: none !important;
+        }
+
+        .ems-sidebar {
+            top: 60px !important;
+
+            left: 0 !important;
+
+            width: 298px !important;
+            max-width: 85vw !important;
+
+            height:
+                    calc(100vh - 60px) !important;
+
+            transform:
+                    translateX(-100%) !important;
+
+            transition:
+                    transform 0.25s ease !important;
+        }
+
+        .ems-sidebar.mobile-open {
+            transform:
+                    translateX(0) !important;
+        }
+
+        .ems-main-content {
+            margin-left: 0 !important;
+
+            padding-top: 60px !important;
+
+            width: 100% !important;
+        }
+
+        .ems-dashboard-content {
+            padding:
+                    16px !important;
+        }
+
+        .ems-header-right {
+            gap: 3px !important;
+        }
+
+        .ems-admin-info,
+        .ems-admin-chevron {
+            display: none !important;
+        }
+
+        .dashboard-grid-4,
+        .dashboard-grid-3 {
+            grid-template-columns:
+            1fr !important;
+
+            gap: 14px !important;
+        }
+    }
+
+
+    /* =========================================================
+       END PROFESSIONAL LAYOUT
+       ========================================================= */
+
+}
+
+
+/* =========================================================
+   END OF EMS FINAL STYLES
+   ========================================================= */

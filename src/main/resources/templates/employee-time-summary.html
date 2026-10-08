@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Break Time</title>
+
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}">  
+    <!-- Custom Styles -->
+
+</head>
+<body>
+    <div th:replace="fragments/sidebar :: sidebar"></div>
+
+    <div class="container">
+        <h2 class="mb-4">Time Tracking Summary</h2>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Employee Code</th>
+                    <th>Email</th>
+                    <th>Date</th>
+                    <th>Clock In</th>
+                    <th>Clock Out</th>
+                    <th>Break Start</th>
+                    <th>Break End</th>
+                    <th>Total Hours</th>
+                    <th>Late Arrival</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ws : ${sessions}">
+                    <td th:text="${ws.employeeCode}">EMP001</td>
+                    <td th:text="${ws.email}">john@example.com</td>
+                    <td th:text="${#temporals.format(ws.clockIn, 'yyyy-MM-dd')}">2025-09-01</td>
+
+                    <!-- 12-hour time format with AM/PM -->
+                    <td th:text="${ws.clockIn != null ? #temporals.format(ws.clockIn, 'hh:mm a') : 'N/A'}">09:00 AM</td>
+                    <td th:text="${ws.clockOut != null ? #temporals.format(ws.clockOut, 'hh:mm a') : 'N/A'}">06:00 PM</td>
+
+                    <td th:text="${#lists.isEmpty(ws.breaks) ? 'N/A' : #temporals.format(ws.breaks[0].breakStart, 'hh:mm a')}">12:00 PM</td>
+                    <td th:text="${#lists.isEmpty(ws.breaks) || ws.breaks[0].breakEnd == null ? 'N/A' : #temporals.format(ws.breaks[0].breakEnd, 'hh:mm a')}">12:30 PM</td>
+
+                    <td th:text="${ws.getTotalWorkedMinutes() / 60.0}">8.5</td>
+                    <td th:text="${ws.clockIn != null and ws.clockIn.toLocalTime().isAfter(T(java.time.LocalTime).of(9,15)) ? 'Yes' : 'No'}">No</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle sidebar
+        document.getElementById('toggleSidebar').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+            document.getElementById('mainContent').classList.toggle('content-expanded');
+        });
+
+        // Add active class to clicked nav items
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Simulate loading animations
+        document.addEventListener('DOMContentLoaded', function () {
+            const animatedElements = document.querySelectorAll('.animate-fadein');
+            animatedElements.forEach(el => {
+                el.style.opacity = '0';
+            });
+
+            setTimeout(() => {
+                animatedElements.forEach(el => {
+                    el.style.opacity = '1';
+                });
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>
