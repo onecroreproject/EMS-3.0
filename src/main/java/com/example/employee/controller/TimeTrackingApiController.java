@@ -26,6 +26,11 @@ public class TimeTrackingApiController {
         this.workSessionService = workSessionService;
     }
 
+    @org.springframework.web.bind.annotation.GetMapping("/debug/worksession")
+    public ResponseEntity<?> debugWorkSession(@RequestParam String employeeCode) {
+        return ResponseEntity.ok(workSessionService.getTodaySession(employeeCode));
+    }
+
     @PostMapping("/clock-in")
     public ResponseEntity<String> clockIn(
             @RequestParam String employeeCode,
@@ -59,19 +64,19 @@ public class TimeTrackingApiController {
         }
     }
 
-    @PostMapping("/clock-out")
+    @RequestMapping(value = "/clock-out", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<String> clockOut(@RequestParam String employeeCode) {
         workSessionService.clockOut(employeeCode);
         return ResponseEntity.ok("Clocked out successfully");
     }
 
-    @PostMapping("/break/start")
+    @RequestMapping(value = "/break/start", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<String> startBreak(@RequestParam String employeeCode) {
         workSessionService.startBreak(employeeCode);
         return ResponseEntity.ok("Break started");
     }
 
-    @PostMapping("/break/end")
+    @RequestMapping(value = "/break/end", method = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<String> endBreak(@RequestParam String employeeCode) {
         workSessionService.endBreak(employeeCode);
         return ResponseEntity.ok("Break ended");

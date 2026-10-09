@@ -102,6 +102,14 @@ public class WorkSessionService {
 
     public WorkSession startBreak(String employeeCode) {
         WorkSession session = getTodaySession(employeeCode);
+        if (session == null) {
+            // Auto clock-in if they try to start a break but haven't clocked in yet today
+            Employee emp = employeeService.findByEmployeeCode(employeeCode);
+            if (emp != null) {
+                session = clockIn(employeeCode, emp.getEmail());
+            }
+        }
+        
         if (session != null) {
             BreakPeriod bp = new BreakPeriod();
             bp.setBreakStart(LocalDateTime.now());
@@ -123,8 +131,12 @@ public class WorkSessionService {
         return session;
     }
 
-    private WorkSession getTodaySession(String employeeCode) {
+    public WorkSession getTodaySession(String employeeCode) {
         return repo.findByEmployeeCodeAndDate(employeeCode, LocalDate.now());
+    }
+
+    public List<WorkSession> findAllTodaySessions() {
+        return mongoTemplate.find(new Query(Criteria.where("date").is(LocalDate.now())), WorkSession.class);
     }
 
     public List<WorkSession> getWorkHistory(String employeeCode) {

@@ -39,6 +39,11 @@ public interface ApplicationActivityRepository
     findByDeviceIdOrderByStartedAtAsc(
             String deviceId
     );
+    
+    ApplicationActivityDocument
+    findFirstByDeviceIdOrderByStartedAtDesc(
+            String deviceId
+    );
 
     // =========================================================
     // TOP APPLICATIONS

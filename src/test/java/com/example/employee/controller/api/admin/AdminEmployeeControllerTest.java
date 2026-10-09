@@ -38,6 +38,9 @@ public class AdminEmployeeControllerTest {
     @MockBean
     private com.example.employee.repository.EmployeeRepository employeeRepository;
 
+    @MockBean
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
     @Test
     @WithMockUser(username = "admin@company.com", roles = {"ADMIN"})
     public void testGetAllEmployees_Pagination() throws Exception {
@@ -46,8 +49,10 @@ public class AdminEmployeeControllerTest {
         mockEmployee.setName("Test Emp");
         mockEmployee.setEmail("test@test.com");
 
-        Page<Employee> page = new PageImpl<>(Collections.singletonList(mockEmployee), PageRequest.of(0, 10), 1);
-        Mockito.when(employeeService.findAll(Mockito.any())).thenReturn(page);
+        java.util.List<Employee> employeeList = Collections.singletonList(mockEmployee);
+        
+        Mockito.when(mongoTemplate.count(Mockito.any(org.springframework.data.mongodb.core.query.Query.class), Mockito.eq(Employee.class))).thenReturn(1L);
+        Mockito.when(mongoTemplate.find(Mockito.any(org.springframework.data.mongodb.core.query.Query.class), Mockito.eq(Employee.class))).thenReturn(employeeList);
 
         mockMvc.perform(get("/api/admin/employees?page=0&size=10"))
                 .andExpect(status().isOk())

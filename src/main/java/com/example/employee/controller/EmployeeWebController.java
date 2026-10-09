@@ -6,22 +6,20 @@ import com.example.employee.model.Team;
 import com.example.employee.service.DepartmentService;
 import com.example.employee.service.EmployeeService;
 import com.example.employee.service.TeamService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Web (Thymeleaf) controller for Employee CRUD pages.
- * Replaces the static addViewController entries in WebMvcConfig so that
- * model attributes (${employee}, ${departments}, ${employees}) are properly
- * populated before the template is rendered.
+ * REST API Controller for Employee CRUD operations.
+ * Designed for the new React frontend.
  */
-@Controller
-@RequestMapping("/employees")
+@RestController
+@RequestMapping("/api/v1/employees")
 public class EmployeeWebController {
 
     private final EmployeeService employeeService;
@@ -39,45 +37,28 @@ public class EmployeeWebController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // LIST
-    /** GET /employees/list - show all employees */
-    @GetMapping("/list")
-    public String listEmployees(Model model) {
+    // LIST ALL EMPLOYEES
+    @GetMapping
+    public ResponseEntity<List<Employee>> getAllEmployees() {
         List<Employee> employees = employeeService.findAll();
         employees.forEach(employeeService::enrichEmployeeWithDeptAndTeam);
-        model.addAttribute("employees", employees);
-        return "employee-list";
+        return ResponseEntity.ok(employees);
     }
 
-    // ADD (new)
-    /** GET /employees/new - show blank add-employee form */
-    @GetMapping("/new")
-    public String showAddForm(Model model) {
-        model.addAttribute("employee", new Employee());
-        model.addAttribute("departments", departmentService.getAllDepartments());
-        model.addAttribute("teams", teamService.getAll());
-        return "employee-form";
-    }
-
-    // EDIT
-    /** GET /employees/edit/{id} - show pre-filled edit form */
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable String id, Model model) {
+    // GET SINGLE EMPLOYEE
+    @GetMapping("/{id}")
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable String id) {
         Employee employee = employeeService.findById(id);
         if (employee == null) {
-            return "redirect:/employees/list";
+            return ResponseEntity.notFound().build();
         }
-        model.addAttribute("employee", employee);
-        model.addAttribute("departments", departmentService.getAllDepartments());
-        model.addAttribute("teams", teamService.getAll());
-        return "employee-form";
+        employeeService.enrichEmployeeWithDeptAndTeam(employee);
+        return ResponseEntity.ok(employee);
     }
 
-    // SAVE (create + update)
-    /** POST /employees/save - persist a new or updated employee */
-    @PostMapping("/save")
-    public String saveEmployee(@ModelAttribute Employee employee,
-                               RedirectAttributes redirectAttributes) {
+    // CREATE OR UPDATE EMPLOYEE
+    @PostMapping
+    public ResponseEntity<Employee> saveEmployee(@RequestBody Employee employee) {
         if (employee.getPassword() != null && !employee.getPassword().isBlank()) {
             employee.setPassword(passwordEncoder.encode(employee.getPassword()));
         } else if (employee.getId() != null) {
@@ -86,27 +67,23 @@ public class EmployeeWebController {
                 employee.setPassword(existing.getPassword());
             }
         }
-        employeeService.save(employee);
-        redirectAttributes.addFlashAttribute("successMessage", "Employee saved successfully!");
-        return "redirect:/employees/list";
+        Employee saved = employeeService.save(employee);
+        return ResponseEntity.ok(saved);
     }
 
-    // DELETE
-    /** GET /employees/delete/{id} - delete an employee and redirect to list */
-    @GetMapping("/delete/{id}")
-    public String deleteEmployee(@PathVariable String id,
-                                 RedirectAttributes redirectAttributes) {
+    // DELETE EMPLOYEE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteEmployee(@PathVariable String id) {
         employeeService.deleteById(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Employee deleted successfully!");
-        return "redirect:/employees/list";
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Employee deleted successfully");
+        return ResponseEntity.ok(response);
     }
 
-    // TEAMS BY DEPARTMENT (used by JS in employee-form.html)
-    /** GET /employees/teams/by-department/{deptId} - returns JSON list of teams */
+    // GET TEAMS BY DEPARTMENT (For Dropdowns)
     @GetMapping("/teams/by-department/{deptId}")
-    @ResponseBody
-    public List<Team> getTeamsByDepartment(@PathVariable String deptId) {
-        return teamService.getTeamsByDepartment(deptId)
+    public ResponseEntity<List<Team>> getTeamsByDepartment(@PathVariable String deptId) {
+        List<Team> teams = teamService.getTeamsByDepartment(deptId)
                 .stream()
                 .map(dto -> {
                     Team t = new Team();
@@ -114,6 +91,7 @@ public class EmployeeWebController {
                     t.setName(dto.getName());
                     return t;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
+        return ResponseEntity.ok(teams);
     }
 }

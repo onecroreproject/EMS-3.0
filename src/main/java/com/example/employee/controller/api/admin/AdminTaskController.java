@@ -38,7 +38,9 @@ public class AdminTaskController {
 
     @PostMapping
     public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        task.setStartDate(LocalDate.now());
+        if (task.getStartDate() == null) {
+            task.setStartDate(LocalDate.now());
+        }
         return ResponseEntity.ok(taskRepository.save(task));
     }
 

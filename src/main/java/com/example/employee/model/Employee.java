@@ -19,6 +19,7 @@ public class Employee {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @NotBlank(message = "Email is required")

@@ -3,14 +3,17 @@ package com.example.employee.controller;
 import com.example.employee.model.Task;
 import com.example.employee.repository.TaskRepository;
 import com.example.employee.service.EmployeeService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping("/tasks")
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/tasks")
 public class TaskWebController {
 
     private final EmployeeService employeeService;
@@ -21,55 +24,44 @@ public class TaskWebController {
         this.taskRepository = taskRepository;
     }
 
-    @GetMapping("/new")
-    public String showTaskForm(Model model) {
-        model.addAttribute("task", new Task());
-        model.addAttribute("employees", employeeService.findAll());
-        return "task-form";
-    }
-    
-    @GetMapping("/edit/{id}")
-    public String editTaskForm(@PathVariable String id, Model model) {
-        Task task = taskRepository.findById(id).orElse(new Task());
-        model.addAttribute("task", task);
-        model.addAttribute("employees", employeeService.findAll());
-        return "task-form";
+    @GetMapping
+    public ResponseEntity<List<Task>> getAllTasks() {
+        return ResponseEntity.ok(taskRepository.findAll());
     }
 
-    @GetMapping({"", "/", "/list"})
-    public String showTaskList() {
-        return "task-list";
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTaskById(@PathVariable String id) {
+        return taskRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public String saveTask(@ModelAttribute Task task) {
+    public ResponseEntity<Task> createTask(@RequestBody Task task) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
             task.setAssignedBy(authentication.getName());
         }
-        
-        taskRepository.save(task);
-        return "redirect:/tasks/list";
+        return ResponseEntity.ok(taskRepository.save(task));
     }
 
-    @PostMapping("/{id}")
-    public String updateTask(@PathVariable String id, @ModelAttribute Task task) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task task) {
         task.setId(id);
-        
         Task existing = taskRepository.findById(id).orElse(null);
         if (existing != null) {
             if (task.getAssignedBy() == null || task.getAssignedBy().isEmpty()) {
                 task.setAssignedBy(existing.getAssignedBy());
             }
         }
-        
-        taskRepository.save(task);
-        return "redirect:/tasks/list";
+        return ResponseEntity.ok(taskRepository.save(task));
     }
     
-    @GetMapping("/delete/{id}")
-    public String deleteTask(@PathVariable String id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteTask(@PathVariable String id) {
         taskRepository.deleteById(id);
-        return "redirect:/tasks/list";
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Task deleted successfully");
+        return ResponseEntity.ok(response);
     }
 }

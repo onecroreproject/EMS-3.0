@@ -13,6 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -32,11 +37,27 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
+    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Allow React frontend
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-auth-token"));
+        configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-            .authorizeHttpRequests()
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
                 // Public Web UI and Static Resources
                 .requestMatchers("/", "/login", "/index.html", "/login.html", "/dashboard.html", "/css/**", "/js/**", "/assets/**", "/images/**", "/webjars/**").permitAll()
                 // Public UI routes (HTML templates) - data is protected by API endpoints
@@ -47,20 +68,16 @@ public class SecurityConfig {
                 .requestMatchers("/api/agent/login").permitAll()
                 .requestMatchers("/api/agent/refresh").permitAll()
                 .requestMatchers("/api/agent/config").permitAll()
-                .requestMatchers("/api/agent/update/download/**").permitAll() // Needed for MSI to self-update before login
-                // Protected endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/agent/update/download/**").permitAll()
+                .requestMatchers("/api/employee/time/**").permitAll() // Whitelist time tracking from agent
+                // Protected endpoints (LOCKED DOWN for production)
+                .requestMatchers("/api/admin/**").authenticated()
                 .requestMatchers("/api/agent/**").hasAnyRole("ADMIN", "EMPLOYEE")
                 .anyRequest().authenticated()
-            .and()
-            .formLogin()
-                .loginPage("/login.html")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/dashboard", true)
-                .permitAll()
-            .and()
-            .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED); // Allow sessions for Web UI, APIs can still use JWT
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // APIs only use JWT
+            );
 
         // Add JWT filter
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
