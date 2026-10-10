@@ -68,7 +68,9 @@ export default function AddEmployee() {
       }
     } catch (error: any) {
       console.error("Error creating employee:", error);
-      alert(`Failed to create employee: ${error.response?.data || error.message}`);
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'object' ? JSON.stringify(errorData) : errorData || error.message;
+      alert(`Failed to create employee: ${errorMsg}`);
     }
   };
 

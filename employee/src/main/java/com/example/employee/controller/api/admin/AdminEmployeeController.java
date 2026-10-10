@@ -110,11 +110,32 @@ public class AdminEmployeeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable String id) {
-        Employee existing = employeeService.findByAny(id);
+        // Find by exact ID instead of findByAny to avoid ObjectId vs String mapping issues in Spring Data Or queries
+        Employee existing = employeeService.findById(id);
         if (existing != null) {
             employeeService.deleteById(existing.getId());
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(org.springframework.dao.DuplicateKeyException.class)
+    public ResponseEntity<String> handleDuplicateKeyException(org.springframework.dao.DuplicateKeyException e) {
+        String msg = e.getMessage();
+        if (msg != null && msg.contains("email")) {
+            return ResponseEntity.status(409).body("An employee with this email already exists.");
+        } else if (msg != null && msg.contains("employeeCode")) {
+            return ResponseEntity.status(409).body("An employee with this employee code already exists.");
+        }
+        return ResponseEntity.status(409).body("Duplicate record found (email or employee code already exists).");
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException e) {
+        String errorMsg = e.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation failed");
+        return ResponseEntity.badRequest().body(errorMsg);
     }
 }

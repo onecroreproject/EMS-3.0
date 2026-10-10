@@ -19,11 +19,13 @@ public class AgentController {
     private final DeviceRepository deviceRepository;
     private final JwtTokenUtil jwtTokenUtil;
     private final EmployeeRepository employeeRepository;
+    private final com.example.employee.service.EmployeeSessionService employeeSessionService;
 
-    public AgentController(DeviceRepository deviceRepository, JwtTokenUtil jwtTokenUtil, EmployeeRepository employeeRepository) {
+    public AgentController(DeviceRepository deviceRepository, JwtTokenUtil jwtTokenUtil, EmployeeRepository employeeRepository, com.example.employee.service.EmployeeSessionService employeeSessionService) {
         this.deviceRepository = deviceRepository;
         this.jwtTokenUtil = jwtTokenUtil;
         this.employeeRepository = employeeRepository;
+        this.employeeSessionService = employeeSessionService;
     }
 
     @PostMapping("/heartbeat")
@@ -60,6 +62,13 @@ public class AgentController {
         device.setLastSeen(now);
 
         deviceRepository.save(device);
+        
+        // Update the employee session heartbeat so the admin panel knows they are online
+        try {
+            employeeSessionService.updateHeartbeat(deviceId);
+        } catch (Exception e) {
+            System.err.println("Failed to update employee session heartbeat: " + e.getMessage());
+        }
 
         response.put("success", true);
         response.put("deviceId", deviceId);

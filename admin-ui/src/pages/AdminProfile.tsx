@@ -155,7 +155,7 @@ export default function AdminProfile() {
           </div>
 
           {/* Right Column - Misc info & Pic */}
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4 h-full">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <Briefcase className="w-5 h-5 text-emerald-500" /> Account Information
@@ -177,17 +177,17 @@ export default function AdminProfile() {
               </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col">
                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <Camera className="w-5 h-5 text-blue-500" /> Profile Picture
               </h3>
-              <div className="flex items-center gap-4">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff&size=150" alt="Avatar" className="w-16 h-16 rounded-full shadow-sm" />
-                <div>
-                  <button className="border border-slate-300 text-blue-600 hover:bg-blue-50 font-medium px-3 py-1.5 rounded-md text-xs flex items-center gap-2 transition-colors">
-                    <Camera className="w-3.5 h-3.5" /> Change Photo
+              <div className="flex flex-col items-center justify-center gap-4 flex-1">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff&size=150" alt="Avatar" className="w-20 h-20 rounded-full shadow-sm shrink-0 object-cover" />
+                <div className="flex flex-col items-center text-center">
+                  <button className="border border-slate-300 text-blue-600 hover:bg-blue-50 font-medium px-4 py-2 rounded-md text-xs flex items-center gap-2 transition-colors">
+                    <Camera className="w-4 h-4" /> Change Photo
                   </button>
-                  <p className="text-[10px] text-slate-500 mt-1.5">JPG, PNG (Max 2MB)</p>
+                  <p className="text-[11px] text-slate-500 mt-2">JPG, PNG (Max 2MB)</p>
                 </div>
               </div>
             </div>
@@ -197,11 +197,11 @@ export default function AdminProfile() {
           <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Security Settings */}
-            <div className="bg-orange-50/30 rounded-xl shadow-sm border border-orange-100 p-5">
+            <div className="bg-orange-50/30 rounded-xl shadow-sm border border-orange-100 p-5 flex flex-col">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <Shield className="w-5 h-5 text-orange-500" /> Security Settings
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
                 <div className="flex justify-between items-center text-sm cursor-pointer hover:bg-white p-2 rounded-md transition-colors -mx-2">
                   <span className="text-slate-700 flex items-center gap-2 font-medium"><Lock className="w-4 h-4 text-slate-500" /> Two-Factor Authentication</span>
                   <div className="flex items-center gap-2">
@@ -225,11 +225,11 @@ export default function AdminProfile() {
             </div>
 
             {/* Notification Preferences */}
-            <div className="bg-purple-50/30 rounded-xl shadow-sm border border-purple-100 p-5">
+            <div className="bg-purple-50/30 rounded-xl shadow-sm border border-purple-100 p-5 flex flex-col">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <Bell className="w-5 h-5 text-purple-500" /> Notification Preferences
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
                 <div className="flex justify-between items-center text-sm cursor-pointer hover:bg-white p-2 rounded-md transition-colors -mx-2">
                   <span className="text-slate-700 flex items-center gap-2 font-medium"><Mail className="w-4 h-4 text-slate-500" /> Email Notifications</span>
                   <div className="flex items-center gap-2">
@@ -262,11 +262,11 @@ export default function AdminProfile() {
             </div>
 
             {/* System Preferences */}
-            <div className="bg-blue-50/30 rounded-xl shadow-sm border border-blue-100 p-5">
+            <div className="bg-blue-50/30 rounded-xl shadow-sm border border-blue-100 p-5 flex flex-col">
               <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5 text-blue-500" /> System Preferences
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
                 <div className="grid grid-cols-[120px_1fr] items-center text-sm p-1">
                   <span className="text-slate-700 flex items-center gap-2 font-medium"><div className="w-4 h-4 rounded-full border-2 border-slate-400"></div> Theme</span>
                   <select className="border border-slate-200 rounded bg-white px-2 py-1 outline-none text-slate-600">

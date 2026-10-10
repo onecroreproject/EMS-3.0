@@ -56,6 +56,16 @@ public class AttendanceEventController {
                 );
 
         if (savedEvent == null) {
+            if (eventType == AttendanceEventType.WORK_ENDED) {
+                // If the server says there is no active session to end,
+                // we should still return 200 OK so the agent can successfully
+                // terminate instead of being stuck in an active state.
+                AttendanceEventDocument dummy = new AttendanceEventDocument();
+                dummy.setEventId(eventId);
+                dummy.setEmployeeCode(employeeCode);
+                dummy.setEventType(eventType);
+                return ResponseEntity.ok(dummy);
+            }
 
             return ResponseEntity
                     .status(409)
@@ -63,9 +73,7 @@ public class AttendanceEventController {
                             Map.of(
                                     "success", false,
                                     "message",
-                                    eventType
-                                            + " rejected. "
-                                            + "Employee already has an active work session."
+                                    eventType + " rejected. Employee already has an active work session."
                             )
                     );
         }

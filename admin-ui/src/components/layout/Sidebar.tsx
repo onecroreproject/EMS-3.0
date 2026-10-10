@@ -22,7 +22,6 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       subItems: [
         { name: 'Add Employee', path: '/employees/add' },
         { name: 'View Employee', path: '/employees/view' },
-        { name: 'Employee Profile', path: '/employees/profile' },
       ]
     },
     { 
@@ -43,7 +42,6 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       subItems: [
         { name: 'Time Tracking Summary', path: '/time-tracking' },
         { name: 'Employee Timesheet', path: '/tracking/timesheet' },
-        { name: 'Screenshot', path: '/tracking/screenshots' },
         { name: 'Attendance', path: '/tracking/attendance' },
       ]
     },
@@ -54,7 +52,6 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       subItems: [
         { name: 'Assign Task', path: '/tasks/assign' },
         { name: 'Task List', path: '/tasks/track' },
-        { name: 'Productivity Score', path: '/tasks/score' },
       ]
     },
     { name: 'Settings', icon: Settings, path: '/settings' },
@@ -110,7 +107,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                           {item.subItems.map((subItem: any, subIdx) => (
                             <li key={subIdx}>
                               {subItem.isLabel ? (
-                                <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider font-bold text-slate-500">
+                                <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider font-bold text-[#F96D3E]/60">
                                   {subItem.name}
                                 </div>
                               ) : (
