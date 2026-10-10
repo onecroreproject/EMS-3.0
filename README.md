@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150?text=EMS+3.0" alt="EMS 3.0 Logo" width="100"/>
   <h1>Employee Monitoring System (EMS 3.0)</h1>
   <p><em>An enterprise-grade platform for remote workforce management, productivity tracking, and intelligent analytics.</em></p>
 </div>
