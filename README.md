@@ -1,49 +1,110 @@
-# Employee Monitoring System (EMS 3.0)
+<div align="center">
+  <img src="https://via.placeholder.com/150?text=EMS+3.0" alt="EMS 3.0 Logo" width="100"/>
+  <h1>Employee Monitoring System (EMS 3.0)</h1>
+  <p><em>An enterprise-grade platform for remote workforce management, productivity tracking, and intelligent analytics.</em></p>
+</div>
 
-Welcome to the Employee Monitoring System (EMS 3.0), a comprehensive, enterprise-grade solution designed to track, manage, and optimize employee productivity across distributed teams.
+<br />
 
-## Project Structure
+The **Employee Monitoring System (EMS 3.0)** is a full-stack monorepo designed to help organizations manage distributed teams efficiently. It provides deep insights into employee productivity through real-time desktop monitoring, automated timesheets, application activity tracking, and organizational hierarchy management.
 
-This monorepo contains all three major components of the EMS platform:
+---
 
-1. **`admin-ui/` (React Frontend)**
-   A beautiful, modern single-page application built with React, Vite, and Tailwind CSS. It provides a centralized dashboard for administrators and HR managers to oversee organization structure, view real-time tracking metrics, approve timesheets, and review employee screenshots.
+## 🏗️ Architecture & Modules
 
-2. **`employee/` (Spring Boot Backend)**
-   The core REST API server and business logic engine built with Java and Spring Boot. It uses MongoDB for flexible, high-performance data storage. It handles authentication, real-time agent ingestion, hierarchy management (Departments & Teams), and complex metric aggregations.
+The platform is divided into three core subsystems, designed to work seamlessly together:
 
-3. **`employee-agent/` (Desktop Client)**
-   A lightweight, resilient Java desktop application installed on employee machines. It runs seamlessly in the background to capture application activity, measure idle time, take configurable screenshots, and report data securely back to the backend. It includes a robust offline queue and Over-The-Air (OTA) update capabilities.
+### 1. 🖥️ Admin Dashboard (`/admin-ui`)
+A modern, reactive single-page application built for HR managers and Administrators.
+- **Tech Stack:** React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons.
+- **Features:** Real-time dashboards, organization hierarchy (Departments & Teams), timesheet approvals, employee productivity scoring, and a secure interface for reviewing desktop screenshots.
 
-## Quick Start
+### 2. ⚙️ Core Backend API (`/employee`)
+The central nervous system of EMS 3.0, providing secure RESTful APIs and real-time data ingestion.
+- **Tech Stack:** Java 17, Spring Boot 3, Spring Security (JWT), MongoDB.
+- **Features:** Role-based access control (RBAC), robust data aggregation for productivity metrics, OTA update orchestration, and scalable event processing for agent telemetry.
 
-### Backend (`employee/`)
-Requirements: Java 17+, Maven, MongoDB.
+### 3. 🛡️ Desktop Agent (`/employee-agent`)
+A lightweight, resilient desktop client that runs silently on employee workstations.
+- **Tech Stack:** Java 17, AWT/Swing (System Tray), Windows API integration.
+- **Features:** Active window tracking, automated idle detection, periodic screenshot capturing, offline data caching, and self-updating capabilities (OTA).
+
+---
+
+## 🔄 System Workflow & Data Pipeline
+
+The following diagram illustrates how data flows securely from the employee's machine to the administrator's dashboard.
+
+```mermaid
+sequenceDiagram
+    participant Agent as Desktop Agent
+    participant API as Spring Boot API
+    participant DB as MongoDB
+    participant Admin as React Admin UI
+
+    Note over Agent: Employee logs in & starts shift
+    Agent->>API: POST /api/v1/auth/login (JWT Request)
+    API-->>Agent: Returns JWT Token
+    
+    loop Every 5 Minutes
+        Note over Agent: Captures Active Window & Screenshot
+        Agent->>API: POST /api/v1/tracking/telemetry
+        API->>DB: Stores Activity & Screenshot Data
+    end
+    
+    Note over Admin: HR Manager reviews data
+    Admin->>API: GET /api/admin/productivity/summary
+    API->>DB: Aggregates metrics
+    DB-->>API: Returns productivity scores
+    API-->>Admin: Displays rich analytics dashboard
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- **Java 17+** (For Backend and Agent)
+- **Node.js 18+** (For Admin UI)
+- **MongoDB 6.0+** (Local or Atlas cluster)
+- **Maven** (For building Java projects)
+
+### 1. Start the Backend API
 ```bash
 cd employee
+# Ensure your MongoDB is running on localhost:27017 or configure application.properties
 mvn clean install
 mvn spring-boot:run
 ```
-Make sure MongoDB is running locally or provide connection details in `application.properties`.
+*The server will start on `http://localhost:8080`*
 
-### Frontend (`admin-ui/`)
-Requirements: Node.js 18+.
+### 2. Launch the Admin Dashboard
 ```bash
 cd admin-ui
 npm install
 npm run dev
 ```
+*The UI will be available at `http://localhost:5174`*
 
-### Desktop Agent (`employee-agent/`)
-Requirements: Java 17+.
+### 3. Run the Desktop Agent (Development Mode)
 ```bash
 cd employee-agent
 mvn clean install
-# The packaged application and MSI builder are available in the packaging/ folder.
+mvn exec:java -Dexec.mainClass="org.example.AgentApplication"
 ```
 
-## Core Features
-- **Organization Hierarchy**: Manage Departments, Teams, and Employee assignments.
-- **Real-time Monitoring**: Live dashboards showing active users, idle users, and offline agents.
-- **Productivity Analysis**: Deep dive into application usage and daily timesheets.
-- **Automated OTA Updates**: Push agent updates to thousands of devices instantly via the backend.
+---
+
+## 🔐 Security & Privacy
+EMS 3.0 is built with security at its core:
+- All telemetry is transmitted over **HTTPS/TLS**.
+- API endpoints are secured using **Stateless JWT Authentication**.
+- Sensitive endpoints require explicit `ROLE_ADMIN` permissions.
+- Screenshots are securely stored and only accessible by authorized managers.
+
+---
+
+## 📦 Deployment
+- **Backend:** Can be containerized via Docker and deployed to AWS ECS / Heroku.
+- **Frontend:** Built via `npm run build` and deployable to Vercel, Netlify, or Nginx.
+- **Agent:** The `packaging/` directory contains PowerShell scripts (`build-msi.ps1`) to compile the agent into a native Windows Installer (`.msi`) using `jpackage`.
