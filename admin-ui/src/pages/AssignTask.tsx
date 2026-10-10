@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, type FormEvent, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   FileText, Users, Calendar as CalendarIcon, 

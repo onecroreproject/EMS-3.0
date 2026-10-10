@@ -122,7 +122,7 @@ export default function AddEmployee() {
                 </div>
                 <DatePicker 
                   selected={dateOfBirth} 
-                  onChange={(date) => setDateOfBirth(date)} 
+                  onChange={(date: Date | null) => setDateOfBirth(date)} 
                   dateFormat="dd MMM yyyy"
                   placeholderText="Select Date"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F96D3E] focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700"
@@ -217,7 +217,7 @@ export default function AddEmployee() {
                 </div>
                 <DatePicker 
                   selected={joiningDate} 
-                  onChange={(date) => setJoiningDate(date)} 
+                  onChange={(date: Date | null) => setJoiningDate(date)} 
                   dateFormat="dd MMM yyyy"
                   placeholderText="Select Date"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700"

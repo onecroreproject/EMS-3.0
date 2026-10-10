@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // In production, you can set VITE_API_URL in your .env file
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8083';
+const baseURL = import.meta.env.VITE_API_URL || '';
 
 export const apiClient = axios.create({
   baseURL,
