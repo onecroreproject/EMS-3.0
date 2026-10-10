@@ -9,6 +9,14 @@ export default function Layout() {
   const location = useLocation();
 
   useEffect(() => {
+    // Check dark mode preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
     const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
     if (!token && location.pathname !== '/login') {
       navigate('/login');
@@ -16,7 +24,7 @@ export default function Layout() {
   }, [navigate, location]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
+    <div className="flex flex-col h-screen bg-slate-50 transition-colors duration-300">
       {/* Top Orange Header */}
       <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
       
