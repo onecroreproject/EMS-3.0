@@ -30,7 +30,7 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
   };
 
   return (
-    <header className="h-16 bg-[#F96D3E] dark:bg-[#0F172A] text-white flex items-center justify-between px-4 md:px-6 shadow-md z-10 shrink-0 transition-colors duration-300">
+    <header className="h-16 bg-[#F96D3E] text-white flex items-center justify-between px-4 md:px-6 shadow-md z-10 shrink-0 transition-colors duration-300">
       
       {/* Left: Mobile Menu & Logo */}
       <div className="flex items-center gap-3 w-auto md:w-64">

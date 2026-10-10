@@ -61,30 +61,7 @@ public class AdminAttendanceTimelineService {
                         )
                 );
 
-        if (events.isEmpty() && date.isBefore(LocalDate.now(INDIA_ZONE).plusDays(1))) {
-            // DEMO: Inject mock data so the timesheet UI has something to show!
-            events = new ArrayList<>();
-            Instant baseTime = startOfDay.plus(Duration.ofHours(9)); // 9:00 AM
-            
-            // Work: 09:00 to 11:30
-            events.add(createMockEvent(employeeCode, AttendanceEventType.WORK_STARTED, baseTime));
-            // Break: 11:30 to 11:45
-            events.add(createMockEvent(employeeCode, AttendanceEventType.BREAK_STARTED, baseTime.plus(Duration.ofMinutes(150))));
-            events.add(createMockEvent(employeeCode, AttendanceEventType.BREAK_ENDED, baseTime.plus(Duration.ofMinutes(165))));
-            // Work: 11:45 to 13:00
-            events.add(createMockEvent(employeeCode, AttendanceEventType.WORK_STARTED, baseTime.plus(Duration.ofMinutes(165))));
-            // Lunch: 13:00 to 14:00
-            events.add(createMockEvent(employeeCode, AttendanceEventType.LUNCH_STARTED, baseTime.plus(Duration.ofMinutes(240))));
-            events.add(createMockEvent(employeeCode, AttendanceEventType.LUNCH_ENDED, baseTime.plus(Duration.ofMinutes(300))));
-            // Work: 14:00 to 16:00
-            events.add(createMockEvent(employeeCode, AttendanceEventType.WORK_STARTED, baseTime.plus(Duration.ofMinutes(300))));
-            // Idle: 16:00 to 16:30
-            events.add(createMockEvent(employeeCode, AttendanceEventType.IDLE_STARTED, baseTime.plus(Duration.ofMinutes(420))));
-            events.add(createMockEvent(employeeCode, AttendanceEventType.IDLE_ENDED, baseTime.plus(Duration.ofMinutes(450))));
-            // Work: 16:30 to 18:00
-            events.add(createMockEvent(employeeCode, AttendanceEventType.WORK_STARTED, baseTime.plus(Duration.ofMinutes(450))));
-            events.add(createMockEvent(employeeCode, AttendanceEventType.WORK_ENDED, baseTime.plus(Duration.ofMinutes(540))));
-        }
+        // The DEMO mock data block has been removed so that it shows empty data when no events are recorded.
 
         List<AttendanceTimelineItem> timeline =
                 new ArrayList<>();
