@@ -3,3 +3,6 @@ dist/
 build/
 .idea/
 .vscode/
+application-local.properties
+application-default.properties
+env.properties

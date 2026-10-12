@@ -75,7 +75,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
     // =========================================================
     private static final int WINDOW_WIDTH = 980;
 
-    private static final int WINDOW_HEIGHT = 550;
+    private static final int WINDOW_HEIGHT = 630;
 
 
     // =========================================================
@@ -637,6 +637,12 @@ public class EmployeeWorkspaceWindow extends JFrame {
                     otaDelayTimer.start();
                 }
         );
+
+        // =====================================================
+        // SYSTEM TRAY
+        // =====================================================
+        
+        AppTrayManager.initialize(this);
     }
 
 
@@ -865,6 +871,24 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         controls.add(
                 btnMinimize
+        );
+        
+        JButton btnClose =
+                createTitleButton(
+                        "X", 
+                        true
+                );
+
+        btnClose.setToolTipText(
+                "Close to System Tray"
+        );
+
+        btnClose.addActionListener(
+                e -> setVisible(false) // Hide the window instead of exiting
+        );
+
+        controls.add(
+                btnClose
         );
 
 
@@ -1152,34 +1176,44 @@ public class EmployeeWorkspaceWindow extends JFrame {
         updatePanel =
                 new JPanel(
                         new BorderLayout(
-                                12,
+                                16,
                                 0
                         )
-                );
+                ) {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        updatePanel.setBackground(
-                new Color(
-                        239,
-                        246,
-                        255
-                )
-        );
+                        // Modern indigo/blue glassmorphism gradient
+                        GradientPaint gp = new GradientPaint(
+                                0, 0, new Color(240, 249, 255),
+                                getWidth(), getHeight(), new Color(224, 242, 254)
+                        );
+                        g2.setPaint(gp);
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
 
+                        // Subtle inner border
+                        g2.setColor(new Color(186, 230, 253));
+                        g2.setStroke(new BasicStroke(1.2f));
+                        g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+
+                        // Vibrant left accent ribbon
+                        g2.setColor(PRIMARY_BLUE);
+                        g2.fillRoundRect(0, 0, 5, getHeight(), 4, 4);
+
+                        g2.dispose();
+                        super.paintComponent(g);
+                    }
+                };
+
+        updatePanel.setOpaque(false);
         updatePanel.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                new Color(
-                                        191,
-                                        219,
-                                        254
-                                )
-                        ),
-                        new EmptyBorder(
-                                7,
-                                12,
-                                7,
-                                12
-                        )
+                new EmptyBorder(
+                        8,
+                        16,
+                        8,
+                        16
                 )
         );
 
@@ -1199,24 +1233,50 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         textPanel.setOpaque(false);
 
+        JPanel headerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        headerRow.setOpaque(false);
+
+        JLabel sparkIcon = new JLabel("✨");
+        sparkIcon.setFont(new Font(FONT_FAMILY, Font.PLAIN, 13));
+
         JLabel titleLabel =
                 new JLabel(
-                        "\uD83D\uDD04  Update Available"
+                        "New Version Available"
                 );
 
         titleLabel.setFont(
                 new Font(
                         FONT_FAMILY,
                         Font.BOLD,
-                        14
+                        13
                 )
         );
 
-        titleLabel.setForeground(TEXT_DARK);
+        titleLabel.setForeground(new Color(15, 23, 42));
+
+        updateVersionLabel =
+                new JLabel(
+                        "v" + org.example.AgentVersion.VERSION + "  ➔  New Version"
+                );
+
+        updateVersionLabel.setFont(
+                new Font(
+                        FONT_FAMILY,
+                        Font.BOLD,
+                        11
+                )
+        );
+
+        updateVersionLabel.setForeground(PRIMARY_BLUE);
+
+        headerRow.add(sparkIcon);
+        headerRow.add(titleLabel);
+        headerRow.add(Box.createHorizontalStrut(6));
+        headerRow.add(updateVersionLabel);
 
         updateMessageLabel =
                 new JLabel(
-                        "A new version of Employee Monitoring Agent is available."
+                        "An updated build with stability improvements and enhanced monitoring is ready."
                 );
 
         updateMessageLabel.setFont(
@@ -1227,28 +1287,11 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 )
         );
 
-        updateMessageLabel.setForeground(TEXT_BODY);
+        updateMessageLabel.setForeground(new Color(71, 85, 105));
+        updateMessageLabel.setBorder(new EmptyBorder(3, 2, 0, 0));
 
-        updateVersionLabel =
-                new JLabel(
-                        "v" + org.example.AgentVersion.VERSION + "  \u2192  New Version"
-                );
-
-        updateVersionLabel.setFont(
-                new Font(
-                        FONT_FAMILY,
-                        Font.BOLD,
-                        12
-                )
-        );
-
-        updateVersionLabel.setForeground(PRIMARY_BLUE);
-
-        textPanel.add(titleLabel);
-        textPanel.add(Box.createVerticalStrut(3));
+        textPanel.add(headerRow);
         textPanel.add(updateMessageLabel);
-        textPanel.add(Box.createVerticalStrut(3));
-        textPanel.add(updateVersionLabel);
 
         // =====================================================
         // UPDATE BUTTON
@@ -1257,11 +1300,26 @@ public class EmployeeWorkspaceWindow extends JFrame {
         updateNowButton =
                 new JButton(
                         "Update Now"
-                );
+                ) {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                        Color btnBg = isEnabled()
+                                ? (getModel().isRollover() ? new Color(29, 78, 216) : PRIMARY_BLUE)
+                                : new Color(148, 163, 184);
+
+                        g2.setColor(btnBg);
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                        g2.dispose();
+                        super.paintComponent(g);
+                    }
+                };
 
         updateNowButton.setPreferredSize(
                 new Dimension(
-                        120,
+                        128,
                         36
                 )
         );
@@ -1278,13 +1336,10 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 Color.WHITE
         );
 
-        updateNowButton.setBackground(
-                PRIMARY_BLUE
-        );
-
         updateNowButton.setFocusPainted(false);
-
         updateNowButton.setBorderPainted(false);
+        updateNowButton.setContentAreaFilled(false);
+        updateNowButton.setOpaque(false);
 
         updateNowButton.setCursor(
                 new Cursor(
@@ -1296,13 +1351,17 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 e -> startOtaInstallation()
         );
 
+        JPanel buttonWrapper = new JPanel(new GridBagLayout());
+        buttonWrapper.setOpaque(false);
+        buttonWrapper.add(updateNowButton);
+
         updatePanel.add(
                 textPanel,
                 BorderLayout.CENTER
         );
 
         updatePanel.add(
-                updateNowButton,
+                buttonWrapper,
                 BorderLayout.EAST
         );
 
@@ -1367,6 +1426,12 @@ public class EmployeeWorkspaceWindow extends JFrame {
             );
 
             updatePanel.setVisible(true);
+
+            if (getHeight() < WINDOW_HEIGHT) {
+                setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+                setMinimumSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
+                setShape(new RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 16, 16));
+            }
 
             revalidate();
 
@@ -6604,6 +6669,10 @@ public class EmployeeWorkspaceWindow extends JFrame {
     // LOGOUT
     // =========================================================
 
+    public void handleLogoutExternal() {
+        handleLogout();
+    }
+
     private void handleLogout() {
 
         if (logoutInProgress) {
@@ -6660,9 +6729,19 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
         org.example.security.WindowsCredentialManager.clearCredentials();
 
-        // This sends WORK_ENDED. AgentApplication stops the complete
-        // monitoring session only after the server confirms success.
-        sendWorkEndedAndStopSession();
+        // Fade out transition
+        Timer fadeTimer = new Timer(20, null);
+        fadeTimer.addActionListener(e -> {
+            float opacity = getOpacity();
+            if (opacity > 0.1f) {
+                setOpacity(opacity - 0.1f);
+            } else {
+                fadeTimer.stop();
+                setVisible(false);
+                sendWorkEndedAndStopSession();
+            }
+        });
+        fadeTimer.start();
     }
 
 
@@ -6698,7 +6777,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                             "WORK_ENDED event sent successfully."
                     );
 
-                    AgentApplication.stopAgentSession();
+                    AgentApplication.stopAgentSession(true);
                     return;
                 }
 
@@ -6725,7 +6804,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         "WORK_ENDED queued. "
                                 + "Stopping agent session."
                 );
-                AgentApplication.stopAgentSession();
+                AgentApplication.stopAgentSession(true);
 
             } catch (Exception ex) {
 
@@ -6746,7 +6825,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         "WORK_ENDED queued. "
                                 + "Stopping agent session."
                 );
-                AgentApplication.stopAgentSession();
+                AgentApplication.stopAgentSession(true);
             }
         });
 
@@ -7895,6 +7974,14 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
     }
 
+
+    @Override
+    public void dispose() {
+        if (uiTimer != null) {
+            uiTimer.stop();
+        }
+        super.dispose();
+    }
 
     // =========================================================
     // MAIN

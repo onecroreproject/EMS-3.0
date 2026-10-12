@@ -11,8 +11,6 @@ public class Department {
 
     private String name;
     private String departmentCode;
-    private String description;
-    private String departmentHead;
     private String status = "ACTIVE"; // default status
 
     public String getId() {
@@ -39,21 +37,6 @@ public class Department {
         this.departmentCode = departmentCode;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getDepartmentHead() {
-        return departmentHead;
-    }
-
-    public void setDepartmentHead(String departmentHead) {
-        this.departmentHead = departmentHead;
-    }
 
     public String getStatus() {
         return status;

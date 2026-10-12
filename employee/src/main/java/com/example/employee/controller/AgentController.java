@@ -30,7 +30,8 @@ public class AgentController {
 
     @PostMapping("/heartbeat")
     public ResponseEntity<Map<String, Object>> heartbeat(
-            @RequestParam String deviceId) {
+            @RequestParam String deviceId,
+            jakarta.servlet.http.HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
 
@@ -60,6 +61,15 @@ public class AgentController {
 
         device.setStatus("ONLINE");
         device.setLastSeen(now);
+
+        if (request != null) {
+            String xf = request.getHeader("X-Forwarded-For");
+            String remoteIp = (xf != null && !xf.isBlank()) ? xf.split(",")[0].trim() : request.getRemoteAddr();
+            if (remoteIp != null && !remoteIp.isBlank()) {
+                if ("0:0:0:0:0:0:0:1".equals(remoteIp)) remoteIp = "127.0.0.1";
+                device.setIpAddress(remoteIp);
+            }
+        }
 
         deviceRepository.save(device);
         

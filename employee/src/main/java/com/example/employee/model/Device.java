@@ -29,6 +29,10 @@ public class Device {
 
     private Instant lastSeen;
 
+    private String ipAddress;
+
+    private String location;
+
     public Device() {
     }
 
@@ -110,5 +114,21 @@ public class Device {
 
     public void setLastSeen(Instant lastSeen) {
         this.lastSeen = lastSeen;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 }

@@ -35,8 +35,8 @@ public class AdminDepartmentController {
             Department dept = opt.get();
             dept.setName(departmentDetails.getName());
             dept.setDepartmentCode(departmentDetails.getDepartmentCode());
-            dept.setDescription(departmentDetails.getDescription());
-            dept.setDepartmentHead(departmentDetails.getDepartmentHead());
+//            dept.setDescription(departmentDetails.getDescription());
+//            dept.setDepartmentHead(departmentDetails.getDepartmentHead());
             dept.setStatus(departmentDetails.getStatus());
             return ResponseEntity.ok(departmentRepository.save(dept));
         }

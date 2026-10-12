@@ -142,7 +142,8 @@ public final class OfflineAuthorizationManager {
             String employeeCode,
             String username,
             String deviceId,
-            String refreshToken
+            String refreshToken,
+            String token
     ) {
 
         if (isBlank(employeeCode)
@@ -176,7 +177,8 @@ public final class OfflineAuthorizationManager {
                         deviceId + "|" +
                         authorizedAt + "|" +
                         expiresAt + "|" +
-                        (refreshToken != null ? refreshToken : "");
+                        (refreshToken != null ? refreshToken : "") + "|" +
+                        (token != null ? token : "");
 
         Memory targetMemory = null;
         Memory usernameMemory = null;
@@ -604,7 +606,8 @@ public final class OfflineAuthorizationManager {
                     values[3],
                     Instant.parse(values[4]),
                     Instant.parse(values[5]),
-                    values.length > 6 ? values[6] : null
+                    values.length > 6 && !values[6].isEmpty() ? values[6] : null,
+                    values.length > 7 && !values[7].isEmpty() ? values[7] : null
             );
 
         } catch (Exception e) {
@@ -670,6 +673,7 @@ public final class OfflineAuthorizationManager {
         private final Instant authorizedAt;
         private final Instant expiresAt;
         private final String refreshToken;
+        private final String token;
 
         public OfflineAuthorization(
                 String employeeId,
@@ -678,7 +682,8 @@ public final class OfflineAuthorizationManager {
                 String deviceId,
                 Instant authorizedAt,
                 Instant expiresAt,
-                String refreshToken
+                String refreshToken,
+                String token
         ) {
 
             this.employeeId = employeeId;
@@ -688,6 +693,7 @@ public final class OfflineAuthorizationManager {
             this.authorizedAt = authorizedAt;
             this.expiresAt = expiresAt;
             this.refreshToken = refreshToken;
+            this.token = token;
         }
 
         public String getEmployeeId() {
@@ -716,6 +722,10 @@ public final class OfflineAuthorizationManager {
 
         public String getRefreshToken() {
             return refreshToken;
+        }
+
+        public String getToken() {
+            return token;
         }
     }
 }

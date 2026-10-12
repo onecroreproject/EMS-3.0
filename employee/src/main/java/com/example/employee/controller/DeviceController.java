@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/agent")
 public class DeviceController {
@@ -19,9 +21,27 @@ public class DeviceController {
         this.deviceRepository = deviceRepository;
     }
 
+    private String extractClientIp(HttpServletRequest request, String providedIp) {
+        if (providedIp != null && !providedIp.trim().isEmpty() && !"127.0.0.1".equals(providedIp)) {
+            return providedIp;
+        }
+        if (request != null) {
+            String xfHeader = request.getHeader("X-Forwarded-For");
+            if (xfHeader != null && !xfHeader.isEmpty()) {
+                return xfHeader.split(",")[0].trim();
+            }
+            String remoteAddr = request.getRemoteAddr();
+            if (remoteAddr != null && !remoteAddr.isEmpty()) {
+                return "0:0:0:0:0:0:0:1".equals(remoteAddr) ? "127.0.0.1" : remoteAddr;
+            }
+        }
+        return providedIp != null ? providedIp : "";
+    }
+
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> registerDevice(
-            @RequestBody Device device) {
+            @RequestBody Device device,
+            HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
 
@@ -48,14 +68,23 @@ public class DeviceController {
             }
         }
 
-        if (existingDevice != null) {
+        String clientIp = extractClientIp(request, device.getIpAddress());
 
+        if (existingDevice != null) {
 
             existingDevice.setEmployeeId(device.getEmployeeId());
             existingDevice.setEmployeeCode(device.getEmployeeCode());
             existingDevice.setHostname(device.getHostname());
             existingDevice.setOperatingSystem(device.getOperatingSystem());
-            existingDevice.setAgentVersion(device.getAgentVersion());
+            if (device.getAgentVersion() != null && !device.getAgentVersion().isBlank()) {
+                existingDevice.setAgentVersion(device.getAgentVersion());
+            }
+            if (clientIp != null && !clientIp.isBlank()) {
+                existingDevice.setIpAddress(clientIp);
+            }
+            if (device.getLocation() != null && !device.getLocation().isBlank()) {
+                existingDevice.setLocation(device.getLocation());
+            }
             existingDevice.setStatus("ONLINE");
             existingDevice.setLastSeen(Instant.now());
 
@@ -70,6 +99,9 @@ public class DeviceController {
         }
 
         device.setStatus("ONLINE");
+        if (clientIp != null && !clientIp.isBlank()) {
+            device.setIpAddress(clientIp);
+        }
         device.setRegisteredAt(Instant.now());
         device.setLastSeen(Instant.now());
 

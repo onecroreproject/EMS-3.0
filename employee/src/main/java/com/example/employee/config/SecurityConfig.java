@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -61,7 +62,7 @@ public class SecurityConfig {
                 // Public Web UI and Static Resources
                 .requestMatchers("/", "/login", "/index.html", "/login.html", "/dashboard.html", "/css/**", "/js/**", "/assets/**", "/images/**", "/webjars/**").permitAll()
                 // Public UI routes (HTML templates) - data is protected by API endpoints
-                .requestMatchers("/dashboard", "/admin/home", "/organizations/**", "/departments/**", "/teams/**", "/employees/**", "/api/employees/**", "/tasks/**", "/api/tasks/**", "/admin/time-tracking/**", "/admin/activity-logs", "/admin/attendance", "/admin/productivity", "/admin/locations").permitAll()
+                .requestMatchers("/dashboard", "/admin/home", "/organizations/**", "/departments/**", "/teams/**", "/employees/**", "/tasks/**", "/admin/time-tracking/**", "/admin/activity-logs", "/admin/attendance", "/admin/productivity", "/admin/locations").permitAll()
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
@@ -69,14 +70,20 @@ public class SecurityConfig {
                 .requestMatchers("/api/agent/refresh").permitAll()
                 .requestMatchers("/api/agent/config").permitAll()
                 .requestMatchers("/api/agent/update/download/**").permitAll()
-                .requestMatchers("/api/employee/time/**").permitAll() // Whitelist time tracking from agent
+                .requestMatchers("/api/v1/agent-updates/**").permitAll()
                 // Protected endpoints (LOCKED DOWN for production)
-                .requestMatchers("/api/admin/**").authenticated()
+                .requestMatchers("/api/employee/time/**").hasRole("EMPLOYEE")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/agent/**").hasAnyRole("ADMIN", "EMPLOYEE")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // APIs only use JWT
+            )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                })
             );
 
         // Add JWT filter

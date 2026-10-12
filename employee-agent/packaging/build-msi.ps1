@@ -24,7 +24,7 @@ $SCRIPT_DIR   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_ROOT = Split-Path -Parent $SCRIPT_DIR
 
 $APP_NAME        = "EMS Agent"
-$APP_VERSION     = "1.2.4"
+$APP_VERSION     = "2.0.3"
 $APP_VENDOR      = "Employee Monitoring Solutions"
 $APP_DESCRIPTION = "Employee Monitoring Agent - Track work hours, attendance and productivity"
 $APP_COPYRIGHT   = "Copyright (c) 2024 Employee Monitoring Solutions. All rights reserved."
@@ -40,6 +40,7 @@ $WIX_BIN       = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
 $JAR_NAME      = "employee-agent-$APP_VERSION.jar"
 $PNG_ICON      = "$PROJECT_ROOT\packaging\installer\icon\Ems-Agent.png"
 $ICO_ICON      = "$PROJECT_ROOT\packaging\installer\icon\Ems-Agent.ico"
+$LICENSE_FILE  = "$PROJECT_ROOT\packaging\installer\terms-and-conditions.txt"
 $OUTPUT_DIR    = "$PROJECT_ROOT\packaging\output"
 $TARGET_DIR    = "$PROJECT_ROOT\target"
 
@@ -109,10 +110,19 @@ function ConvertTo-MultiSizeIco {
         $bmp = New-Object System.Drawing.Bitmap($sz, $sz,
             [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
         $g = [System.Drawing.Graphics]::FromImage($bmp)
+        $g.Clear([System.Drawing.Color]::Transparent)
         $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
         $g.InterpolationMode  = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
         $g.SmoothingMode      = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-        $g.DrawImage($src, 0, 0, $sz, $sz)
+        $g.PixelOffsetMode    = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+        $ratio = [Math]::Min([double]$sz / $src.Width, [double]$sz / $src.Height)
+        $destW = [int][Math]::Round($src.Width * $ratio)
+        $destH = [int][Math]::Round($src.Height * $ratio)
+        $destX = [int][Math]::Round(($sz - $destW) / 2.0)
+        $destY = [int][Math]::Round(($sz - $destH) / 2.0)
+
+        $g.DrawImage($src, $destX, $destY, $destW, $destH)
         $g.Dispose()
 
         $ms = New-Object System.IO.MemoryStream
@@ -231,6 +241,7 @@ $jpackageArgs = @(
     "--win-menu-group",     "EMS",
     "--win-dir-chooser",
     "--win-per-user-install",
+    "--license-file",       $LICENSE_FILE,
 
     # JVM options
     "--java-options",   "-Dfile.encoding=UTF-8",

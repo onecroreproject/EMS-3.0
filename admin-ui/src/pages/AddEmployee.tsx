@@ -20,6 +20,7 @@ export default function AddEmployee() {
   
   const [joiningDate, setJoiningDate] = useState<Date | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [departments, setDepartments] = useState<{label: string, value: string}[]>([]);
   const [teams, setTeams] = useState<{label: string, value: string}[]>([]);
@@ -42,15 +43,38 @@ export default function AddEmployee() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const newErrors: Record<string, string> = {};
+    if (!formData.name) newErrors.name = 'Full Name is required';
+    if (!dateOfBirth) newErrors.dateOfBirth = 'Date of Birth is required';
+    if (!formData.employeeCode) newErrors.employeeCode = 'Employee Code is required';
+    if (!formData.department) newErrors.department = 'Department is required';
+    if (!formData.team) newErrors.team = 'Team is required';
+    if (!formData.designation) newErrors.designation = 'Designation is required';
+    if (!joiningDate) newErrors.joiningDate = 'Joining Date is required';
+    if (!formData.email) newErrors.email = 'Email Address is required';
+    if (!formData.phone) newErrors.phone = 'Phone Number is required';
+    if (!formData.password) newErrors.password = 'System Password is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     // Construct payload with required field mappings
     const payload = {
       ...formData,
@@ -91,7 +115,7 @@ export default function AddEmployee() {
         </div>
       </div>
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit} noValidate>
         
         {/* Section 1: Personal Information */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 relative z-30">
@@ -105,27 +129,31 @@ export default function AddEmployee() {
           <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <User className="h-4 w-4" />
                 </div>
-                <input type="text" name="name" placeholder="John Doe" onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F96D3E] focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+                <input type="text" name="name" required placeholder="John Doe" onChange={handleChange} className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#F96D3E] focus:border-transparent'}`} />
               </div>
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date of Birth</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date of Birth <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
                   <CalendarIcon className="h-4 w-4" />
                 </div>
                 <DatePicker 
                   selected={dateOfBirth} 
-                  onChange={(date: Date | null) => setDateOfBirth(date)} 
+                  onChange={(date: Date | null) => {
+                    setDateOfBirth(date);
+                    if (errors.dateOfBirth) setErrors(prev => ({ ...prev, dateOfBirth: '' }));
+                  }} 
                   dateFormat="dd MMM yyyy"
                   placeholderText="Select Date"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F96D3E] focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700"
+                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.dateOfBirth ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-[#F96D3E] focus:border-transparent'}`}
                   wrapperClassName="w-full"
                   showMonthDropdown
                   showYearDropdown
@@ -134,10 +162,11 @@ export default function AddEmployee() {
                   yearDropdownItemNumber={100}
                 />
               </div>
+              {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Blood Group</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Blood Group <span className="text-slate-400 font-normal normal-case">(Optional)</span></label>
               <CustomSelect 
                 value={formData.bloodGroup}
                 onChange={(val) => handleSelectChange('bloodGroup', val)}
@@ -169,58 +198,69 @@ export default function AddEmployee() {
           <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Employee Code</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Employee Code <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <ShieldCheck className="h-4 w-4" />
                 </div>
-                <input type="text" name="employeeCode" placeholder="EMP-001" onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+                <input type="text" name="employeeCode" required placeholder="EMP-001" onChange={handleChange} className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.employeeCode ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'}`} />
               </div>
+              {errors.employeeCode && <p className="text-red-500 text-xs mt-1">{errors.employeeCode}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Department</label>
-              <CustomSelect 
-                value={formData.department}
-                onChange={(val) => handleSelectChange('department', val)}
-                placeholder="Select Department"
-                icon={<Building className="h-4 w-4" />}
-                themeColor="blue"
-                size="lg"
-                options={departments}
-              />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Department <span className="text-red-500">*</span></label>
+              <div className={errors.department ? 'ring-2 ring-red-500 rounded-xl' : ''}>
+                <CustomSelect 
+                  value={formData.department}
+                  onChange={(val) => handleSelectChange('department', val)}
+                  placeholder="Select Department"
+                  icon={<Building className="h-4 w-4" />}
+                  themeColor="blue"
+                  size="lg"
+                  options={departments}
+                />
+              </div>
+              {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Team</label>
-              <CustomSelect 
-                value={formData.team}
-                onChange={(val) => handleSelectChange('team', val)}
-                placeholder="Select Team"
-                icon={<Users className="h-4 w-4" />}
-                themeColor="blue"
-                size="lg"
-                options={teams}
-              />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Team <span className="text-red-500">*</span></label>
+              <div className={errors.team ? 'ring-2 ring-red-500 rounded-xl' : ''}>
+                <CustomSelect 
+                  value={formData.team}
+                  onChange={(val) => handleSelectChange('team', val)}
+                  placeholder="Select Team"
+                  icon={<Users className="h-4 w-4" />}
+                  themeColor="blue"
+                  size="lg"
+                  options={teams}
+                />
+              </div>
+              {errors.team && <p className="text-red-500 text-xs mt-1">{errors.team}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Designation</label>
-              <input type="text" name="designation" placeholder="e.g. Senior Developer" onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Designation <span className="text-red-500">*</span></label>
+              <input type="text" name="designation" required placeholder="e.g. Senior Developer / Intern" onChange={handleChange} className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.designation ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'}`} />
+              {errors.designation && <p className="text-red-500 text-xs mt-1">{errors.designation}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Joining Date</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Joining Date <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
                   <CalendarIcon className="h-4 w-4" />
                 </div>
                 <DatePicker 
                   selected={joiningDate} 
-                  onChange={(date: Date | null) => setJoiningDate(date)} 
+                  onChange={(date: Date | null) => {
+                    setJoiningDate(date);
+                    if (errors.joiningDate) setErrors(prev => ({ ...prev, joiningDate: '' }));
+                  }} 
                   dateFormat="dd MMM yyyy"
                   placeholderText="Select Date"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700"
+                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.joiningDate ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-blue-500 focus:border-transparent'}`}
                   wrapperClassName="w-full"
                   showMonthDropdown
                   showYearDropdown
@@ -229,6 +269,7 @@ export default function AddEmployee() {
                   yearDropdownItemNumber={100}
                 />
               </div>
+              {errors.joiningDate && <p className="text-red-500 text-xs mt-1">{errors.joiningDate}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -262,37 +303,40 @@ export default function AddEmployee() {
           <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="h-4 w-4" />
                 </div>
-                <input type="email" name="email" placeholder="john@company.com" onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+                <input type="email" name="email" required placeholder="john@company.com" onChange={handleChange} className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-purple-500 focus:border-transparent'}`} />
               </div>
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Phone className="h-4 w-4" />
                 </div>
-                <input type="text" name="phone" placeholder="+1 (555) 000-0000" onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+                <input type="text" name="phone" required placeholder="+1 (555) 000-0000" onChange={handleChange} className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-purple-500 focus:border-transparent'}`} />
               </div>
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">System Password</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">System Password <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock className="h-4 w-4" />
                 </div>
-                <input type="password" name="password" placeholder="••••••••" onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
+                <input type="password" name="password" required placeholder="••••••••" onChange={handleChange} className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all text-sm font-medium text-slate-700 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:ring-purple-500 focus:border-transparent'}`} />
               </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
             <div className="space-y-1.5 lg:col-span-3">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Addresses</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Addresses <span className="text-slate-400 font-normal normal-case">(Optional)</span></label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 pt-3 pointer-events-none text-slate-400">
@@ -311,7 +355,7 @@ export default function AddEmployee() {
 
             {/* Emergency Contact */}
             <div className="space-y-1.5 lg:col-span-3 pt-4 mt-4 border-t border-slate-100">
-              <h4 className="text-sm font-bold text-slate-700 mb-4">Emergency Contact</h4>
+              <h4 className="text-sm font-bold text-slate-700 mb-4">Emergency Contact <span className="text-slate-400 font-normal normal-case text-xs">(Optional)</span></h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input type="text" name="altPhoneOwner" placeholder="Contact Name" onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />
                 <input type="text" name="relationType" placeholder="Relationship (e.g. Spouse)" onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent transition-all text-sm font-medium text-slate-700" />

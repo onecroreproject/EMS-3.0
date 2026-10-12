@@ -8,14 +8,18 @@ export default function AddDepartment() {
   const [formData, setFormData] = useState({
     name: '',
     departmentCode: '',
-    departmentHead: '',
-    description: '',
     status: 'ACTIVE'
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleToggleStatus = () => {
@@ -25,14 +29,20 @@ export default function AddDepartment() {
     }));
   };
 
-  const [loading, setLoading] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newErrors: Record<string, string> = {};
+    if (!formData.name) newErrors.name = 'Department Name is required';
+    if (!formData.departmentCode) newErrors.departmentCode = 'Department Code is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
     try {
-      // Import apiClient from axios configuration
-      // We will assume it's imported at the top, I'll add the import as well.
       const apiClient = (await import('../lib/axios')).default;
       
       const response = await apiClient.post('/api/admin/departments', formData);
@@ -64,7 +74,7 @@ export default function AddDepartment() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Form Container */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           
           <div className="p-6 sm:p-8 space-y-6">
             
@@ -74,6 +84,27 @@ export default function AddDepartment() {
                 <Info className="w-5 h-5 text-blue-500" />
                 Basic Information
               </h2>
+
+              {/* Status Toggle moved to top */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-lg mb-6">
+                <div>
+                  <h3 className="text-sm font-medium text-slate-800">Department Status</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Determine if this department is active and visible to employees.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleStatus}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    formData.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.status === 'ACTIVE' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 
@@ -94,9 +125,10 @@ export default function AddDepartment() {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="e.g., Engineering"
-                      className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow outline-none"
+                      className={`block w-full pl-10 pr-3 py-2 border rounded-lg outline-none text-sm transition-shadow ${errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`}
                     />
                   </div>
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
 
                 {/* Department Code */}
@@ -116,99 +148,19 @@ export default function AddDepartment() {
                       value={formData.departmentCode}
                       onChange={handleChange}
                       placeholder="e.g., ENG-01"
-                      className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow outline-none uppercase"
+                      className={`block w-full pl-10 pr-3 py-2 border rounded-lg outline-none text-sm transition-shadow uppercase ${errors.departmentCode ? 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">A unique shortcode for tracking.</p>
+                  {errors.departmentCode ? (
+                    <p className="text-red-500 text-xs mt-1">{errors.departmentCode}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500 mt-1">A unique shortcode for tracking.</p>
+                  )}
                 </div>
 
               </div>
             </div>
 
-            {/* Section 2: Operational Details */}
-            <div className="space-y-4 pt-4">
-              <h2 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-500" />
-                Operational Details
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                
-                {/* Department Head */}
-                <div className="space-y-2">
-                  <label htmlFor="departmentHead" className="block text-sm font-medium text-slate-700">
-                    Department Head
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <select
-                      id="departmentHead"
-                      name="departmentHead"
-                      value={formData.departmentHead}
-                      onChange={handleChange}
-                      className="block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white transition-shadow outline-none"
-                    >
-                      <option value="" disabled>Select a Manager</option>
-                      <option value="EMP001">John Doe</option>
-                      <option value="EMP002">Jane Smith</option>
-                      <option value="EMP003">Santhosh Kumar</option>
-                      <option value="EMP004">Alice Johnson</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500">
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2 pt-2">
-                <label htmlFor="description" className="block text-sm font-medium text-slate-700">
-                  Description
-                </label>
-                <div className="relative">
-                  <div className="absolute top-3 left-3 pointer-events-none">
-                    <FileText className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows={4}
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Briefly describe the responsibilities and goals of this department..."
-                    className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow outline-none resize-none"
-                  ></textarea>
-                </div>
-              </div>
-
-              {/* Status Toggle */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-lg mt-4">
-                <div>
-                  <h3 className="text-sm font-medium text-slate-800">Department Status</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Determine if this department is active and visible to employees.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleStatus}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    formData.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.status === 'ACTIVE' ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
-            </div>
           </div>
 
           {/* Form Actions / Footer */}

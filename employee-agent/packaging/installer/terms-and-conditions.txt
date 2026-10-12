@@ -1,0 +1,30 @@
+EMPLOYEE MONITORING SYSTEM (EMS)
+End-User License Agreement and Workplace Monitoring Policy
+
+Please read this agreement carefully before installing or using this software.
+
+This End-User License Agreement ("Agreement") is an agreement between you ("Employee" or "User") and your employer / Employee Monitoring Solutions ("Company"). By selecting "I accept the terms in the License Agreement" and proceeding with the installation of EMS Agent ("Software"), you acknowledge, understand, and agree to the following terms:
+
+1. Purpose and Scope of Monitoring
+The Software is installed on company-authorized workstations to track working hours, measure productivity, verify attendance, and support transparent remote and hybrid work engagements.
+
+2. Activity Tracking and Data Collection
+During active work shifts, the Software collects the following metrics:
+- Active Windows and Applications: Logs names and window titles of active applications and browser tabs used during work hours.
+- Productivity and Idle Tracking: Monitors mouse and keyboard interaction levels to accurately measure active work time, idle time, and breaks.
+- Automated Screen Capture: Takes periodic screenshots of your desktop display at scheduled intervals for work verification and compliance auditing.
+
+3. Privacy Safeguards and Restrictions
+The Company is committed to protecting employee privacy:
+- No Keystroke Logging: The Software measures activity levels only and does not record individual keystrokes, passwords, or personal messages.
+- No Audio or Webcam Access: The Software does not access, record, or stream your webcam or microphone.
+- Secure Encrypted Transmission: All captured logs and screenshots are transmitted using industry-standard TLS encryption to protected company servers.
+- Role-Based Access: Monitoring data is strictly restricted to authorized managerial, administrative, and HR personnel.
+
+4. Shift-Based Operation
+Monitoring operates solely during active work shifts. Employees retain control to pause monitoring during breaks or end tracking upon concluding their daily shift.
+
+5. Employee Consent and Acknowledgment
+By installing, activating, or using this Software, you confirm that you have read, understood, and agreed to the monitoring policies and data practices outlined in this Agreement.
+
+Copyright (c) 2026 Employee Monitoring Solutions. All rights reserved.

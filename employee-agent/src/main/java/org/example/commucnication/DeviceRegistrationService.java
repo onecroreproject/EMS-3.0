@@ -42,6 +42,12 @@ public class DeviceRegistrationService {
             String operatingSystem =
                     deviceInfoService.getOperatingSystem();
 
+            String ipAddress =
+                    deviceInfoService.getIpAddress();
+
+            String agentVersion =
+                    org.example.AgentVersion.VERSION;
+
             String requestBody = """
                     {
                         "deviceId": "%s",
@@ -49,27 +55,31 @@ public class DeviceRegistrationService {
                         "employeeCode": "%s",
                         "hostname": "%s",
                         "operatingSystem": "%s",
-                        "agentVersion": "1.0.0"
+                        "agentVersion": "%s",
+                        "ipAddress": "%s"
                     }
                     """.formatted(
                     deviceId,
                     employeeId,
                     employeeCode,
                     hostname,
-                    operatingSystem
+                    operatingSystem,
+                    agentVersion,
+                    ipAddress
             );
+
+            String authToken = (token != null && !token.isBlank()) ? token : org.example.config.AgentTokenHolder.getToken();
 
             HttpRequest request =
                     HttpRequest.newBuilder()
                             .uri(URI.create(url))
-                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
                             .header(
                                     "Content-Type",
                                     "application/json"
                             )
                             .header(
                                     "Authorization",
-                                    "Bearer " + token
+                                    "Bearer " + authToken
                             )
                             .POST(
                                     HttpRequest.BodyPublishers

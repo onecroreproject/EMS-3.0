@@ -15,6 +15,11 @@ export default function Login() {
   const [qrUrl, setQrUrl] = useState('');
   const [mfaSecret, setMfaSecret] = useState('');
 
+  // Session Conflict State
+  const [sessionConflict, setSessionConflict] = useState(false);
+  const [sessionConflictMessage, setSessionConflictMessage] = useState('');
+  const [forceLogin, setForceLogin] = useState(false);
+
   // Mouse tracking for interactive left panel
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -37,9 +42,10 @@ export default function Login() {
     }
   };
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+  const handleCredentialsSubmit = async (e: React.FormEvent, force: boolean = false) => {
     e.preventDefault();
     setError('');
+    setSessionConflict(false);
     
     if (rememberMe) {
       localStorage.setItem('rememberedEmail', email);
@@ -51,14 +57,20 @@ export default function Login() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, force })
       });
       
-      if (!response.ok) {
-        throw new Error('Invalid email or password');
+      const data = await response.json().catch(() => null);
+
+      if (response.status === 409 && data?.sessionActive) {
+        setSessionConflict(true);
+        setSessionConflictMessage(data.message);
+        return;
       }
-      
-      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Invalid email or password');
+      }
       
       if (data.mfaRequired) {
         setIsFirstTimeSetup(data.setupRequired);
@@ -67,27 +79,43 @@ export default function Login() {
           setMfaSecret(data.secret);
         }
         setStep(2);
+      } else {
+        // Direct employee login
+        if (rememberMe) {
+          localStorage.setItem('adminToken', data.token);
+        } else {
+          sessionStorage.setItem('adminToken', data.token);
+        }
+        navigate('/');
       }
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  const handleMfaSubmit = async (e: React.FormEvent) => {
+  const handleMfaSubmit = async (e: React.FormEvent, force: boolean = false) => {
     e.preventDefault();
     setError('');
+    setSessionConflict(false);
+
     try {
       const response = await fetch('/api/auth/verify-mfa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: mfaCode })
+        body: JSON.stringify({ email, code: mfaCode, force })
       });
       
-      if (!response.ok) {
-        throw new Error('Invalid verification code');
+      const data = await response.json().catch(() => null);
+
+      if (response.status === 409 && data?.sessionActive) {
+        setSessionConflict(true);
+        setSessionConflictMessage(data.message);
+        return;
       }
-      
-      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Invalid verification code');
+      }
       
       if (rememberMe) {
         localStorage.setItem('adminToken', data.token);
@@ -275,12 +303,37 @@ export default function Login() {
                     </label>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 mt-4"
-                  >
-                    Authenticate <ArrowRight className="h-4 w-4" />
-                  </button>
+                  {sessionConflict ? (
+                    <div className="mt-6 p-5 bg-orange-50 border border-orange-200 rounded-xl flex flex-col gap-4 animate-in fade-in">
+                      <div className="flex gap-3 text-orange-800">
+                        <Activity className="h-5 w-5 shrink-0" />
+                        <p className="text-sm font-medium">{sessionConflictMessage}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSessionConflict(false)}
+                          className="flex-1 py-2.5 bg-white border border-orange-200 text-orange-700 rounded-lg text-sm font-bold hover:bg-orange-50 transition"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleCredentialsSubmit(e, true)}
+                          className="flex-1 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-500/30"
+                        >
+                          Force Login
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button 
+                      type="submit" 
+                      className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 mt-4"
+                    >
+                      Authenticate <ArrowRight className="h-4 w-4" />
+                    </button>
+                  )}
                 </form>
               </div>
             )}
@@ -347,13 +400,38 @@ export default function Login() {
                     />
                   </div>
 
-                  <button 
-                    type="submit" 
-                    disabled={mfaCode.length !== 6}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-600 disabled:bg-blue-300 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30"
-                  >
-                    <CheckCircle2 className="h-5 w-5" /> Verify & Access Dashboard
-                  </button>
+                  {sessionConflict ? (
+                    <div className="mt-6 p-5 bg-orange-50 border border-orange-200 rounded-xl flex flex-col gap-4 animate-in fade-in">
+                      <div className="flex gap-3 text-orange-800">
+                        <Activity className="h-5 w-5 shrink-0" />
+                        <p className="text-sm font-medium">{sessionConflictMessage}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSessionConflict(false)}
+                          className="flex-1 py-2.5 bg-white border border-orange-200 text-orange-700 rounded-lg text-sm font-bold hover:bg-orange-50 transition"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleMfaSubmit(e, true)}
+                          className="flex-1 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-500/30"
+                        >
+                          Force Login
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button 
+                      type="submit" 
+                      disabled={mfaCode.length !== 6}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 disabled:bg-blue-300 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30"
+                    >
+                      <CheckCircle2 className="h-5 w-5" /> Verify & Access Dashboard
+                    </button>
+                  )}
                 </form>
               </div>
             )}

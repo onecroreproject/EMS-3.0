@@ -3,9 +3,12 @@ package com.example.employee.dto;
 public class MfaVerifyRequest {
     private String email;
     private String code;
+    private boolean force;
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
+    public boolean isForce() { return force; }
+    public void setForce(boolean force) { this.force = force; }
 }

@@ -60,6 +60,9 @@ public class HeartbeatService {
                         }
                     }
                 }
+                if (response.statusCode() == 401 || response.statusCode() == 403) {
+                    return "{\"status\":\"UNAUTHORIZED\"}";
+                }
                 return null;
             }
 

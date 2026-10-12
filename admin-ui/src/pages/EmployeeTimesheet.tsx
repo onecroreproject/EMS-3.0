@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { exportTimesheetToExcel } from '../utils/excelExport';
 import { 
   CheckCircle2, Clock, Coffee, Eye, Monitor, 
   Download, Printer, ChevronLeft, ChevronRight, Calendar, ChevronDown
@@ -138,8 +139,15 @@ export default function EmployeeTimesheet() {
       setError(err.response?.data?.message || err.message || "An error occurred");
     } finally {
       setLoading(false);
+      setLoading(false);
     }
   };
+
+  const exportToExcel = () => {
+    if (!data) return;
+    exportTimesheetToExcel(data, viewMode);
+  };
+
 
   const formatHHMM = (seconds: number) => {
     if (!seconds) return '-';
@@ -638,7 +646,11 @@ export default function EmployeeTimesheet() {
           <button className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-semibold transition shadow-sm h-[30px]">
             <Monitor className="h-3.5 w-3.5" /> Generate Report
           </button>
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition shadow-sm h-[30px]">
+          <button 
+            onClick={exportToExcel}
+            disabled={!data}
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#107C41] border border-[#0b5c2f] rounded-md text-[11px] font-semibold text-white hover:bg-[#0b5c2f] transition shadow-sm h-[30px] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Download className="h-3.5 w-3.5" /> Export to Excel
           </button>
           <button 

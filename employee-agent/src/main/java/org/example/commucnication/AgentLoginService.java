@@ -23,6 +23,10 @@ public class AgentLoginService {
     }
 
     public LoginResult login(String username, String password) {
+        return login(username, password, false);
+    }
+
+    public LoginResult login(String username, String password, boolean force) {
 
         try {
 
@@ -31,9 +35,10 @@ public class AgentLoginService {
             String requestBody = """
                     {
                         "username": "%s",
-                        "password": "%s"
+                        "password": "%s",
+                        "force": %b
                     }
-                    """.formatted(username, password);
+                    """.formatted(username, password, force);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -132,6 +137,14 @@ public class AgentLoginService {
                 );
             }
 
+            if (response.statusCode() == 409) {
+                System.out.println("Login rejected by server: Session conflict.");
+                return new LoginResult(
+                        false, null, null, null, null, null, null,
+                        LoginStatus.SESSION_CONFLICT
+                );
+            }
+
             /*
              * =========================================================
              * OTHER SERVER ERROR
@@ -222,15 +235,11 @@ public class AgentLoginService {
      */
 
     public enum LoginStatus {
-
         ONLINE_SUCCESS,
-
         OFFLINE_SUCCESS,
-
         INVALID_CREDENTIALS,
-
+        SESSION_CONFLICT,
         SERVER_UNAVAILABLE,
-
         SERVER_ERROR
     }
 
@@ -282,7 +291,8 @@ public class AgentLoginService {
                 String employeeId,
                 String employeeCode,
                 String username,
-                String refreshToken) {
+                String refreshToken,
+                String token) {
 
             return new LoginResult(
                     true,
@@ -290,7 +300,7 @@ public class AgentLoginService {
                     employeeCode,
                     null,
                     username,
-                    null,
+                    token,
                     refreshToken,
                     LoginStatus.OFFLINE_SUCCESS
             );
@@ -334,6 +344,10 @@ public class AgentLoginService {
 
         public boolean isInvalidCredentials() {
             return status == LoginStatus.INVALID_CREDENTIALS;
+        }
+
+        public boolean isSessionConflict() {
+            return status == LoginStatus.SESSION_CONFLICT;
         }
     }
 }

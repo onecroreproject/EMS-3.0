@@ -5,6 +5,7 @@ public class AgentLoginRequest {
     private String username;
     private String password;
     private String deviceId;
+    private boolean force;
 
     public AgentLoginRequest() {
     }
@@ -31,5 +32,13 @@ public class AgentLoginRequest {
 
     public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
     }
 }

@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface EmployeeLocationRepository extends MongoRepository<EmployeeLocation, String> {
 
      List<EmployeeLocation> findAllByOrderByTimestampDesc();
+     java.util.Optional<EmployeeLocation> findTopByEmployeeCodeOrderByTimestampDesc(String employeeCode);
 }

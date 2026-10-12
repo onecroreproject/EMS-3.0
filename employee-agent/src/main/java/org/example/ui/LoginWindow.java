@@ -1215,6 +1215,10 @@ public class LoginWindow extends JFrame {
 // =========================================================
 
     private void handleLogin() {
+        handleLogin(false);
+    }
+
+    private void handleLogin(boolean force) {
 
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
@@ -1257,7 +1261,7 @@ public class LoginWindow extends JFrame {
         Thread loginThread = new Thread(() -> {
 
             AgentLoginService.LoginResult result =
-                    loginService.login(username, password);
+                    loginService.login(username, password, force);
 
             SwingUtilities.invokeLater(() -> {
 
@@ -1305,7 +1309,8 @@ public class LoginWindow extends JFrame {
                                     result.getEmployeeCode(),
                                     username,
                                     deviceId,
-                                    result.getRefreshToken()
+                                    result.getRefreshToken(),
+                                    result.getToken()
                             );
 
                     if (!offlineAuthorizationSaved) {
@@ -1453,7 +1458,8 @@ public class LoginWindow extends JFrame {
                                         authorization.getEmployeeId(),
                                         authorization.getEmployeeCode(),
                                         authorization.getUsername(),
-                                        authorization.getRefreshToken()
+                                        authorization.getRefreshToken(),
+                                        authorization.getToken()
                                 );
 
 
@@ -1512,7 +1518,31 @@ public class LoginWindow extends JFrame {
 
                 } else {
 
-                    if (result != null
+                    if (result != null && result.isSessionConflict()) {
+
+                        updateStatus(
+                                "Session conflict",
+                                ERROR_RED,
+                                ERROR_RED,
+                                ERROR_BG,
+                                ERROR_BORDER
+                        );
+
+                        // Show dialog asking to force login
+                        int choice = JOptionPane.showConfirmDialog(
+                                LoginWindow.this,
+                                "Already one session is active. If you login here, the previous login will expire.\n\nDo you want to continue?",
+                                "Session Conflict",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.WARNING_MESSAGE
+                        );
+
+                        if (choice == JOptionPane.YES_OPTION) {
+                            handleLogin(true);
+                            return; // handleLogin(true) will re-enable the button or keep it disabled
+                        }
+
+                    } else if (result != null
                             && result.isInvalidCredentials()) {
 
                         updateStatus(

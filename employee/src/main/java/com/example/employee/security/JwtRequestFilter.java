@@ -1,5 +1,6 @@
 package com.example.employee.security;
 
+import com.example.employee.repository.ActiveSessionRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,10 +20,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     private final JwtUserDetailsService jwtUserDetailsService;
     private final JwtTokenUtil jwtTokenUtil;
+    private final ActiveSessionRepository activeSessionRepository;
 
-    public JwtRequestFilter(JwtUserDetailsService jwtUserDetailsService, JwtTokenUtil jwtTokenUtil) {
+    public JwtRequestFilter(JwtUserDetailsService jwtUserDetailsService, JwtTokenUtil jwtTokenUtil, ActiveSessionRepository activeSessionRepository) {
         this.jwtUserDetailsService = jwtUserDetailsService;
         this.jwtTokenUtil = jwtTokenUtil;
+        this.activeSessionRepository = activeSessionRepository;
     }
 
     @Override
@@ -60,7 +63,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             UserDetails userDetails = this.jwtUserDetailsService.loadUserByUsername(username);
 
             // if token is valid configure Spring Security to manually set authentication
-            if (jwtTokenUtil.validateToken(jwtToken, userDetails)) {
+            // Also check if the token exists in the active_sessions collection (Single Active Session)
+            if (jwtTokenUtil.validateToken(jwtToken, userDetails) && activeSessionRepository.findByToken(jwtToken).isPresent()) {
 
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
