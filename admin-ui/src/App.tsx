@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -16,7 +17,7 @@ import ViewTeams from './pages/ViewTeams';
 import Attendance from './pages/Attendance';
 
 // ProtectedRoute checks if adminToken exists in localStorage or sessionStorage
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
   
   if (!token) {
