@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
@@ -10,41 +12,90 @@
     @apply text-slate-800 bg-slate-50 transition-colors duration-300;
     line-height: 1.6;
   }
-  
-  /* Global Dark Mode Overrides */
-  html.dark body {
-    background-color: #0B1120;
-    color: #F8FAFC;
+
+  /* Smooth Theme Transition for all structural elements */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 250ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  html.dark .bg-white { background-color: #0F172A !important; }
-  html.dark .bg-slate-50 { background-color: #0B1120 !important; }
-  html.dark .bg-slate-100 { background-color: #1E293B !important; }
-  html.dark .bg-slate-200 { background-color: #334155 !important; }
   
-  html.dark .text-slate-800 { color: #F1F5F9 !important; }
-  html.dark .text-slate-700 { color: #E2E8F0 !important; }
-  html.dark .text-slate-600 { color: #CBD5E1 !important; }
-  html.dark .text-slate-500 { color: #94A3B8 !important; }
-  html.dark .text-gray-800 { color: #F1F5F9 !important; }
-  html.dark .text-gray-500 { color: #9CA3AF !important; }
+  /* Global Pleasant Dark Mode Overrides (Soothing Deep Navy / Zinc Palette) */
+  html.dark body {
+    background-color: #0b0f19;
+    color: #f1f5f9;
+  }
   
+  /* Surface Layers */
+  html.dark .bg-white { 
+    background-color: #111827 !important; 
+  }
+  html.dark .bg-slate-50 { 
+    background-color: #0b0f19 !important; 
+  }
+  html.dark .bg-slate-100 { 
+    background-color: #1a2234 !important; 
+  }
+  html.dark .bg-slate-200 { 
+    background-color: #242f45 !important; 
+  }
+  
+  /* Typography */
+  html.dark .text-slate-900,
+  html.dark .text-slate-800 { 
+    color: #f8fafc !important; 
+  }
+  html.dark .text-slate-700 { 
+    color: #e2e8f0 !important; 
+  }
+  html.dark .text-slate-600 { 
+    color: #cbd5e1 !important; 
+  }
+  html.dark .text-slate-500 { 
+    color: #94a3b8 !important; 
+  }
+  html.dark .text-slate-400 { 
+    color: #64748b !important; 
+  }
+  html.dark .text-gray-900,
+  html.dark .text-gray-800 { 
+    color: #f8fafc !important; 
+  }
+  html.dark .text-gray-700 { 
+    color: #e2e8f0 !important; 
+  }
+  html.dark .text-gray-500 { 
+    color: #94a3b8 !important; 
+  }
+  
+  /* Borders & Dividers */
+  html.dark .border-slate-50,
   html.dark .border-slate-100, 
   html.dark .border-slate-200, 
+  html.dark .border-gray-100,
   html.dark .border-gray-200 {
-    border-color: #334155 !important;
+    border-color: #1f293d !important;
   }
-  
-  /* Dark Mode specific inputs */
-  html.dark input, 
-  html.dark select, 
-  html.dark textarea {
-    background-color: #1E293B !important;
-    color: #F1F5F9 !important;
-    border-color: #334155 !important;
+
+  /* Table zebra and hover states */
+  html.dark tr:hover td {
+    background-color: rgba(30, 41, 59, 0.45) !important;
   }
-  html.dark input::placeholder {
-    color: #64748B !important;
+
+  /* Modals & Popups backdrop & card borders */
+  html.dark .shadow-xl,
+  html.dark .shadow-2xl {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6) !important;
   }
+
+  /* Soft icon badge backgrounds for dark mode */
+  html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.15) !important; }
+  html.dark .bg-emerald-50,
+  html.dark .bg-green-50 { background-color: rgba(16, 185, 129, 0.15) !important; }
+  html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15) !important; }
+  html.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.15) !important; }
+  html.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.15) !important; }
+  html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.15) !important; }
 }@layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

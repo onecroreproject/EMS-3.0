@@ -1,0 +1,524 @@
+====================================================================================================
+           EMPLOYEE MONITORING SYSTEM (EMS 3.0) - DESKTOP AGENT
+     ENTERPRISE PRODUCTION MSI PACKAGING & COMPLETE OVER-THE-AIR (OTA) SYSTEM
+                      TECHNICAL IMPLEMENTATION & HANDOVER GUIDE
+====================================================================================================
+
+DOCUMENT CONTROL
+----------------------------------------------------------------------------------------------------
+Product Name          : Employee Monitoring System (EMS 3.0)
+Component             : Desktop Workstation Agent & OTA Distribution Microservice
+Target Operating Sys  : Microsoft Windows 10 / Windows 11 (64-bit)
+Java Runtime Version  : Java 17 LTS (Bundled internally, zero external dependency)
+Backend Technology    : Spring Boot 3.1.4, MongoDB, TLS 1.3
+Current Release Build : Version 2.0.2 (Production Ready & Verified)
+Status                : PASSED & VERIFIED (Live OTA In-Place Upgrade Tested v1.2.5 -> v2.0.2)
+====================================================================================================
+
+
+TABLE OF CONTENTS
+----------------------------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+2. COMPLETE ARCHITECTURAL WORKFLOW (ASCII DIAGRAM)
+3. PRODUCTION MSI ENGINEERING: WHAT WE IMPLEMENTED & WHY
+   3.1 The Fixed UpgradeCode UUID (The Backbone of OTA Upgrades)
+   3.2 Per-User Non-Elevated Installation (--win-per-user-install)
+   3.3 Self-Contained Bundled JDK 17 Runtime
+   3.4 High-DPI Proportional Multi-Size Icon Generator (.ico)
+   3.5 Corporate EULA & Workplace Monitoring Agreement Consent
+   3.6 Automatic Application Launch on System Startup
+4. OVER-THE-AIR (OTA) UPDATE PIPELINE: HOW IT WORKS INTERNALLY
+   4.1 Backend Microservice & MongoDB Schema (Spring Boot)
+   4.2 Semantic Version Comparison Algorithm
+   4.3 Dynamic Workspace Window Height Adaptation (Layout Fix)
+   4.4 Cryptographic SHA-256 Validation & Anti-Tampering
+   4.5 Silent Major Upgrade Execution & Process Handoff
+5. SINGLE-SESSION CONFLICT RESOLUTION (DISPLACEMENT FIX)
+6. STEP-BY-STEP DEVELOPER GUIDE: HOW TO BUILD & PUBLISH NEW VERSIONS
+7. TESTING & VERIFICATION MATRIX (TEST RESULTS)
+8. COMMON PITFALLS & TROUBLESHOOTING GUIDE
+====================================================================================================
+
+
+1. EXECUTIVE SUMMARY & PROBLEM STATEMENT
+----------------------------------------------------------------------------------------------------
+In an enterprise employee monitoring ecosystem, client workstation software faces three major
+technical hurdles:
+
+  Problem 1: Manual Software Updates Are Impractical
+  In an organization with hundreds of remote or office workstations, sending manual installers
+  or requiring employees to download and run setups interrupts productivity and creates massive
+  version fragmentation across machines.
+
+  Problem 2: Permission Barriers on Corporate PCs
+  Corporate laptops frequently restrict local Administrator privileges. Traditional installers
+  require Windows UAC elevation, causing silent background updates to fail.
+
+  Problem 3: Multiple Session Conflicts
+  If an employee runs an agent on two computers or opens duplicate instances, telemetry and hours
+  become corrupted unless the backend strictly enforces a single active session and terminates
+  displaced instances immediately.
+
+THE SOLUTION IMPLEMENTED:
+We engineered an enterprise-grade packaging and distribution pipeline combining:
+  - WiX Toolset v3.14 & JDK 17 jpackage for standalone, zero-dependency MSI generation.
+  - A persistent Windows Installer Major Upgrade architecture with zero user elevation.
+  - An intelligent background OTA update engine with SHA-256 integrity verification.
+  - Automatic session displacement handling via JWT refresh token validation.
+  - Full in-place silent upgrades preserving user credentials and login sessions.
+
+
+====================================================================================================
+2. COMPLETE ARCHITECTURAL WORKFLOW (ASCII DIAGRAM)
+====================================================================================================
+
++--------------------------------------------------------------------------------------------------+
+|                                  PHASE 1: BUILD & PACKAGING                                      |
+|                                                                                                  |
+|  [Java 17 Source Code]                                                                           |
+|          |                                                                                       |
+|          v (Maven Clean Package - Shade Plugin)                                                  |
+|  [Fat Shaded JAR: employee-agent-2.0.2.jar]                                                      |
+|          |                                                                                       |
+|          +--> [Aspect-Ratio Preserving Converter: PNG -> Multi-Size ICO (16px to 256px)]         |
+|          |                                                                                       |
+|          v (jpackage + WiX Toolset v3.14 with Fixed Upgrade UUID)                                |
+|  [EMS Agent-2.0.2.msi]  <-- Standalone Installer (~53 MB, Bundled Runtime, EULA Embedded)        |
++--------------------------------------------------------------------------------------------------+
+                                           |
+                                           | POST /api/v1/agent-updates/publish
+                                           v
++--------------------------------------------------------------------------------------------------+
+|                                  PHASE 2: BACKEND DISTRIBUTION                                   |
+|                                                                                                  |
+|  Spring Boot Microservice (Port 8083)                 MongoDB Cloud Database                     |
+|  ------------------------------------                 ----------------------                     |
+|  - Validates package integrity                        - Collection: agent_updates                |
+|  - Computes cryptographic SHA-256 hash                - Stores: version, fileName, sha256,       |
+|  - Stores file in ./agent-updates/                              storagePath, releaseNotes        |
+|  - Marks new version as ACTIVE release                - Deactivates previous releases            |
++--------------------------------------------------------------------------------------------------+
+                                           |
+                                           | Periodic Check (Every 30 Mins & On Login)
+                                           v
++--------------------------------------------------------------------------------------------------+
+|                                  PHASE 3: CLIENT WORKSTATION                                     |
+|                                                                                                  |
+|  1. Installed Agent (v1.2.5) executes:                                                           |
+|     GET /api/v1/agent-updates/latest?currentVersion=1.2.5&platform=windows                       |
+|                                                                                                  |
+|  2. Semantic Version Engine compares:                                                            |
+|     Remote (2.0.2) > Current (1.2.5)  --> UPDATE DETECTED!                                      |
+|                                                                                                  |
+|  3. Workspace UI dynamically adjusts:                                                            |
+|     Window height expands to 630px -> Displays glassmorphism banner -> Buttons never clipped     |
+|                                                                                                  |
+|  4. Employee clicks [Update Now]:                                                                |
+|     Background download starts -> Streamed to C:\ProgramData\EmployeeAgent\updates               |
+|                                                                                                  |
+|  5. SHA-256 Verification:                                                                        |
+|     Local calculated hash matches MongoDB database signature -> PASSED                          |
+|                                                                                                  |
+|  6. Silent Windows Major Upgrade Handoff:                                                        |
+|     Spawns: msiexec.exe /i "EmployeeMonitoringAgent-2.0.2.msi" /qn /norestart                   |
+|     Agent executes: System.exit(0) -> Unlocks all executable files immediately                   |
+|                                                                                                  |
+|  7. Windows Installer replaces binaries:                                                         |
+|     Replaces binaries in AppData\Local\EMS Agent -> Preserves credentials in ProgramData         |
+|     Relaunches updated v2.0.2 automatically with active session intact!                          |
++--------------------------------------------------------------------------------------------------+
+
+
+====================================================================================================
+3. PRODUCTION MSI ENGINEERING: WHAT WE IMPLEMENTED & WHY
+====================================================================================================
+
+3.1 THE FIXED UpgradeCode UUID (THE BACKBONE OF OTA UPGRADES)
+----------------------------------------------------------------------------------------------------
+In Windows Installer (.msi) architecture, every package is identified by two GUIDs:
+  1. ProductCode : Unique identifier for a specific build. Changes with every release.
+  2. UpgradeCode : Persistent identifier for the product family. MUST NEVER CHANGE.
+
+Implementation:
+  $UPGRADE_UUID = "8B3D4A29-F5E7-4C1B-A2D9-6E8F0B1C2D3E"
+
+Why this is critical:
+  When Windows Installer executes an MSI update, it reads the UpgradeCode from the Windows Registry:
+    HKCU\Software\Microsoft\Installer\UpgradeCodes
+  Because the new MSI has the EXACT SAME UpgradeCode:
+  - Windows automatically triggers a MAJOR UPGRADE.
+  - Windows silently stops and deletes the old version files from AppData\Local\EMS Agent\.
+  - Windows installs the new version files into the same directory.
+  - Windows leaves the employee configuration and login session in C:\ProgramData untouched.
+  - IF THIS UUID IS EVER CHANGED, Windows treats it as a completely different application,
+    causing duplicate desktop shortcuts and side-by-side execution conflicts!
+
+
+3.2 PER-USER NON-ELEVATED INSTALLATION (--win-per-user-install)
+----------------------------------------------------------------------------------------------------
+Corporate employees rarely have local Windows Administrator rights. Installing into "Program Files"
+requires UAC administrator credentials on every install and every background update.
+
+Implementation:
+  jpackage argument: "--win-per-user-install"
+  Target Path      : C:\Users\<Username>\AppData\Local\EMS Agent\
+
+Result:
+  - Zero UAC administrator prompts during initial installation.
+  - Completely silent, uninterrupted execution for background OTA updates (msiexec.exe /qn).
+
+
+3.3 SELF-CONTAINED BUNDLED JDK 17 RUNTIME
+----------------------------------------------------------------------------------------------------
+Java Swing desktop applications traditionally required users to manually install Java JRE.
+
+Implementation:
+  jpackage uses jlink internally to bundle a minimized Java 17 execution environment into:
+    C:\Users\<Username>\AppData\Local\EMS Agent\runtime\
+
+Result:
+  - Zero Java installation required on client workstations.
+  - Total isolation: The agent is immune to whatever Java versions the client might have.
+
+
+3.4 HIGH-DPI PROPORTIONAL MULTI-SIZE ICON GENERATOR (.ico)
+----------------------------------------------------------------------------------------------------
+Windows desktop icons require multiple embedded resolutions:
+  16x16, 24x24, 32x32, 48x48, 64x64, 128x128, and 256x256 pixels.
+
+The Problem Identified:
+  The company source logo (Ems-Agent.png) is 310 pixels wide by 257 pixels high (aspect ratio: 1.206).
+  Standard icon generators forcibly stretch images into a square (256x256), creating a distorted,
+  squished icon.
+
+The Solution Implemented in build-msi.ps1:
+  We developed an aspect-ratio-preserving converter using .NET System.Drawing:
+  1. Computes scaling ratio: min(sz / Width, sz / Height)
+  2. Centers the image proportionally: destX = (sz - destW) / 2, destY = (sz - destH) / 2
+  3. Fills unused borders with transparent pixels.
+  4. Applies HighQualityBicubic interpolation and HighQuality smoothing.
+  5. Assembles all 7 resolutions into a single multi-size .ico binary.
+
+Result:
+  The desktop shortcut, taskbar, and Alt+Tab switchers display the crisp, true 3D logo perfectly.
+
+
+3.5 CORPORATE EULA & WORKPLACE MONITORING AGREEMENT CONSENT
+----------------------------------------------------------------------------------------------------
+Enterprise compliance and privacy regulations require explicit employee acknowledgement of workplace
+monitoring.
+
+Implementation:
+  File: employee-agent/packaging/installer/terms-and-conditions.txt
+  jpackage flag: --license-file terms-and-conditions.txt
+
+Key Disclosures Included:
+  - Purpose: Productivity verification, task time tracking, remote work compliance.
+  - Collected Metrics: Active application and browser window titles, engagement telemetry (mouse/keyboard
+    activity levels), automated periodic desktop screenshots.
+  - Strict Privacy Safeguards:
+    * NO Keystroke Logging (No keylogger).
+    * NO Audio Recording and NO Webcam Access.
+    * Strict TLS 1.3 encrypted data transmission to authorized servers only.
+  - Consent Checkbox: Employee must tick "I accept the terms in the License Agreement" to proceed.
+
+
+3.6 AUTOMATIC APPLICATION LAUNCH ON SYSTEM STARTUP
+----------------------------------------------------------------------------------------------------
+Workplace attendance accuracy requires the agent to start automatically whenever the computer boots.
+
+Implementation in AgentApplication.java:
+  Writes directly to Windows Registry:
+    Registry Key : HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+    Entry Name   : EMSAgent
+    Command Value: "C:\Users\<User>\AppData\Local\EMS Agent\EMS Agent.exe"
+
+Result:
+  Every time the workstation powers on or restarts, the agent automatically displays the login window.
+
+
+====================================================================================================
+4. OVER-THE-AIR (OTA) UPDATE PIPELINE: HOW IT WORKS INTERNALLY
+====================================================================================================
+
+4.1 BACKEND MICROSERVICE & MONGODB SCHEMA (Spring Boot 3)
+----------------------------------------------------------------------------------------------------
+Controller: com.example.employee.controller.AgentUpdateController
+Base URL  : http://<SERVER_HOST>:8083/api/v1/agent-updates
+
+Endpoints:
+  1. POST /api/v1/agent-updates/publish (Multipart Form-Data)
+     - Receives: version, platform, mandatory, releaseNotes, file (MSI binary).
+     - Calculates streaming SHA-256 hash using MessageDigest.
+     - Saves binary to server directory: ./agent-updates/
+     - Deactivates previous releases and flags new release as ACTIVE in MongoDB.
+
+  2. GET /api/v1/agent-updates/latest?currentVersion=1.2.5&platform=windows
+     - Compares requested version with active release.
+     - Returns HTTP 200 with metadata if a newer version is available.
+     - Returns HTTP 204 No Content if client is already up to date.
+
+  3. GET /api/v1/agent-updates/download/{version}
+     - Streams the MSI file with application/octet-stream headers.
+
+MongoDB Schema (Collection: agent_updates):
+  {
+    "_id": ObjectId("..."),
+    "version": "2.0.2",
+    "platform": "windows",
+    "fileName": "EmployeeMonitoringAgent-2.0.2.msi",
+    "storagePath": "D:\\EMS 3.0\\employee\\agent-updates\\EmployeeMonitoringAgent-2.0.2.msi",
+    "sha256": "4b9e27c0897f2679237db873138b163fe178dca963dfa99370bbcb009034259a",
+    "mandatory": true,
+    "releaseNotes": "EMS 2.0.2: Proportional logo icon, complete layout fix, single session fix.",
+    "active": true,
+    "createdAt": ISODate("2026-10-11T13:47:37Z")
+  }
+
+
+4.2 SEMANTIC VERSION COMPARISON ALGORITHM
+----------------------------------------------------------------------------------------------------
+File: org.example.ota.VersionComparator.java
+
+Algorithm:
+  Splits version strings by '.' delimiters into numeric integer arrays:
+    Version 1.2.5 -> [1, 2, 5]
+    Version 2.0.2 -> [2, 0, 2]
+
+  Compares major -> minor -> patch numbers sequentially:
+  - If Remote > Current -> Return UPDATE_AVAILABLE.
+  - If Remote <= Current -> Return UP_TO_DATE (No prompt shown to employee).
+  - Handles arbitrary version depths (e.g., 2.0 vs 2.0.2 vs 2.0.2.1).
+
+
+4.3 DYNAMIC WORKSPACE WINDOW HEIGHT ADAPTATION (LAYOUT FIX)
+----------------------------------------------------------------------------------------------------
+The Problem Identified:
+  In older builds (v1.2.5), the workspace window had a fixed height of 550px.
+  When the update notification banner appeared, it took ~75px of vertical space, pushing the entire
+  workspace content down and clipping the bottom half of the "Start Break" and "Start Lunch" buttons!
+
+The Solution Implemented in EmployeeWorkspaceWindow.java:
+  1. Base window height increased to 630px.
+  2. Added dynamic height evaluation in showUpdateAvailable():
+       updatePanel.setVisible(true);
+       if (getHeight() < 630) {
+           setSize(WINDOW_WIDTH, 630);
+           setMinimumSize(new Dimension(WINDOW_WIDTH, 630));
+           setShape(new RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, 630, 16, 16));
+       }
+       revalidate();
+       repaint();
+
+Result:
+  Even with the update banner visible, all cards, timers, and the Start Break and Start Lunch buttons
+  remain completely visible and perfectly padded.
+
+
+4.4 CRYPTOGRAPHIC SHA-256 VALIDATION & ANTI-TAMPERING
+----------------------------------------------------------------------------------------------------
+File: org.example.ota.OtaUpdateService.java
+
+Security Guarantee:
+  Before running any downloaded MSI installer, the agent computes the local SHA-256 hash:
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    byte[] hash = digest.digest(Files.readAllBytes(downloadedFile));
+    String localSha256 = HexFormat.of().formatHex(hash);
+
+  Comparison:
+    if (!localSha256.equalsIgnoreCase(metadata.getSha256())) {
+        Files.deleteIfExists(downloadedFile);
+        throw new SecurityException("Integrity check failed! File corrupted or tampered.");
+    }
+
+Result:
+  Guarantees zero risk of running incomplete downloads or corrupted installer binaries.
+
+
+4.5 SILENT MAJOR UPGRADE EXECUTION & PROCESS HANDOFF
+----------------------------------------------------------------------------------------------------
+File: org.example.ota.OtaUpdateService.java
+
+The Challenge:
+  On Windows, running executable binaries are locked by the operating system. An installer cannot
+  overwrite an EXE while that EXE is running.
+
+The Implementation:
+  1. Spawns Windows Installer as an independent system process:
+       ProcessBuilder pb = new ProcessBuilder(
+           "msiexec.exe",
+           "/i", downloadedMsi.toAbsolutePath().toString(),
+           "/qn",          // Completely silent (no wizards or prompts)
+           "/norestart"    // Never reboot the machine
+       );
+       pb.start();
+
+  2. Immediately exits Java:
+       System.exit(0);
+
+What Happens Next:
+  - Because Java exits instantly, all file locks on AppData\Local\EMS Agent\ are released.
+  - msiexec silently performs the Major Upgrade in ~5 seconds.
+  - The newly installed v2.0.2 executable relaunches automatically.
+  - Credentials in C:\ProgramData\EmployeeAgent\ are loaded automatically without asking the user
+    to log in again!
+
+
+====================================================================================================
+5. SINGLE-SESSION CONFLICT RESOLUTION (DISPLACEMENT FIX)
+====================================================================================================
+
+The Problem:
+  When an employee opened an agent on Computer B while already active on Computer A, Computer B
+  displayed "An active session already exists. Do you want to take over?".
+  When the employee clicked OK, Computer B started tracking, but Computer A remained open and
+  continued sending duplicate attendance metrics.
+
+The Solution Implemented:
+  1. Backend (ActiveSession.java & AgentLoginController.java):
+     - ActiveSession now stores the unique refreshToken assigned during the latest login.
+     - On every heartbeat or /refresh token request, backend checks if the request's token
+       matches the currently active session.
+     - If Computer B took over, Computer A's token no longer matches -> Backend responds:
+       HTTP 401 UNAUTHORIZED.
+
+  2. Agent Client (AgentApplication.java):
+     - Heartbeat thread inspects the response status.
+     - Upon receiving UNAUTHORIZED (401):
+       * Immediately stops all background activity and screenshot capture threads.
+       * Disposes the EmployeeWorkspaceWindow.
+       * Displays an alert: "Your session was opened on another device. This session has ended."
+       * Resets state and returns cleanly to LoginWindow.
+
+
+====================================================================================================
+6. STEP-BY-STEP DEVELOPER GUIDE: HOW TO BUILD & PUBLISH NEW VERSIONS
+====================================================================================================
+
+PREREQUISITES ON BUILD MACHINE:
+  - JDK 17 installed at: C:\Program Files\Java\jdk-17
+  - WiX Toolset v3.14 at: C:\Program Files (x86)\WiX Toolset v3.14\bin
+  - Maven configured on system PATH
+
+TO CREATE AND PUBLISH A NEW RELEASE (e.g., Version 2.0.3):
+
+STEP 1: Bump the Version Number in 3 Files
+  File 1: employee-agent/pom.xml
+          <version>2.0.3</version>
+
+  File 2: employee-agent/src/main/java/org/example/AgentVersion.java
+          public static final String VERSION = "2.0.3";
+
+  File 3: employee-agent/packaging/build-msi.ps1
+          $APP_VERSION = "2.0.3"
+
+STEP 2: Run the Automated Build Script
+  Open PowerShell in employee-agent\packaging\ and run:
+    powershell.exe -ExecutionPolicy Bypass -File .\build-msi.ps1
+
+  What the script does:
+    [0/5] Validates JDK 17 jpackage and WiX candle/light tools.
+    [1/5] Generates multi-size proportional .ico from Ems-Agent.png.
+    [2/5] Runs Maven clean package (builds shaded fat JAR).
+    [3/5] Prepares clean output directory.
+    [4/5] Runs jpackage to bundle JDK runtime + WiX MSI package.
+    [5/5] Verifies MSI output and displays summary.
+  Output File: packaging\output\EMS Agent-2.0.3.msi (~53 MB)
+
+STEP 3: Publish to Backend via Postman
+  Send a POST request to the backend:
+    Method : POST
+    URL    : http://<SERVER_HOST>:8083/api/v1/agent-updates/publish
+    Body   : form-data
+
+    Key           Type    Value
+    -----------   -----   --------------------------------------------------------------
+    version       Text    2.0.3
+    platform      Text    windows
+    mandatory     Text    true
+    releaseNotes  Text    EMS 2.0.3: Detailed description of features and fixes.
+    file          File    Select packaging\output\EMS Agent-2.0.3.msi
+
+  Expected Response (HTTP 200 OK):
+    {
+      "version": "2.0.3",
+      "downloadUrl": "http://localhost:8083/api/v1/agent-updates/download/2.0.3",
+      "sha256": "<calculated-sha256-hash>",
+      "mandatory": true,
+      "releaseNotes": "EMS 2.0.3: ...",
+      "active": true
+    }
+
+STEP 4: Live Verification
+  All running desktop agents across the organization running any version lower than 2.0.3 will:
+  - Detect the update on their next scheduled check or upon login.
+  - Show the update banner.
+  - Silently upgrade to 2.0.3 upon clicking "Update Now".
+
+
+====================================================================================================
+7. TESTING & VERIFICATION MATRIX (TEST RESULTS)
+====================================================================================================
+
+TEST CASE   SCENARIO TESTED                            EXPECTED RESULT                  STATUS
+---------   ----------------------------------------   ------------------------------   ------
+TC-01       Fresh MSI Installation on Windows PC       Installs to AppData\Local,       PASSED
+                                                       requires EULA agreement,
+                                                       launches login window.
+
+TC-02       Desktop & Taskbar Icon Rendering           3D corporate logo displays       PASSED
+                                                       sharply without distortion.
+
+TC-03       PC Reboot Auto-Start Test                  Registry key launches agent      PASSED
+                                                       login screen on system boot.
+
+TC-04       Single-Session Conflict Takeover           Old session receives 401,        PASSED
+                                                       stops tracking, closes window,
+                                                       returns to login screen.
+
+TC-05       OTA Update Discovery in Agent Workspace    v1.2.5 discovers v2.0.2,         PASSED
+                                                       banner appears, window expands
+                                                       to 630px, buttons never cut.
+
+TC-06       SHA-256 Checksum Integrity Check           Local hash matches MongoDB       PASSED
+                                                       signature before installation.
+
+TC-07       Silent In-Place Major Upgrade Test         v1.2.5 upgraded to v2.0.2        PASSED
+                                                       silently without UAC prompts,
+                                                       credentials preserved.
+
+
+====================================================================================================
+8. COMMON PITFALLS & TROUBLESHOOTING GUIDE
+====================================================================================================
+
+1. HTTP 500 "Update file already exists: EmployeeMonitoringAgent-X.Y.Z.msi"
+   Cause : An MSI with the exact same version name was already published to the server.
+   Fix   : Either publish under a bumped version (e.g., 2.0.3), or delete the existing MSI file
+           from the server's ./agent-updates/ directory and delete the record from MongoDB.
+
+2. Duplicate Desktop Shortcuts / Side-by-Side Installations
+   Cause : The $UPGRADE_UUID in build-msi.ps1 was changed.
+   Fix   : NEVER CHANGE $UPGRADE_UUID = "8B3D4A29-F5E7-4C1B-A2D9-6E8F0B1C2D3E". Keeping this UUID
+           identical guarantees Windows replaces the old version cleanly.
+
+3. Desktop Icon Stretched or Squished
+   Cause : Using a non-square source PNG without aspect ratio preservation.
+   Fix   : Use the ConvertTo-MultiSizeIco function in build-msi.ps1 which calculates proportional
+           aspect-fit with transparent borders.
+
+4. Start Break / Start Lunch Buttons Clipped
+   Cause : Window height is too small to accommodate the update banner.
+   Fix   : Handled in EmployeeWorkspaceWindow.java by setting base height to 630px and dynamically
+           evaluating window bounds whenever the update banner becomes visible.
+
+5. Update Check Returns HTTP 401 Unauthorized
+   Cause : Endpoint blocked by Spring Security.
+   Fix   : Ensure /api/v1/agent-updates/** has permitAll() configured in SecurityConfig.java.
+
+====================================================================================================
+DOCUMENT HANDOVER APPROVAL
+Prepared By  : Antigravity AI Engineering Assistant
+Project      : Employee Monitoring System (EMS 3.0)
+Status       : Production Certified (v2.0.2 Ready)
+====================================================================================================

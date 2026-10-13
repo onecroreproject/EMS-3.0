@@ -9,16 +9,16 @@ import com.example.employee.model.Employee;
 
 public interface EmployeeRepository extends MongoRepository<Employee, String> {
 
-     Optional<Employee> findByEmployeeCode(String employeeCode);
+     Optional<Employee> findFirstByEmployeeCode(String employeeCode);
 
-      Optional<Employee> findById(String id);
-    Optional<Employee> findByEmail(String email);
-    Optional<Employee> findByPhone(String phone);
+      Optional<Employee> findFirstById(String id);
+    Optional<Employee> findFirstByEmail(String email);
+    Optional<Employee> findFirstByPhone(String phone);
 
     // OR write custom method for combined search
-   Optional<Employee> findByIdOrEmailOrPhoneOrEmployeeCode(String id, String email, String phone, String employeeCode);
+   Optional<Employee> findFirstByIdOrEmailOrPhoneOrEmployeeCode(String id, String email, String phone, String employeeCode);
 
-  Optional<Employee> findByName(String name);
+  Optional<Employee> findFirstByName(String name);
 
     List<Employee> findByTeamId(String teamId);
 

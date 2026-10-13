@@ -38,7 +38,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         }
 
         // Check for Employee
-        Optional<Employee> employeeOpt = employeeRepository.findByEmail(username);
+        Optional<Employee> employeeOpt = employeeRepository.findFirstByEmail(username);
         if (employeeOpt.isPresent()) {
             Employee emp = employeeOpt.get();
             return User.builder()

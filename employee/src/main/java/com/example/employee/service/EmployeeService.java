@@ -40,7 +40,7 @@ public class EmployeeService {
     }
 
     public Employee findById(String id) {
-        return employeeRepo.findById(id).orElse(null);
+        return employeeRepo.findFirstById(id).orElse(null);
     }
 
     public Employee save(Employee employee) {
@@ -53,12 +53,12 @@ public class EmployeeService {
 
     public Employee findByAny(String input) {
         return employeeRepo
-                .findByIdOrEmailOrPhoneOrEmployeeCode(input, input, input, input)
+                .findFirstByIdOrEmailOrPhoneOrEmployeeCode(input, input, input, input)
                 .orElse(null);
     }
 
     public Employee findByEmail(String email) {
-        return employeeRepo.findByEmail(email).orElse(null);
+        return employeeRepo.findFirstByEmail(email).orElse(null);
     }
 
     public Employee enrichEmployeeWithDeptAndTeam(Employee emp) {
@@ -80,7 +80,7 @@ public class EmployeeService {
     }
 
     public Employee findByEmployeeCode(String employeeCode) {
-        return employeeRepo.findByEmployeeCode(employeeCode).orElse(null);
+        return employeeRepo.findFirstByEmployeeCode(employeeCode).orElse(null);
     }
 
     public List<Employee> getAllEmployees() {
@@ -88,7 +88,7 @@ public class EmployeeService {
     }
 
     public Optional<EmployeeResponseDTO> getEmployeeWithNames(String name) {
-        Optional<Employee> empOpt = employeeRepo.findByName(name);
+        Optional<Employee> empOpt = employeeRepo.findFirstByName(name);
 
         if (empOpt.isEmpty()) {
             return Optional.empty();

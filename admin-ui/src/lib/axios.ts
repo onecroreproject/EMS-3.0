@@ -23,8 +23,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Token is expired or invalid
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      // Token is expired, invalid, or session revoked
       localStorage.removeItem('adminToken');
       sessionStorage.removeItem('adminToken');
       

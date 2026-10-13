@@ -3,6 +3,8 @@ package com.example.employee.controller;
 import com.example.employee.dto.LoginRequest;
 import com.example.employee.dto.LoginResponse;
 import com.example.employee.dto.MfaVerifyRequest;
+import com.example.employee.model.ActiveSession;
+import com.example.employee.repository.ActiveSessionRepository;
 import com.example.employee.model.AdminConfig;
 import com.example.employee.model.Employee;
 import com.example.employee.repository.AdminConfigRepository;
@@ -15,7 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +30,7 @@ public class AuthController {
 
     private final EmployeeRepository employeeRepository;
     private final AdminConfigRepository adminConfigRepository;
+    private final ActiveSessionRepository activeSessionRepository;
     private final JwtTokenUtil jwtTokenUtil;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthenticator gAuth;
@@ -36,21 +41,22 @@ public class AuthController {
     @Value("${admin.password.hash}")
     private String adminPasswordHash;
 
-    public AuthController(EmployeeRepository employeeRepository, AdminConfigRepository adminConfigRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder) {
+    public AuthController(EmployeeRepository employeeRepository, AdminConfigRepository adminConfigRepository, ActiveSessionRepository activeSessionRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder) {
         this.employeeRepository = employeeRepository;
         this.adminConfigRepository = adminConfigRepository;
+        this.activeSessionRepository = activeSessionRepository;
         this.jwtTokenUtil = jwtTokenUtil;
         this.passwordEncoder = passwordEncoder;
         this.gAuth = new GoogleAuthenticator();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         // Admin Login
         if (adminEmail.equalsIgnoreCase(loginRequest.getEmail())) {
             if (passwordEncoder.matches(loginRequest.getPassword(), adminPasswordHash)) {
                 // Check if MFA is set up for admin
-                Optional<AdminConfig> configOpt = adminConfigRepository.findByEmail(adminEmail);
+                Optional<AdminConfig> configOpt = adminConfigRepository.findFirstByEmail(adminEmail);
                 Map<String, Object> response = new HashMap<>();
                 response.put("mfaRequired", true);
                 
@@ -83,12 +89,28 @@ public class AuthController {
         }
 
         // Employee Login
-        Optional<Employee> empOpt = employeeRepository.findByEmail(loginRequest.getEmail());
+        Optional<Employee> empOpt = employeeRepository.findFirstByEmail(loginRequest.getEmail());
         if (empOpt.isPresent()) {
             Employee emp = empOpt.get();
             if (passwordEncoder.matches(loginRequest.getPassword(), emp.getPassword())) {
+                if (!loginRequest.isForce() && activeSessionRepository.findFirstByEmail(emp.getEmail()).isPresent()) {
+                    Map<String, Object> errorResp = new HashMap<>();
+                    errorResp.put("sessionActive", true);
+                    errorResp.put("message", "Already one session is active. If you login here, the previous login will expire.");
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResp);
+                }
+
                 String jwt = jwtTokenUtil.generateToken(emp.getEmail(), "EMPLOYEE", emp.getEmployeeCode());
                 String refresh = jwtTokenUtil.generateRefreshToken(emp.getEmail());
+
+                // Revoke old session and save new one
+                activeSessionRepository.findFirstByEmail(emp.getEmail()).ifPresent(session -> {
+                    activeSessionRepository.delete(session);
+                });
+                String userAgent = request.getHeader("User-Agent");
+                ActiveSession session = new ActiveSession(emp.getEmail(), jwt, userAgent, LocalDateTime.now());
+                activeSessionRepository.save(session);
+
                 return ResponseEntity.ok(new LoginResponse(jwt, "EMPLOYEE", emp.getEmployeeCode(), emp.getName(), refresh));
             }
         }
@@ -97,23 +119,39 @@ public class AuthController {
     }
 
     @PostMapping("/verify-mfa")
-    public ResponseEntity<?> verifyMfa(@RequestBody MfaVerifyRequest request) {
-        if (!adminEmail.equalsIgnoreCase(request.getEmail())) {
+    public ResponseEntity<?> verifyMfa(@RequestBody MfaVerifyRequest mfaRequest, HttpServletRequest request) {
+        if (!adminEmail.equalsIgnoreCase(mfaRequest.getEmail())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email");
         }
         
-        Optional<AdminConfig> configOpt = adminConfigRepository.findByEmail(adminEmail);
+        Optional<AdminConfig> configOpt = adminConfigRepository.findFirstByEmail(adminEmail);
         if (configOpt.isEmpty() || configOpt.get().getMfaSecret() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("MFA not set up");
         }
         
         try {
-            int code = Integer.parseInt(request.getCode());
+            int code = Integer.parseInt(mfaRequest.getCode());
             boolean isCodeValid = gAuth.authorize(configOpt.get().getMfaSecret(), code);
             
             if (isCodeValid) {
+                if (!mfaRequest.isForce() && activeSessionRepository.findFirstByEmail(adminEmail).isPresent()) {
+                    Map<String, Object> errorResp = new HashMap<>();
+                    errorResp.put("sessionActive", true);
+                    errorResp.put("message", "Already one session is active. If you login here, the previous login will expire.");
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResp);
+                }
+
                 String jwt = jwtTokenUtil.generateToken(adminEmail, "ADMIN", null);
                 String refresh = jwtTokenUtil.generateRefreshToken(adminEmail);
+
+                // Revoke old session and save new one
+                activeSessionRepository.findFirstByEmail(adminEmail).ifPresent(session -> {
+                    activeSessionRepository.delete(session);
+                });
+                String userAgent = request.getHeader("User-Agent");
+                ActiveSession session = new ActiveSession(adminEmail, jwt, userAgent, LocalDateTime.now());
+                activeSessionRepository.save(session);
+
                 return ResponseEntity.ok(new LoginResponse(jwt, "ADMIN", null, "System Admin", refresh));
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid verification code");
@@ -124,7 +162,57 @@ public class AuthController {
     }
 
     @PostMapping("/agent/login")
-    public ResponseEntity<?> authenticateAgent(@RequestBody LoginRequest loginRequest) {
-        return authenticateUser(loginRequest);
+    public ResponseEntity<?> authenticateAgent(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        return authenticateUser(loginRequest, request);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody com.example.employee.dto.RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        String refreshToken = request.getRefreshToken();
+        
+        if (jwtTokenUtil.isTokenExpired(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired");
+        }
+
+        String email = jwtTokenUtil.getUsernameFromToken(refreshToken);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+        }
+
+        // Determine role and generate new token
+        String jwt;
+        if (adminEmail.equalsIgnoreCase(email)) {
+            jwt = jwtTokenUtil.generateToken(email, "ADMIN", null);
+        } else {
+            Optional<Employee> empOpt = employeeRepository.findFirstByEmail(email);
+            if (empOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+            }
+            jwt = jwtTokenUtil.generateToken(email, "EMPLOYEE", empOpt.get().getEmployeeCode());
+        }
+
+        String newRefresh = jwtTokenUtil.generateRefreshToken(email);
+
+        // Revoke old session and save new one
+        activeSessionRepository.findFirstByEmail(email).ifPresent(session -> {
+            activeSessionRepository.delete(session);
+        });
+        String userAgent = httpRequest.getHeader("User-Agent");
+        ActiveSession session = new ActiveSession(email, jwt, userAgent, LocalDateTime.now());
+        activeSessionRepository.save(session);
+
+        return ResponseEntity.ok(new LoginResponse(jwt, adminEmail.equalsIgnoreCase(email) ? "ADMIN" : "EMPLOYEE", null, "Refreshed Token", newRefresh));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            activeSessionRepository.findByToken(jwt).ifPresent(session -> {
+                activeSessionRepository.delete(session);
+            });
+        }
+        return ResponseEntity.ok("Logged out successfully");
     }
 }

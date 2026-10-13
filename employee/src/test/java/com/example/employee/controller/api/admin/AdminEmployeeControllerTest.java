@@ -41,6 +41,9 @@ public class AdminEmployeeControllerTest {
     @MockBean
     private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
+    @MockBean
+    private com.example.employee.repository.ActiveSessionRepository activeSessionRepository;
+
     @Test
     @WithMockUser(username = "admin@company.com", roles = {"ADMIN"})
     public void testGetAllEmployees_Pagination() throws Exception {

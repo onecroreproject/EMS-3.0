@@ -9,9 +9,9 @@ export default function Layout() {
   const location = useLocation();
 
   useEffect(() => {
-    // Check dark mode preference
+    // Check dark mode preference: only dark if explicitly saved as 'dark'
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -27,11 +27,11 @@ export default function Layout() {
     <div className="flex flex-col h-screen bg-slate-50 transition-colors duration-300">
       {/* Top Orange Header */}
       <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
+
       {/* Below Header: Sidebar + Main Content */}
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-        
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
           <Outlet />
         </main>

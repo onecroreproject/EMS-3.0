@@ -113,8 +113,11 @@ public class AttendanceEventSender {
              * Do NOT retry these events automatically.
              * =====================================================
              */
-            if (statusCode >= 400
-                    && statusCode < 500) {
+            if (statusCode >= 400 && statusCode < 500) {
+                if (statusCode == 401 || statusCode == 403) {
+                    System.out.println("Authentication failed (HTTP " + statusCode + "). Event will be kept in queue for retry.");
+                    return AttendanceSendResult.RETRY;
+                }
 
                 System.out.println(
                         "Attendance event rejected by server. "

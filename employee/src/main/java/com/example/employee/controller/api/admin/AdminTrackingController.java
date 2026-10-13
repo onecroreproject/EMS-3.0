@@ -21,6 +21,9 @@ import com.example.employee.model.AttendanceEventDocument;
 import com.example.employee.attendance.AttendanceEventType;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import com.example.employee.repository.EmployeeLocationRepository;
+import com.example.employee.model.EmployeeLocation;
+
 @RestController
 @RequestMapping("/api/admin/tracking")
 public class AdminTrackingController {
@@ -30,6 +33,7 @@ public class AdminTrackingController {
     private final ApplicationActivityRepository appActivityRepository;
     private final WorkSessionService workSessionService;
     private final AttendanceEventRepository attendanceEventRepository;
+    private final EmployeeLocationRepository employeeLocationRepository;
     private final MongoTemplate mongoTemplate;
 
     public AdminTrackingController(
@@ -38,13 +42,90 @@ public class AdminTrackingController {
             ApplicationActivityRepository appActivityRepository,
             WorkSessionService workSessionService,
             AttendanceEventRepository attendanceEventRepository,
+            EmployeeLocationRepository employeeLocationRepository,
             MongoTemplate mongoTemplate) {
         this.deviceRepository = deviceRepository;
         this.employeeRepository = employeeRepository;
         this.appActivityRepository = appActivityRepository;
         this.workSessionService = workSessionService;
         this.attendanceEventRepository = attendanceEventRepository;
+        this.employeeLocationRepository = employeeLocationRepository;
         this.mongoTemplate = mongoTemplate;
+    }
+
+    private static volatile String cachedResolvedLocation = null;
+    private static volatile String cachedResolvedIp = null;
+
+    private static String extractJsonValue(String json, String key) {
+        try {
+            String pattern = "\"" + key + "\":\"";
+            int idx = json.indexOf(pattern);
+            if (idx != -1) {
+                int start = idx + pattern.length();
+                int end = json.indexOf("\"", start);
+                if (end != -1) return json.substring(start, end);
+            }
+        } catch (Exception ignored) {}
+        return "";
+    }
+
+    private String resolveSystemLocation() {
+        if (cachedResolvedLocation != null && !cachedResolvedLocation.isBlank()) {
+            return cachedResolvedLocation;
+        }
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(2))
+                    .build();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("http://ip-api.com/json"))
+                    .timeout(java.time.Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200) {
+                String body = resp.body();
+                String city = extractJsonValue(body, "city");
+                String region = extractJsonValue(body, "regionName");
+                String country = extractJsonValue(body, "country");
+                if (city != null && !city.isBlank()) {
+                    cachedResolvedLocation = city + ", " + region + ", " + country;
+                    return cachedResolvedLocation;
+                }
+            }
+        } catch (Exception ignored) {}
+        return "Chennai, Tamil Nadu, India";
+    }
+
+    private String resolveSystemIp(String ip) {
+        if (ip != null && !ip.isBlank() && !"-".equals(ip) && !"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
+            return ip;
+        }
+        if (cachedResolvedIp != null && !cachedResolvedIp.isBlank()) {
+            return cachedResolvedIp;
+        }
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(2))
+                    .build();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("http://ip-api.com/json"))
+                    .timeout(java.time.Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200) {
+                String query = extractJsonValue(resp.body(), "query");
+                if (query != null && !query.isBlank()) {
+                    cachedResolvedIp = query;
+                    return cachedResolvedIp;
+                }
+            }
+        } catch (Exception ignored) {}
+        try {
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception ignored) {}
+        return "127.0.0.1";
     }
 
     @GetMapping("/devices")
@@ -98,13 +179,42 @@ public class AdminTrackingController {
             }
             map.put("activity", activity);
             map.put("lastSeen", d.getLastSeen() != null ? d.getLastSeen().toString() : "");
-            map.put("agentVersion", d.getAgentVersion() != null ? d.getAgentVersion() : "1.0.0");
+            map.put("agentVersion", d.getAgentVersion() != null && !d.getAgentVersion().isBlank() ? d.getAgentVersion() : "2.0.2");
             map.put("registeredAt", d.getRegisteredAt() != null ? d.getRegisteredAt().toString() : "");
-            map.put("ipAddress", "192.168.1." + (new Random().nextInt(150) + 50)); // Mocking IP since it's not in Device model usually
-            map.put("location", "Chennai, Tamil Nadu, India");
+
+            String ip = d.getIpAddress();
+            if (ip == null || ip.isBlank() || "-".equals(ip) || "127.0.0.1".equals(ip)) {
+                ip = resolveSystemIp(ip);
+            }
+            map.put("ipAddress", ip != null && !ip.isBlank() ? ip : "-");
+
+            Employee e = d.getEmployeeCode() != null ? empMap.get(d.getEmployeeCode()) : null;
+
+            String loc = d.getLocation();
+            if ((loc == null || loc.isBlank()) && d.getEmployeeCode() != null) {
+                java.util.Optional<EmployeeLocation> latestLoc = employeeLocationRepository.findTopByEmployeeCodeOrderByTimestampDesc(d.getEmployeeCode());
+                if (latestLoc.isPresent()) {
+                    EmployeeLocation el = latestLoc.get();
+                    if (el.getAddress() != null && !el.getAddress().isBlank()) {
+                        loc = el.getAddress();
+                    } else if (el.getLatitude() != null && el.getLongitude() != null) {
+                        loc = el.getLatitude() + ", " + el.getLongitude();
+                    }
+                }
+            }
+            if ((loc == null || loc.isBlank()) && e != null) {
+                if (e.getCurrentAddress() != null && !e.getCurrentAddress().isBlank()) {
+                    loc = e.getCurrentAddress();
+                } else if (e.getAddress() != null && !e.getAddress().isBlank()) {
+                    loc = e.getAddress();
+                }
+            }
+            if (loc == null || loc.isBlank() || "-".equals(loc)) {
+                loc = resolveSystemLocation();
+            }
+            map.put("location", loc != null && !loc.isBlank() ? loc : "-");
 
             // Attach Employee details
-            Employee e = d.getEmployeeCode() != null ? empMap.get(d.getEmployeeCode()) : null;
             Map<String, Object> empDetails = new HashMap<>();
             if (e != null) {
                 empDetails.put("id", e.getId());
@@ -157,25 +267,44 @@ public class AdminTrackingController {
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getTrackingSummary(
             @RequestParam(required = false) String employeeCode,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         
         Map<String, Object> summary = new HashMap<>();
         
         java.time.ZoneId zoneId = java.time.ZoneId.of("Asia/Kolkata");
-        java.time.LocalDate targetDate;
-        
-        if (date != null && !date.isEmpty()) {
+        java.time.LocalDate targetDate = java.time.LocalDate.now(zoneId);
+        Instant startOfDay;
+        Instant endOfDay;
+
+        if (startDate != null && !startDate.isBlank() && endDate != null && !endDate.isBlank()) {
+            try {
+                java.time.LocalDate s = java.time.LocalDate.parse(startDate);
+                java.time.LocalDate e = java.time.LocalDate.parse(endDate);
+                targetDate = s;
+                startOfDay = s.atStartOfDay(zoneId).toInstant();
+                endOfDay = e.plusDays(1).atStartOfDay(zoneId).toInstant();
+            } catch (Exception ex) {
+                targetDate = java.time.LocalDate.now(zoneId);
+                startOfDay = targetDate.atStartOfDay(zoneId).toInstant();
+                endOfDay = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant();
+            }
+        } else if (date != null && !date.isBlank()) {
             try {
                 targetDate = java.time.LocalDate.parse(date);
+                startOfDay = targetDate.atStartOfDay(zoneId).toInstant();
+                endOfDay = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant();
             } catch (Exception e) {
                 targetDate = java.time.LocalDate.now(zoneId);
+                startOfDay = targetDate.atStartOfDay(zoneId).toInstant();
+                endOfDay = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant();
             }
         } else {
             targetDate = java.time.LocalDate.now(zoneId);
+            startOfDay = targetDate.atStartOfDay(zoneId).toInstant();
+            endOfDay = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant();
         }
-        
-        Instant startOfDay = targetDate.atStartOfDay(zoneId).toInstant();
-        Instant endOfDay = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant();
 
         // 1. Fetch Application Activities for Top Apps/Websites
         List<ApplicationActivityDocument> activities = new ArrayList<>();
@@ -206,13 +335,13 @@ public class AdminTrackingController {
 
         List<Map<String, Object>> topApps = appDurations.entrySet().stream()
                 .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-                .limit(5)
+                .limit(50)
                 .map(e -> Map.of("name", (Object)e.getKey(), "durationSeconds", e.getValue()))
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> topWebs = webDurations.entrySet().stream()
                 .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-                .limit(5)
+                .limit(50)
                 .map(e -> Map.of("name", (Object)e.getKey(), "durationSeconds", e.getValue()))
                 .collect(Collectors.toList());
 

@@ -79,7 +79,7 @@ public class TaskWorkServiceImpl implements TaskWorkService {
                     .orElse(null);
         }
         if (employee == null && !isBlank(request.getEmployeeCode())) {
-            employee = employeeRepository.findByEmployeeCode(request.getEmployeeCode())
+            employee = employeeRepository.findFirstByEmployeeCode(request.getEmployeeCode())
                     .orElse(null);
         }
         if (employee == null) {

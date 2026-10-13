@@ -1,14 +1,31 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Users, MonitorPlay, Globe, 
   LayoutGrid, BarChart2, CheckSquare, 
   PieChart, Settings, HeadphonesIcon, ChevronDown, ChevronRight,
-  Building2
+  Building2, LogOut
 } from 'lucide-react';
+import apiClient from '../../lib/axios';
 
 export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: boolean) => void }) {
   const [expandedMenu, setExpandedMenu] = useState<string | null>('Tracking & Monitoring');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+      if (token) {
+        await apiClient.post('/api/auth/logout');
+      }
+    } catch (error) {
+      console.error('Logout error', error);
+    } finally {
+      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminToken');
+      navigate('/login');
+    }
+  };
 
   const toggleMenu = (name: string) => {
     setExpandedMenu(expandedMenu === name ? null : name);
@@ -28,12 +45,12 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       name: 'Organization Management', 
       icon: Building2, 
       subItems: [
-        { name: 'Department', isLabel: true },
-        { name: 'Add Department', path: '/departments/add' },
-        { name: 'View Department', path: '/departments/view' },
         { name: 'Teams', isLabel: true },
         { name: 'Add Teams', path: '/teams/add' },
         { name: 'View Teams', path: '/teams/view' },
+        { name: 'Department', isLabel: true },
+        { name: 'Add Department', path: '/departments/add' },
+        { name: 'View Department', path: '/departments/view' },
       ]
     },
     { 
@@ -50,7 +67,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       name: 'Task & Projects', 
       icon: CheckSquare, 
       subItems: [
-        { name: 'Assign Task', path: '/tasks/assign' },
+        { name: 'Create Task', path: '/tasks/assign' },
         { name: 'Task List', path: '/tasks/track' },
       ]
     },
@@ -70,13 +87,13 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       {/* Sidebar Container */}
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
-        w-64 bg-[#1E2B3C] text-slate-300 flex flex-col h-full shrink-0 
-        transition-transform duration-300 ease-in-out
+        w-64 bg-[#1E2B3C] dark:bg-[#0e1626] text-slate-300 flex flex-col h-full shrink-0 
+        transition-all duration-300 ease-in-out border-r border-transparent dark:border-slate-800/80
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         
         {/* Mobile Header (Hidden on Desktop) */}
-        <div className="h-16 flex items-center justify-center border-b border-slate-700 md:hidden bg-[#F96D3E] text-white">
+        <div className="h-16 flex items-center justify-center border-b border-slate-700/80 md:hidden bg-[#FF5B22] dark:bg-[#111827] text-white">
            <h1 className="text-xl font-bold">EmpMonitor</h1>
         </div>
 
@@ -168,6 +185,13 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
               Contact Support
             </button>
           </div>
+          <button 
+            onClick={handleLogout}
+            className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors text-sm font-medium"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </button>
         </div>
       </aside>
     </>

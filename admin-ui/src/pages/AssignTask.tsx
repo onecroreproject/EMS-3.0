@@ -382,59 +382,6 @@ export default function AssignTask() {
         {/* Right Sidebar Area - 1/3 width */}
         <div className="space-y-6">
           
-          {/* Task Workflow */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="bg-slate-50/80 px-5 py-4 flex items-center gap-2 border-b border-slate-100">
-              <FileText className="h-4 w-4 text-blue-600" />
-              <h3 className="font-bold text-slate-800 text-sm">Task Workflow</h3>
-            </div>
-            <div className="p-5">
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm shrink-0">1</div>
-                    <div className="w-0.5 h-6 bg-slate-200 my-1"></div>
-                  </div>
-                  <div className="pt-1">
-                    <h4 className="font-bold text-slate-800 text-sm">Assigned</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Task is assigned to employee</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm shrink-0">2</div>
-                    <div className="w-0.5 h-6 bg-slate-200 my-1"></div>
-                  </div>
-                  <div className="pt-1">
-                    <h4 className="font-bold text-slate-800 text-sm">Accepted</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Employee accepts the task</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">3</div>
-                    <div className="w-0.5 h-6 bg-slate-200 my-1"></div>
-                  </div>
-                  <div className="pt-1">
-                    <h4 className="font-bold text-slate-800 text-sm">In Progress</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Employee works on the task</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="h-8 w-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-sm shrink-0">4</div>
-                  </div>
-                  <div className="pt-1">
-                    <h4 className="font-bold text-slate-800 text-sm">Completed</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Task is completed and reviewed</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Task Types */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

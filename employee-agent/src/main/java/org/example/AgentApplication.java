@@ -307,6 +307,20 @@ public class AgentApplication {
 
         /*
          * =========================
+         * Auto-Start on Windows Boot
+         * =========================
+         */
+        registerAutoStartOnBoot();
+
+        /*
+         * =========================
+         * First-Run Terms & Monitoring Agreement
+         * =========================
+         */
+        checkAndShowTermsAgreement();
+
+        /*
+         * =========================
          * Login Window
          * =========================
          */
@@ -1459,6 +1473,33 @@ public class AgentApplication {
                                                     String hbResponse = heartbeatService
                                                             .sendHeartbeat();
                                                             
+                                                    if (hbResponse != null && (hbResponse.contains("\"status\":\"OFFLINE\"") || hbResponse.contains("\"status\":\"UNAUTHORIZED\""))) {
+                                                        System.out.println("ALERT: Session invalidated by server (Logged in on another machine).");
+                                                        sessionRunning = false;
+                                                        org.example.config.AgentTokenHolder.setToken(null);
+                                                        org.example.config.AgentTokenHolder.setRefreshToken(null);
+                                                        org.example.security.WindowsCredentialManager.clearCredentials();
+
+                                                        SwingUtilities.invokeLater(() -> {
+                                                            try {
+                                                                workspaceWindow.setVisible(false);
+                                                                workspaceWindow.dispose();
+                                                            } catch (Exception e) {
+                                                                e.printStackTrace();
+                                                            }
+                                                            JOptionPane.showMessageDialog(null,
+                                                                "Your session was terminated because this employee logged in on another device or instance.",
+                                                                "Session Terminated",
+                                                                JOptionPane.WARNING_MESSAGE);
+                                                            if (loginWindowHolder[0] != null) {
+                                                                loginWindowHolder[0].prepareForNewLogin();
+                                                                loginWindowHolder[0].setVisible(true);
+                                                                loginWindowHolder[0].toFront();
+                                                            }
+                                                        });
+                                                        break;
+                                                    }
+
                                                     if (hbResponse == null) {
                                                         if (!AgentApplication.isOfflineMode()) {
                                                             System.out.println("Heartbeat failed, switching to offline mode dynamically.");
@@ -1469,22 +1510,6 @@ public class AgentApplication {
                                                             System.out.println("Heartbeat succeeded, switching to online mode dynamically.");
                                                             AgentApplication.setOfflineMode(false);
                                                         }
-                                                    }
-
-                                                    if (hbResponse != null && hbResponse.contains("\"status\":\"OFFLINE\"")) {
-                                                        System.out.println("ALERT: Session invalidated by server (Logged in on another machine).");
-                                                        sessionRunning = false;
-                                                        SwingUtilities.invokeLater(() -> {
-                                                            workspaceWindow.setVisible(false);
-                                                            workspaceWindow.dispose();
-                                                            JOptionPane.showMessageDialog(null,
-                                                                "Your session was terminated because this employee logged in on another device.",
-                                                                "Session Terminated",
-                                                                JOptionPane.WARNING_MESSAGE);
-                                                            loginWindowHolder[0].setVisible(true);
-                                                            loginWindowHolder[0].toFront();
-                                                        });
-                                                        break;
                                                     }
 
 
@@ -1764,7 +1789,7 @@ public class AgentApplication {
      * =========================================================
      */
 
-    public static void stopAgentSession() {
+    public static void stopAgentSession(boolean restart) {
 
         if (!sessionRunning) {
 
@@ -1828,8 +1853,37 @@ public class AgentApplication {
                 "Employee Monitoring Agent stopped."
         );
 
+        if (restart) {
+            restartApplication();
+        } else {
+            System.exit(0);
+        }
+    }
 
-        System.exit(0);
+    public static void restartApplication() {
+        try {
+            String javaHome = System.getProperty("java.home");
+            String javaBin = javaHome + java.io.File.separator + "bin" + java.io.File.separator + "java";
+            String classpath = System.getProperty("java.class.path");
+            String className = AgentApplication.class.getName();
+
+            String currentCommand = ProcessHandle.current().info().command().orElse("");
+            boolean isWrapper = currentCommand.toLowerCase().endsWith(".exe") 
+                                && !currentCommand.toLowerCase().endsWith("java.exe") 
+                                && !currentCommand.toLowerCase().endsWith("javaw.exe");
+
+            ProcessBuilder builder;
+            if (isWrapper) {
+                builder = new ProcessBuilder(currentCommand);
+            } else {
+                builder = new ProcessBuilder(javaBin, "-cp", classpath, className);
+            }
+            builder.start();
+            System.exit(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
     }
 
 
@@ -2201,5 +2255,75 @@ public class AgentApplication {
         ).start();
 
         System.exit(0);
+    }
+
+    /**
+     * Registers the application in Windows HKCU Run registry key so the agent
+     * starts automatically whenever the PC is rebooted or user logs in.
+     */
+    private static void registerAutoStartOnBoot() {
+        try {
+            String currentCommand = ProcessHandle.current().info().command().orElse("");
+            if (currentCommand != null && currentCommand.toLowerCase().endsWith(".exe")
+                    && !currentCommand.toLowerCase().endsWith("java.exe")
+                    && !currentCommand.toLowerCase().endsWith("javaw.exe")) {
+
+                String regCmd = "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"EMSAgent\" /t REG_SZ /d \"\\\""
+                        + currentCommand + "\\\"\" /f";
+                Runtime.getRuntime().exec(new String[]{"cmd.exe", "/c", regCmd});
+                System.out.println("Auto-start registered in Windows Registry: " + currentCommand);
+            }
+        } catch (Exception e) {
+            System.err.println("Could not register auto-start on boot: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Shows a mandatory Employee Monitoring & Activity Tracking Agreement on first installation.
+     * The agent continues only if the employee explicitly agrees.
+     */
+    private static void checkAndShowTermsAgreement() {
+        try {
+            Path marker = Path.of("C:\\ProgramData\\EmployeeAgent\\terms-agreed.marker");
+            if (Files.exists(marker)) {
+                return;
+            }
+
+            Files.createDirectories(marker.getParent());
+
+            String agreementText = """
+                    EMPLOYEE MONITORING & PRODUCTIVITY AGREEMENT (EMS v2.0)
+                    
+                    Please review and accept company workstation monitoring policies:
+                    
+                    1. ACTIVE LOGS: This software tracks active window titles, applications, and work durations.
+                    2. TIME TRACKING: User keyboard/mouse activity is monitored to calculate active vs. idle hours.
+                    3. SCREEN MONITORING: Periodic workstation screenshots are securely captured during active shifts.
+                    4. DATA PRIVACY: All telemetry is encrypted and accessible only by authorized HR & management.
+                    
+                    By clicking 'I Agree & Continue', you acknowledge and consent to this monitoring policy.
+                    """;
+
+            int choice = JOptionPane.showOptionDialog(
+                    null,
+                    agreementText,
+                    "EMS Agent - Terms & Monitoring Consent",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    null,
+                    new Object[]{"I Agree & Continue", "Decline & Exit"},
+                    "I Agree & Continue"
+            );
+
+            if (choice == JOptionPane.YES_OPTION) {
+                Files.createFile(marker);
+                System.out.println("Employee accepted Monitoring Terms & Conditions.");
+            } else {
+                System.out.println("Employee declined terms. Exiting application.");
+                System.exit(0);
+            }
+        } catch (Exception e) {
+            System.err.println("Could not process terms agreement check: " + e.getMessage());
+        }
     }
 }

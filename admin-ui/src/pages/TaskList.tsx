@@ -193,12 +193,6 @@ export default function TaskList() {
               { label: 'Task List' }
             ]} />
           </div>
-          <NavLink 
-            to="/tasks/assign" 
-            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-sm"
-          >
-            <Plus className="h-4 w-4" /> Create New Task
-          </NavLink>
         </div>
       </div>
 

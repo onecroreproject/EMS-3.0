@@ -108,6 +108,22 @@ public class AgentConfig {
                      Files.newInputStream(configPath)) {
 
             properties.load(inputStream);
+
+            if (properties.containsKey("workday.required-hours")) {
+                try {
+                    requiredHours = Integer.parseInt(properties.getProperty("workday.required-hours").trim());
+                } catch (Exception ignored) {}
+            }
+            if (properties.containsKey("idle.grace-minutes")) {
+                try {
+                    idleGraceMinutes = Integer.parseInt(properties.getProperty("idle.grace-minutes").trim());
+                } catch (Exception ignored) {}
+            }
+            if (properties.containsKey("idle.auto-work-end-minutes")) {
+                try {
+                    autoWorkEndMinutes = Long.parseLong(properties.getProperty("idle.auto-work-end-minutes").trim());
+                } catch (Exception ignored) {}
+            }
         }
     }
 

@@ -21,4 +21,12 @@ public class DeviceInfoService {
 
         return System.getProperty("os.arch");
     }
+
+    public String getIpAddress() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            return "127.0.0.1";
+        }
+    }
 }

@@ -153,7 +153,7 @@ public String viewScreenshots(@RequestParam("employeeId") String employeeId, Mod
 }
 @GetMapping("/api/employee/id-by-code")
 public ResponseEntity<String> getEmployeeIdByCode(@RequestParam String code) {
-    Optional<Employee> emp = employeeRepository.findByEmployeeCode(code);
+    Optional<Employee> emp = employeeRepository.findFirstByEmployeeCode(code);
     return emp.map(employee -> ResponseEntity.ok(employee.getId()))
               .orElseGet(() -> ResponseEntity.status(404).body("Employee not found"));
 }
