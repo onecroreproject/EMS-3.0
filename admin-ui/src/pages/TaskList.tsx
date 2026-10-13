@@ -9,6 +9,8 @@ import {
 import Breadcrumb from '../components/ui/Breadcrumb';
 import apiClient from '../lib/axios';
 import DeleteModal from '../components/ui/DeleteModal';
+import Modal from '../components/ui/Modal';
+import { notify } from '../utils/toast';
 
 interface Task {
   id: string;
@@ -20,17 +22,26 @@ interface Task {
   endDate: string;
   status: string;
   priority: string;
+  description?: string;
+  remarks?: string;
 }
 
 interface Employee {
   id: string;
   name: string;
+  employeeCode?: string;
+  email?: string;
 }
 
 export default function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit Modal State
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,12 +85,15 @@ export default function TaskList() {
 
   const confirmDelete = async () => {
     if (!taskToDelete) return;
+    const toastId = notify.loading('Deleting task...');
     try {
       await apiClient.delete(`/api/admin/tasks/${taskToDelete}`);
+      notify.update(toastId, 'Task deleted successfully', 'delete');
       setTaskToDelete(null);
       fetchTasks();
     } catch (error) {
       console.error("Failed to delete task", error);
+      notify.update(toastId, 'Failed to delete task. Please try again.', 'error');
     }
   };
 
@@ -89,20 +103,77 @@ export default function TaskList() {
     setFilterType('');
     setFilterStatus('');
     setFilterPriority('');
+    setPage(0);
   };
 
-  // Filter tasks locally (since backend API currently doesn't support pagination/filtering natively yet, based on AdminTaskController)
-  const filteredTasks = tasks.filter(task => {
-    if (searchQuery) {
-      const matchTitle = task.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      const empName = employees.find(e => e.id === task.assignedTo)?.name.toLowerCase() || '';
-      const matchEmp = empName.includes(searchQuery.toLowerCase());
-      if (!matchTitle && !matchEmp) return false;
+  const handleEditClick = (task: Task) => {
+    setEditingTask({ ...task });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask) return;
+
+    setEditLoading(true);
+    const toastId = notify.loading(`Updating task "${editingTask.title}"...`);
+    try {
+      await apiClient.put(`/api/admin/tasks/${editingTask.id}`, editingTask);
+      notify.update(toastId, 'Task updated successfully! ✨', 'success');
+      setIsEditModalOpen(false);
+      setEditingTask(null);
+      fetchTasks();
+    } catch (err: any) {
+      console.error("Failed to update task", err);
+      notify.update(toastId, err.response?.data?.message || 'Failed to update task. Please try again.', 'error');
+    } finally {
+      setEditLoading(false);
     }
-    if (filterEmployee && task.assignedTo !== filterEmployee) return false;
-    if (filterType && task.taskType !== filterType) return false;
-    if (filterStatus && task.status !== filterStatus) return false;
-    if (filterPriority && task.priority !== filterPriority) return false;
+  };
+
+  const getEmployeeName = (assignedTo: string) => {
+    if (!assignedTo) return 'Unassigned';
+    const found = employees.find(e => 
+      e.id === assignedTo || 
+      (e.name && e.name.toLowerCase() === assignedTo.toLowerCase()) ||
+      (e.employeeCode && e.employeeCode.toLowerCase() === assignedTo.toLowerCase()) ||
+      (e.email && e.email.toLowerCase() === assignedTo.toLowerCase())
+    );
+    return found?.name || assignedTo;
+  };
+
+  // Automatically reset to page 0 when any search or filter query changes
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, filterEmployee, filterType, filterStatus, filterPriority]);
+
+  // Frontend filter matching employee name, title, type, status, priority
+  const filteredTasks = tasks.filter(task => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchTitle = (task.title || '').toLowerCase().includes(q);
+      const rawAssigned = (task.assignedTo || '').toLowerCase();
+      const resolvedEmpName = getEmployeeName(task.assignedTo).toLowerCase();
+      const matchEmp = rawAssigned.includes(q) || resolvedEmpName.includes(q);
+      const matchType = (task.taskType || '').toLowerCase().includes(q);
+      const matchStatus = (task.status || '').toLowerCase().includes(q);
+      const matchPriority = (task.priority || '').toLowerCase().includes(q);
+      const matchDesc = (task.description || '').toLowerCase().includes(q);
+      
+      if (!matchTitle && !matchEmp && !matchType && !matchStatus && !matchPriority && !matchDesc) {
+        return false;
+      }
+    }
+    if (filterEmployee) {
+      const selectedEmp = employees.find(e => e.id === filterEmployee);
+      const matchesId = task.assignedTo === filterEmployee;
+      const matchesName = !!(selectedEmp && task.assignedTo?.toLowerCase() === selectedEmp.name?.toLowerCase());
+      const matchesCode = !!(selectedEmp && selectedEmp.employeeCode && task.assignedTo?.toLowerCase() === selectedEmp.employeeCode?.toLowerCase());
+      if (!matchesId && !matchesName && !matchesCode) return false;
+    }
+    if (filterType && (task.taskType || '').toLowerCase() !== filterType.toLowerCase()) return false;
+    if (filterStatus && (task.status || '').toLowerCase() !== filterStatus.toLowerCase()) return false;
+    if (filterPriority && (task.priority || '').toLowerCase() !== filterPriority.toLowerCase()) return false;
     return true;
   });
 
@@ -166,13 +237,154 @@ export default function TaskList() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 w-full max-w-full overflow-x-hidden">
       
       <DeleteModal 
         isOpen={!!taskToDelete}
         onClose={() => setTaskToDelete(null)}
         onConfirm={confirmDelete}
       />
+
+      {/* View & Edit Task Modal */}
+      <Modal 
+        isOpen={isEditModalOpen} 
+        onClose={() => { setIsEditModalOpen(false); setEditingTask(null); }}
+        title="View & Edit Task Details"
+      >
+        {editingTask && (
+          <form onSubmit={handleEditSave} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Task Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={editingTask.title}
+                onChange={e => setEditingTask({ ...editingTask, title: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Task Type</label>
+                <select
+                  value={editingTask.taskType}
+                  onChange={e => setEditingTask({ ...editingTask, taskType: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                >
+                  <option value="Project">Project</option>
+                  <option value="Development">Development</option>
+                  <option value="Testing">Testing</option>
+                  <option value="Support">Support</option>
+                  <option value="Training">Training</option>
+                  <option value="Mentoring">Mentoring</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Assigned Employee</label>
+                <select
+                  value={editingTask.assignedTo}
+                  onChange={e => setEditingTask({ ...editingTask, assignedTo: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                >
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} {emp.employeeCode ? `(${emp.employeeCode})` : ''}
+                    </option>
+                  ))}
+                  {!employees.some(e => e.id === editingTask.assignedTo) && (
+                    <option value={editingTask.assignedTo}>{editingTask.assignedTo}</option>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Status</label>
+                <select
+                  value={editingTask.status}
+                  onChange={e => setEditingTask({ ...editingTask, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                >
+                  <option value="ASSIGNED">ASSIGNED</option>
+                  <option value="REGISTERED">REGISTERED</option>
+                  <option value="IN_PROGRESS">IN PROGRESS</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                  <option value="PENDING">PENDING</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Priority</label>
+                <select
+                  value={editingTask.priority}
+                  onChange={e => setEditingTask({ ...editingTask, priority: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={editingTask.startDate || ''}
+                  onChange={e => setEditingTask({ ...editingTask, startDate: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={editingTask.endDate || ''}
+                  onChange={e => setEditingTask({ ...editingTask, endDate: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Task Description</label>
+              <textarea
+                rows={3}
+                value={editingTask.description || ''}
+                onChange={e => setEditingTask({ ...editingTask, description: e.target.value })}
+                placeholder="Enter detailed description of what needs to be done..."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => { setIsEditModalOpen(false); setEditingTask(null); }}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={editLoading}
+                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 disabled:opacity-50 transition"
+              >
+                {editLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
 
       {/* Header & Breadcrumb */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -252,10 +464,10 @@ export default function TaskList() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
         
         {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 items-center justify-between bg-slate-50/50 rounded-t-2xl">
+        <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between bg-slate-50/50 rounded-t-2xl">
           
           {/* Search */}
-          <div className="w-full lg:w-96">
+          <div className="w-full lg:w-80">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Search className="h-4 w-4" />
@@ -271,10 +483,10 @@ export default function TaskList() {
           </div>
 
           {/* Filter Section */}
-          <div className="flex flex-wrap lg:flex-nowrap gap-3 items-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex gap-2 sm:gap-2.5 items-center w-full lg:w-auto">
               
-              <div className="w-[140px]">
-                <select value={filterEmployee} onChange={e => setFilterEmployee(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-blue-500 shadow-sm">
+              <div className="w-full lg:w-[160px]">
+                <select value={filterEmployee} onChange={e => setFilterEmployee(e.target.value)} className="w-full pl-3 pr-7 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none bg-white focus:border-blue-500 shadow-sm cursor-pointer truncate">
                   <option value="">All Employees</option>
                   {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -282,8 +494,8 @@ export default function TaskList() {
                 </select>
               </div>
 
-              <div className="w-[130px]">
-                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-blue-500 shadow-sm">
+              <div className="w-full lg:w-[125px]">
+                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full pl-3 pr-7 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none bg-white focus:border-blue-500 shadow-sm cursor-pointer truncate">
                   <option value="">All Types</option>
                   <option value="Development">Development</option>
                   <option value="Training">Training</option>
@@ -294,8 +506,8 @@ export default function TaskList() {
                 </select>
               </div>
 
-              <div className="w-[130px]">
-                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-blue-500 shadow-sm">
+              <div className="w-full lg:w-[125px]">
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full pl-3 pr-7 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none bg-white focus:border-blue-500 shadow-sm cursor-pointer truncate">
                   <option value="">All Status</option>
                   <option value="ASSIGNED">ASSIGNED</option>
                   <option value="REGISTERED">REGISTERED</option>
@@ -304,8 +516,8 @@ export default function TaskList() {
                 </select>
               </div>
 
-              <div className="w-[120px]">
-                <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-blue-500 shadow-sm">
+              <div className="w-full lg:w-[120px]">
+                <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)} className="w-full pl-3 pr-7 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none bg-white focus:border-blue-500 shadow-sm cursor-pointer truncate">
                   <option value="">All Priority</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
@@ -313,11 +525,11 @@ export default function TaskList() {
                 </select>
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={handleResetFilters} className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm">
+              <div className="col-span-2 sm:col-span-4 lg:col-span-1 flex gap-2 justify-end w-full lg:w-auto">
+                <button onClick={handleResetFilters} className="flex-1 lg:flex-none px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition shadow-sm text-center">
                   Reset
                 </button>
-                <button className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-sm">
+                <button className="flex-1 lg:flex-none px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-sm text-center">
                   Apply
                 </button>
               </div>
@@ -326,8 +538,75 @@ export default function TaskList() {
 
         </div>
 
-        {/* Table */}
-        <div className="w-full">
+        {/* Mobile Card View (Zero horizontal scrollbar) */}
+        <div className="block md:hidden divide-y divide-slate-100 bg-white">
+          {loading ? (
+            <div className="p-8 text-center text-slate-400 text-sm">Loading tasks...</div>
+          ) : paginatedTasks.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-sm">No tasks found.</div>
+          ) : (
+            paginatedTasks.map((task, index) => {
+              const empName = getEmployeeName(task.assignedTo);
+              return (
+                <div key={task.id} className="p-4 space-y-3 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 mr-2">#{page * size + index + 1}</span>
+                      <h4 className="inline font-bold text-slate-800 text-sm">{task.title || '-'}</h4>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase shrink-0 ${getStatusBadge(task.status)}`}>
+                      {task.status || 'UNKNOWN'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-5 h-5 rounded-full text-white flex items-center justify-center text-[9px] font-bold ${getAvatarColor(empName)}`}>
+                        {getInitials(empName)}
+                      </div>
+                      <span className="font-medium text-slate-700">{empName}</span>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getTaskTypeBadge(task.taskType)}`}>
+                      {task.taskType || 'Task'}
+                    </span>
+
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${getPriorityColor(task.priority)}`}>
+                      {task.priority || 'Medium'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+                    <div className="flex items-center gap-1 text-[11px]">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{task.startDate || '-'} → {task.endDate || '-'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleEditClick(task)} 
+                        className="p-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition" 
+                        title="View / Edit"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                      </button>
+                      <button 
+                        onClick={() => setTaskToDelete(task.id)} 
+                        className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition" 
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block w-full overflow-x-auto no-scrollbar">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-100">
               <tr>
@@ -350,7 +629,7 @@ export default function TaskList() {
                 <tr><td colSpan={10} className="px-6 py-12 text-center text-slate-400">No tasks found.</td></tr>
               ) : (
                 paginatedTasks.map((task, index) => {
-                  const empName = employees.find(e => e.id === task.assignedTo)?.name || task.assignedTo || 'Unknown';
+                  const empName = getEmployeeName(task.assignedTo);
                   return (
                     <tr key={task.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4">{page * size + index + 1}</td>
@@ -397,7 +676,7 @@ export default function TaskList() {
 
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => alert(`View/Edit Task ID: ${task.id}`)} className="p-1.5 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition" title="View / Edit">
+                          <button onClick={() => handleEditClick(task)} className="p-1.5 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition" title="View / Edit">
                             <Edit className="h-4 w-4" />
                           </button>
                           <button onClick={() => setTaskToDelete(task.id)} className="p-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 transition" title="Delete">

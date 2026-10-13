@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.employee.service.NotificationService;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +18,13 @@ public class AdminEmployeeController {
     private final EmployeeService employeeService;
     private final PasswordEncoder passwordEncoder;
     private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    private final NotificationService notificationService;
 
-    public AdminEmployeeController(EmployeeService employeeService, PasswordEncoder passwordEncoder, org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
+    public AdminEmployeeController(EmployeeService employeeService, PasswordEncoder passwordEncoder, org.springframework.data.mongodb.core.MongoTemplate mongoTemplate, NotificationService notificationService) {
         this.employeeService = employeeService;
         this.passwordEncoder = passwordEncoder;
         this.mongoTemplate = mongoTemplate;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -83,7 +87,20 @@ public class AdminEmployeeController {
         if (employee.getPassword() != null && !employee.getPassword().isEmpty()) {
             employee.setPassword(passwordEncoder.encode(employee.getPassword()));
         }
-        return ResponseEntity.ok(employeeService.save(employee));
+        Employee saved = employeeService.save(employee);
+        try {
+            String empCode = (saved.getEmployeeCode() != null && !saved.getEmployeeCode().isEmpty()) 
+                    ? saved.getEmployeeCode() 
+                    : "EMP";
+            notificationService.createNotification(
+                "New Employee Added",
+                "New employee " + saved.getName() + " (" + empCode + ") has been added to the organization.",
+                "System",
+                "user",
+                "/employees/view"
+            );
+        } catch (Exception ignored) {}
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")

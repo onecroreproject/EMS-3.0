@@ -3,6 +3,7 @@ import { Building2, Edit2, Trash2, Search, Plus, Filter, AlertCircle, X, Save, U
 import { Link } from 'react-router-dom';
 import apiClient from '../lib/axios';
 import Modal from '../components/ui/Modal';
+import { notify } from '../utils/toast';
 
 interface Department {
   id: number;
@@ -42,12 +43,22 @@ export default function ViewDepartments() {
 
   const handleDelete = async (id: number, name: string) => {
     if (window.confirm(`Are you sure you want to delete the department "${name}"?`)) {
+      const toastId = notify.loading(`Deleting department "${name}"...`);
       try {
         await apiClient.delete(`/api/admin/departments/${id}`);
         setDepartments(prev => prev.filter(dept => dept.id !== id));
+        notify.update(toastId, {
+          render: `Department "${name}" deleted successfully!`,
+          type: 'delete',
+          autoClose: 3000
+        });
       } catch (err: any) {
         console.error(err);
-        alert('Failed to delete department. It might be in use.');
+        notify.update(toastId, {
+          render: 'Failed to delete department. It might be in use.',
+          type: 'error',
+          autoClose: 4000
+        });
       }
     }
   };
@@ -78,15 +89,25 @@ export default function ViewDepartments() {
     if (!editingDept) return;
     
     setEditLoading(true);
+    const toastId = notify.loading(`Updating department "${editingDept.name}"...`);
     try {
       const res = await apiClient.put(`/api/admin/departments/${editingDept.id}`, editingDept);
       if (res.status === 200) {
         setDepartments(prev => prev.map(d => d.id === editingDept.id ? res.data : d));
         setIsEditModalOpen(false);
+        notify.update(toastId, {
+          render: `Department "${editingDept.name}" updated successfully! ✨`,
+          type: 'success',
+          autoClose: 3000
+        });
       }
     } catch (err: any) {
       console.error('Error updating department:', err);
-      alert('Failed to update department: ' + (err.response?.data?.message || err.message));
+      notify.update(toastId, {
+        render: 'Failed to update department: ' + (err.response?.data?.message || err.message),
+        type: 'error',
+        autoClose: 4000
+      });
     } finally {
       setEditLoading(false);
     }

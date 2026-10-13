@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import { 
   Users, UserCheck, UserX, Clock, 
   Search, Download, Plus, 
@@ -10,6 +10,7 @@ import CustomSelect from '../components/ui/CustomSelect';
 import DeleteModal from '../components/ui/DeleteModal';
 import Modal from '../components/ui/Modal';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import { notify } from '../utils/toast';
 
 // TypeScript interfaces based on Spring Boot models
 interface Employee {
@@ -36,6 +37,9 @@ interface PageData {
 }
 
 export default function ViewEmployee() {
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get('search') || '';
+
   const [data, setData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -44,7 +48,13 @@ export default function ViewEmployee() {
   const [size, setSize] = useState(10);
   
   // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+
+  useEffect(() => {
+    if (urlSearch !== undefined && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [urlSearch]);
   const [departmentId, setDepartmentId] = useState('');
   const [teamId, setTeamId] = useState('');
   const [status, setStatus] = useState('');
@@ -168,13 +178,23 @@ export default function ViewEmployee() {
 
   const confirmDelete = async () => {
     if (!employeeToDelete) return;
+    const toastId = notify.loading('Deleting employee...');
     try {
       await apiClient.delete(`/api/admin/employees/${employeeToDelete}`);
       setEmployeeToDelete(null);
+      notify.update(toastId, {
+        render: 'Employee deleted successfully! 🗑️',
+        type: 'delete',
+        autoClose: 3000
+      });
       fetchEmployees();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete employee", error);
-      alert("Failed to delete employee.");
+      notify.update(toastId, {
+        render: error.response?.data?.message || 'Failed to delete employee.',
+        type: 'error',
+        autoClose: 4000
+      });
     }
   };
 
@@ -214,14 +234,16 @@ export default function ViewEmployee() {
       designation: formData.get('designation'),
     };
 
+    const toastId = notify.loading('Updating employee details...');
     try {
       const editId = selectedEmployee.id || selectedEmployee.email || selectedEmployee.employeeCode;
       await apiClient.put(`/api/admin/employees/${encodeURIComponent(editId)}`, updatedData);
       setEditEmployeeId(null);
+      notify.update(toastId, 'Employee updated successfully! ✨', 'success');
       fetchEmployees();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update employee", error);
-      alert("Failed to update employee.");
+      notify.update(toastId, error.response?.data?.message || 'Failed to update employee.', 'error');
     }
   };
 

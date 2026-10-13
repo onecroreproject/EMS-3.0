@@ -3,6 +3,7 @@ import { Users, Info, Building2 } from 'lucide-react';
 import Breadcrumb from '../components/ui/Breadcrumb';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/axios';
+import { notify } from '../utils/toast';
 
 export default function AddTeam() {
   const navigate = useNavigate();
@@ -53,14 +54,24 @@ export default function AddTeam() {
     }
 
     setLoading(true);
+    const toastId = notify.loading('Creating team...');
     try {
       const response = await apiClient.post('/api/admin/teams', formData);
       if (response.status === 200 || response.status === 201) {
+        notify.update(toastId, {
+          render: `Team "${formData.name}" created successfully! 🎉`,
+          type: 'success',
+          autoClose: 3000
+        });
         navigate('/teams/view');
       }
     } catch (error: any) {
       console.error('Error saving team:', error);
-      alert('Failed to save team: ' + (error.response?.data?.message || error.message));
+      notify.update(toastId, {
+        render: 'Failed to save team: ' + (error.response?.data?.message || error.message),
+        type: 'error',
+        autoClose: 4000
+      });
     } finally {
       setLoading(false);
     }

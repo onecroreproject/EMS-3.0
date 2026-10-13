@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 
+import com.example.employee.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class AuthController {
     private final JwtTokenUtil jwtTokenUtil;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthenticator gAuth;
+    private final NotificationService notificationService;
 
     @Value("${admin.email}")
     private String adminEmail;
@@ -41,12 +43,13 @@ public class AuthController {
     @Value("${admin.password.hash}")
     private String adminPasswordHash;
 
-    public AuthController(EmployeeRepository employeeRepository, AdminConfigRepository adminConfigRepository, ActiveSessionRepository activeSessionRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder) {
+    public AuthController(EmployeeRepository employeeRepository, AdminConfigRepository adminConfigRepository, ActiveSessionRepository activeSessionRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder, NotificationService notificationService) {
         this.employeeRepository = employeeRepository;
         this.adminConfigRepository = adminConfigRepository;
         this.activeSessionRepository = activeSessionRepository;
         this.jwtTokenUtil = jwtTokenUtil;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService = notificationService;
         this.gAuth = new GoogleAuthenticator();
     }
 
@@ -111,6 +114,21 @@ public class AuthController {
                 ActiveSession session = new ActiveSession(emp.getEmail(), jwt, userAgent, LocalDateTime.now());
                 activeSessionRepository.save(session);
 
+                // Live dynamic notification for Employee Login
+                try {
+                    String clientIp = request.getHeader("X-Forwarded-For");
+                    if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+                    if ("0:0:0:0:0:0:0:1".equals(clientIp)) clientIp = "127.0.0.1";
+                    String timeStr = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+                    notificationService.createNotification(
+                        "Employee Login",
+                        emp.getName() + " (" + emp.getEmployeeCode() + ") logged in at " + timeStr + (clientIp != null ? ". IP Address: " + clientIp : ""),
+                        "Employee",
+                        "login",
+                        "/employees/view"
+                    );
+                } catch (Exception ignored) {}
+
                 return ResponseEntity.ok(new LoginResponse(jwt, "EMPLOYEE", emp.getEmployeeCode(), emp.getName(), refresh));
             }
         }
@@ -151,6 +169,22 @@ public class AuthController {
                 String userAgent = request.getHeader("User-Agent");
                 ActiveSession session = new ActiveSession(adminEmail, jwt, userAgent, LocalDateTime.now());
                 activeSessionRepository.save(session);
+
+                // Live dynamic notification for Admin Login
+                try {
+                    String clientIp = request.getHeader("X-Forwarded-For");
+                    if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+                    if ("0:0:0:0:0:0:0:1".equals(clientIp)) clientIp = "127.0.0.1";
+                    String userAgentHeader = request.getHeader("User-Agent");
+                    String deviceDesc = (userAgentHeader != null && userAgentHeader.contains("Windows")) ? "Windows PC" : "Web Browser";
+                    notificationService.createNotification(
+                        "New Login Detected",
+                        "Admin logged in from " + deviceDesc + (clientIp != null ? " (" + clientIp + ")" : "") + ". If this wasn't you, please secure your account.",
+                        "Security",
+                        "login",
+                        "/profile"
+                    );
+                } catch (Exception ignored) {}
 
                 return ResponseEntity.ok(new LoginResponse(jwt, "ADMIN", null, "System Admin", refresh));
             } else {
@@ -210,6 +244,23 @@ public class AuthController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
             activeSessionRepository.findByToken(jwt).ifPresent(session -> {
+                // Live dynamic notification for Employee Offline
+                try {
+                    String email = session.getEmail();
+                    if (email != null && !adminEmail.equalsIgnoreCase(email)) {
+                        Optional<Employee> empOpt = employeeRepository.findFirstByEmail(email);
+                        String name = empOpt.map(Employee::getName).orElse(email);
+                        String code = empOpt.map(Employee::getEmployeeCode).orElse("");
+                        String timeStr = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+                        notificationService.createNotification(
+                            "Employee Went Offline",
+                            name + (code.isEmpty() ? "" : " (" + code + ")") + " went offline. Last active at " + timeStr + ".",
+                            "Employee",
+                            "offline",
+                            "/employees/view"
+                        );
+                    }
+                } catch (Exception ignored) {}
                 activeSessionRepository.delete(session);
             });
         }

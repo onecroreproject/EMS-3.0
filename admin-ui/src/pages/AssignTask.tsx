@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Breadcrumb from '../components/ui/Breadcrumb';
 import apiClient from '../lib/axios';
+import { notify } from '../utils/toast';
 
 interface Employee {
   id: string;
@@ -133,12 +134,14 @@ export default function AssignTask() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title || !taskType || !selectedEmployeeId) {
+      notify.warn('Please fill in all required fields');
       setMessage({ type: 'error', text: 'Please fill in all required fields' });
       return;
     }
 
     setIsSubmitting(true);
     setMessage(null);
+    const toastId = notify.loading('Assigning task...');
     try {
       await apiClient.post('/api/admin/tasks', {
         title,
@@ -152,6 +155,7 @@ export default function AssignTask() {
         remarks,
         status: 'ASSIGNED'
       });
+      notify.update(toastId, 'Task successfully created and assigned!', 'success');
       setMessage({ type: 'success', text: 'Task successfully created and assigned!' });
       // Reset form
       setTitle('');
@@ -164,6 +168,7 @@ export default function AssignTask() {
       setRemarks('');
     } catch (error) {
       console.error(error);
+      notify.update(toastId, 'Failed to create task. Please try again.', 'error');
       setMessage({ type: 'error', text: 'Failed to create task. Please try again.' });
     } finally {
       setIsSubmitting(false);

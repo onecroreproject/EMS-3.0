@@ -60,7 +60,7 @@ interface TimesheetData {
 }
 
 export default function EmployeeTimesheet() {
-  const [viewMode, setViewMode] = useState('DAY');
+  const [viewMode, setViewMode] = useState<'DAY' | 'WEEK' | 'MONTH' | 'YEAR'>('DAY');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [employeeCode, setEmployeeCode] = useState('');
   
@@ -562,7 +562,7 @@ export default function EmployeeTimesheet() {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-white rounded-md border border-slate-200 overflow-hidden shadow-sm h-8">
-            {['DAY', 'WEEK', 'MONTH', 'YEAR'].map(mode => (
+            {(['DAY', 'WEEK', 'MONTH', 'YEAR'] as const).map(mode => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}

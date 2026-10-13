@@ -4,6 +4,7 @@ import Breadcrumb from '../components/ui/Breadcrumb';
 import { Link } from 'react-router-dom';
 import apiClient from '../lib/axios';
 import Modal from '../components/ui/Modal';
+import { notify } from '../utils/toast';
 
 interface Team {
   id: string;
@@ -51,12 +52,22 @@ export default function ViewTeams() {
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete the team "${name}"?`)) {
+      const toastId = notify.loading(`Deleting team "${name}"...`);
       try {
         await apiClient.delete(`/api/admin/teams/${id}`);
         setTeams(prev => prev.filter(team => team.id !== id));
+        notify.update(toastId, {
+          render: `Team "${name}" deleted successfully!`,
+          type: 'delete',
+          autoClose: 3000
+        });
       } catch (err: any) {
         console.error(err);
-        alert('Failed to delete team. It might be in use.');
+        notify.update(toastId, {
+          render: 'Failed to delete team. It might be in use.',
+          type: 'error',
+          autoClose: 4000
+        });
       }
     }
   };
@@ -78,15 +89,25 @@ export default function ViewTeams() {
     if (!editingTeam) return;
     
     setEditLoading(true);
+    const toastId = notify.loading(`Updating team "${editingTeam.name}"...`);
     try {
       const res = await apiClient.put(`/api/admin/teams/${editingTeam.id}`, editingTeam);
       if (res.status === 200) {
         setTeams(prev => prev.map(t => t.id === editingTeam.id ? res.data : t));
         setIsEditModalOpen(false);
+        notify.update(toastId, {
+          render: `Team "${editingTeam.name}" updated successfully! ✨`,
+          type: 'success',
+          autoClose: 3000
+        });
       }
     } catch (err: any) {
       console.error('Error updating team:', err);
-      alert('Failed to update team: ' + (err.response?.data?.message || err.message));
+      notify.update(toastId, {
+        render: 'Failed to update team: ' + (err.response?.data?.message || err.message),
+        type: 'error',
+        autoClose: 4000
+      });
     } finally {
       setEditLoading(false);
     }
@@ -223,7 +244,7 @@ export default function ViewTeams() {
       </div>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Team">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-slate-800">Edit Team</h2>

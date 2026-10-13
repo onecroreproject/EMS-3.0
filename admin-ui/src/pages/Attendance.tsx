@@ -36,7 +36,7 @@ export default function Attendance() {
   const [rightPanelTab, setRightPanelTab] = useState('Overview');
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLTableCellElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
