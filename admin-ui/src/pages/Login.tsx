@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ShieldCheck, QrCode, ArrowRight, CheckCircle2, ChevronLeft, Activity, Users, Clock } from 'lucide-react';
+import { notify } from '../utils/toast';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ export default function Login() {
           setMfaSecret(data.secret);
         }
         setStep(2);
+        notify.info('Two-Factor Authentication required. Please enter code.');
       } else {
         // Direct employee login
         if (rememberMe) {
@@ -86,10 +88,12 @@ export default function Login() {
         } else {
           sessionStorage.setItem('adminToken', data.token);
         }
+        notify.success('Logged in successfully! Welcome back.');
         navigate('/');
       }
     } catch (err: any) {
       setError(err.message);
+      notify.error(err.message || 'Login failed. Please check credentials.');
     }
   };
 
@@ -123,9 +127,11 @@ export default function Login() {
         sessionStorage.setItem('adminToken', data.token);
       }
       
+      notify.success('Authentication verified successfully! Welcome.');
       navigate('/');
     } catch (err: any) {
       setError(err.message);
+      notify.error(err.message || 'Verification failed');
     }
   };
 

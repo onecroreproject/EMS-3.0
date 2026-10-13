@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer, Slide } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import TimeTrackingSummary from './pages/TimeTrackingSummary';
@@ -16,6 +19,7 @@ import AddTeam from './pages/AddTeam';
 import ViewTeams from './pages/ViewTeams';
 import Attendance from './pages/Attendance';
 
+
 // ProtectedRoute checks if adminToken exists in localStorage or sessionStorage
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
@@ -28,8 +32,36 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 };
 
 function App() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => window.removeEventListener('theme-change', handleThemeChange);
+  }, []);
+
   return (
     <BrowserRouter>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={isDark ? "dark" : "light"}
+        transition={Slide}
+      />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={
@@ -50,6 +82,7 @@ function App() {
           <Route path="teams/add" element={<AddTeam />} />
           <Route path="teams/view" element={<ViewTeams />} />
           <Route path="admin/profile" element={<AdminProfile />} />
+          <Route path="profile" element={<AdminProfile />} />
           <Route path="settings" element={<AdminProfile />} />
           {/* We will add more routes here later */}
         </Route>

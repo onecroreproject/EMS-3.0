@@ -2,6 +2,7 @@ package com.example.employee.controller.api.admin;
 
 import com.example.employee.model.Task;
 import com.example.employee.repository.TaskRepository;
+import com.example.employee.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,9 +15,11 @@ import java.util.Optional;
 public class AdminTaskController {
 
     private final TaskRepository taskRepository;
+    private final NotificationService notificationService;
 
-    public AdminTaskController(TaskRepository taskRepository) {
+    public AdminTaskController(TaskRepository taskRepository, NotificationService notificationService) {
         this.taskRepository = taskRepository;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -41,7 +44,20 @@ public class AdminTaskController {
         if (task.getStartDate() == null) {
             task.setStartDate(LocalDate.now());
         }
-        return ResponseEntity.ok(taskRepository.save(task));
+        Task saved = taskRepository.save(task);
+        try {
+            String assignee = (saved.getAssignedTo() != null && !saved.getAssignedTo().isEmpty()) 
+                    ? saved.getAssignedTo() 
+                    : "Employee";
+            notificationService.createNotification(
+                "Task Assigned",
+                "A new task has been assigned to " + assignee + ". Task: " + saved.getTitle(),
+                "Tasks",
+                "task",
+                "/tasks/track"
+            );
+        } catch (Exception ignored) {}
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, Save, X, Info, Tag, MapPin, User, FileText, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { notify } from '../utils/toast';
 
 export default function AddDepartment() {
   const navigate = useNavigate();
@@ -42,16 +43,26 @@ export default function AddDepartment() {
     }
 
     setLoading(true);
+    const toastId = notify.loading('Creating department...');
     try {
       const apiClient = (await import('../lib/axios')).default;
       
       const response = await apiClient.post('/api/admin/departments', formData);
       if (response.status === 200 || response.status === 201) {
+        notify.update(toastId, {
+          render: `Department "${formData.name}" created successfully! 🎉`,
+          type: 'success',
+          autoClose: 3000
+        });
         navigate('/departments/view');
       }
     } catch (error: any) {
       console.error('Error saving department:', error);
-      alert('Failed to save department: ' + (error.response?.data?.message || error.message));
+      notify.update(toastId, {
+        render: error.response?.data?.message || 'Failed to save department',
+        type: 'error',
+        autoClose: 4000
+      });
     } finally {
       setLoading(false);
     }

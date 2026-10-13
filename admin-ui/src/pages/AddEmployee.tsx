@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import CustomSelect from '../components/ui/CustomSelect';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import { notify } from '../utils/toast';
 
 export default function AddEmployee() {
   const navigate = useNavigate();
@@ -84,17 +85,27 @@ export default function AddEmployee() {
       joiningDate: joiningDate ? joiningDate.toISOString().split('T')[0] : null,
     };
 
+    const toastId = notify.loading(`Creating employee "${payload.name}"...`);
     try {
       const response = await apiClient.post('/api/admin/employees', payload);
 
       if (response.status === 200 || response.status === 201) {
+        notify.update(toastId, {
+          render: `Employee "${payload.name}" created successfully! 🎉`,
+          type: 'success',
+          autoClose: 3000
+        });
         navigate('/employees/view');
       }
     } catch (error: any) {
       console.error("Error creating employee:", error);
       const errorData = error.response?.data;
-      const errorMsg = typeof errorData === 'object' ? JSON.stringify(errorData) : errorData || error.message;
-      alert(`Failed to create employee: ${errorMsg}`);
+      const errorMsg = typeof errorData === 'object' ? (errorData.message || JSON.stringify(errorData)) : errorData || error.message;
+      notify.update(toastId, {
+        render: `Failed to create employee: ${errorMsg}`,
+        type: 'error',
+        autoClose: 4000
+      });
     }
   };
 

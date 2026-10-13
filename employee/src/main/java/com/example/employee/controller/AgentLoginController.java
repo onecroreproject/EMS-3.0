@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import com.example.employee.model.ActiveSession;
 import com.example.employee.repository.ActiveSessionRepository;
+import com.example.employee.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
@@ -24,12 +25,14 @@ public class AgentLoginController {
     private final JwtTokenUtil jwtTokenUtil;
     private final PasswordEncoder passwordEncoder;
     private final ActiveSessionRepository activeSessionRepository;
+    private final NotificationService notificationService;
 
-    public AgentLoginController(EmployeeRepository employeeRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder, ActiveSessionRepository activeSessionRepository) {
+    public AgentLoginController(EmployeeRepository employeeRepository, JwtTokenUtil jwtTokenUtil, PasswordEncoder passwordEncoder, ActiveSessionRepository activeSessionRepository, NotificationService notificationService) {
         this.employeeRepository = employeeRepository;
         this.jwtTokenUtil = jwtTokenUtil;
         this.passwordEncoder = passwordEncoder;
         this.activeSessionRepository = activeSessionRepository;
+        this.notificationService = notificationService;
     }
 
     @PostMapping("/login")
@@ -86,6 +89,21 @@ public class AgentLoginController {
         String userAgent = httpRequest.getHeader("User-Agent");
         ActiveSession session = new ActiveSession(employee.getEmail(), token, refreshToken, userAgent, LocalDateTime.now());
         activeSessionRepository.save(session);
+
+        // Live dynamic notification for Employee Agent Login
+        try {
+            String clientIp = httpRequest.getHeader("X-Forwarded-For");
+            if (clientIp == null || clientIp.isBlank()) clientIp = httpRequest.getRemoteAddr();
+            if ("0:0:0:0:0:0:0:1".equals(clientIp)) clientIp = "127.0.0.1";
+            String timeStr = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+            notificationService.createNotification(
+                "Employee Login",
+                employee.getName() + " (" + employee.getEmployeeCode() + ") logged in via Desktop Agent at " + timeStr + (clientIp != null ? ". IP Address: " + clientIp : ""),
+                "Employee",
+                "login",
+                "/employees/view"
+            );
+        } catch (Exception ignored) {}
 
         return ResponseEntity.ok(
                 new AgentLoginResponse(
