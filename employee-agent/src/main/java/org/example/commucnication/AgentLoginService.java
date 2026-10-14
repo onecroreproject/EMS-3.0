@@ -198,6 +198,26 @@ public class AgentLoginService {
         }
     }
 
+    public void logout(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        try {
+            String url = serverUrl + "/api/auth/logout";
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(5))
+                    .header("Authorization", "Bearer " + token)
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Logout request sent to server -> HTTP " + response.statusCode());
+        } catch (Exception e) {
+            System.err.println("Logout request failed: " + e.getMessage());
+        }
+    }
+
     private LoginResult createServerUnavailableResult() {
 
         return new LoginResult(

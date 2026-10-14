@@ -18,13 +18,16 @@ public class AttendanceEventController {
 
     private final AttendanceEventService attendanceEventService;
     private final AttendanceCalculationService attendanceCalculationService;
+    private final com.example.employee.service.AdminAttendanceDailyService adminAttendanceDailyService;
 
     public AttendanceEventController(
             AttendanceEventService attendanceEventService,
-            AttendanceCalculationService attendanceCalculationService
+            AttendanceCalculationService attendanceCalculationService,
+            com.example.employee.service.AdminAttendanceDailyService adminAttendanceDailyService
     ) {
         this.attendanceEventService = attendanceEventService;
         this.attendanceCalculationService = attendanceCalculationService;
+        this.adminAttendanceDailyService = adminAttendanceDailyService;
     }
 
 
@@ -197,5 +200,43 @@ public class AttendanceEventController {
         return ResponseEntity.ok(
                 remainingWorkSeconds
         );
+    }
+
+
+    // =====================================================
+    // Today's Daily Attendance Summary (for Agent Workspace)
+    // =====================================================
+
+    @GetMapping("/today-summary/{employeeCode}")
+    public ResponseEntity<?> getTodaySummary(
+            @PathVariable String employeeCode
+    ) {
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+        com.example.employee.dto.DailyAttendanceSummary summary =
+                adminAttendanceDailyService.getDailySummary(employeeCode, today);
+
+        String firstClockInTime = "--";
+        if (summary != null && summary.getTimeline() != null) {
+            for (com.example.employee.dto.AttendanceTimelineItem item : summary.getTimeline()) {
+                if (item.getStartedAt() != null) {
+                    java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("hh:mm a")
+                            .withZone(java.time.ZoneId.of("Asia/Kolkata"));
+                    firstClockInTime = fmt.format(item.getStartedAt());
+                    break;
+                }
+            }
+        }
+
+        Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("employeeCode", employeeCode);
+        resp.put("date", today.toString());
+        resp.put("clockInTime", firstClockInTime);
+        resp.put("workingSeconds", summary != null ? summary.getWorkingSeconds() : 0L);
+        resp.put("effectiveWorkingSeconds", summary != null ? summary.getEffectiveWorkingSeconds() : 0L);
+        resp.put("breakSeconds", summary != null ? summary.getBreakSeconds() : 0L);
+        resp.put("lunchSeconds", summary != null ? summary.getLunchSeconds() : 0L);
+        resp.put("idleSeconds", summary != null ? summary.getIdleSeconds() : 0L);
+
+        return ResponseEntity.ok(resp);
     }
 }

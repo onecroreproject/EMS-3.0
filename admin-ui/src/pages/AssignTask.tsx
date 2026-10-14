@@ -100,6 +100,7 @@ export default function AssignTask() {
 
   // Form state
   const [title, setTitle] = useState('');
+  const [client, setClient] = useState('Internal');
   const [taskType, setTaskType] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -145,9 +146,10 @@ export default function AssignTask() {
     try {
       await apiClient.post('/api/admin/tasks', {
         title,
+        client: client || 'Internal',
         taskType,
         description,
-        assignedTo: selectedEmployeeId,
+        assignedTo: selectedEmployee?.name || selectedEmployeeId,
         assignedBy: 'Admin', // Or get from auth context
         startDate: startDate || undefined, // Send undefined if empty so backend sets it
         endDate,
@@ -159,6 +161,7 @@ export default function AssignTask() {
       setMessage({ type: 'success', text: 'Task successfully created and assigned!' });
       // Reset form
       setTitle('');
+      setClient('Internal');
       setTaskType('');
       setDescription('');
       setSelectedEmployeeId('');
@@ -217,7 +220,20 @@ export default function AssignTask() {
               <h3 className="font-bold text-blue-900">Task Information</h3>
             </div>
             <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Client <span className="text-red-500">*</span></label>
+                  <CustomSelect 
+                    value={client} 
+                    onChange={setClient} 
+                    placeholder="Select Client"
+                    ringColor="ring-blue-500"
+                    options={[
+                      { label: 'Internal', value: 'Internal', icon: <Briefcase className="w-4 h-4" />, colorClass: 'bg-blue-50 text-blue-700' },
+                      { label: 'External', value: 'External', icon: <Users className="w-4 h-4" />, colorClass: 'bg-purple-50 text-purple-700' }
+                    ]}
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Task Title <span className="text-red-500">*</span></label>
                   <input type="text" placeholder="Enter task title" value={title} onChange={e => setTitle(e.target.value)} required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />

@@ -18,6 +18,10 @@ public class Task {
     private String title;
     private String description;
 
+    // Client: Internal / External
+    @org.springframework.data.mongodb.core.index.Indexed
+    private String client = "Internal";
+
 
     // =========================
     // Assignment Information
@@ -180,5 +184,13 @@ public class Task {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public String getClient() {
+        return client != null && !client.isBlank() ? client : "Internal";
+    }
+
+    public void setClient(String client) {
+        this.client = client;
     }
 }

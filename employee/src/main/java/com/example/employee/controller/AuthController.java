@@ -63,10 +63,11 @@ public class AuthController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("mfaRequired", true);
                 
+                String secret;
                 if (configOpt.isEmpty() || configOpt.get().getMfaSecret() == null) {
                     // First time setup
                     GoogleAuthenticatorKey key = gAuth.createCredentials();
-                    String secret = key.getKey();
+                    secret = key.getKey();
                     
                     AdminConfig config = configOpt.orElse(new AdminConfig());
                     config.setEmail(adminEmail);
@@ -74,18 +75,19 @@ public class AuthController {
                     adminConfigRepository.save(config);
                     
                     response.put("setupRequired", true);
-                    response.put("secret", secret);
-                    
-                    try {
-                        String otpAuth = "otpauth://totp/EmpMonitor:" + adminEmail + "?secret=" + secret + "&issuer=EmpMonitor";
-                        String encodedUrl = java.net.URLEncoder.encode(otpAuth, java.nio.charset.StandardCharsets.UTF_8.toString());
-                        String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedUrl;
-                        response.put("qrCode", qrUrl);
-                    } catch (Exception e) {
-                        response.put("qrCode", "");
-                    }
                 } else {
                     response.put("setupRequired", false);
+                    secret = configOpt.get().getMfaSecret();
+                }
+
+                response.put("secret", secret);
+                try {
+                    String otpAuth = "otpauth://totp/EmpMonitor:" + adminEmail + "?secret=" + secret + "&issuer=EmpMonitor";
+                    String encodedUrl = java.net.URLEncoder.encode(otpAuth, java.nio.charset.StandardCharsets.UTF_8.toString());
+                    String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedUrl;
+                    response.put("qrCode", qrUrl);
+                } catch (Exception e) {
+                    response.put("qrCode", "");
                 }
                 return ResponseEntity.ok(response);
             }
@@ -134,6 +136,34 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+    }
+
+    @PostMapping("/reset-mfa")
+    public ResponseEntity<?> resetMfa(@RequestBody LoginRequest loginRequest) {
+        if (adminEmail.equalsIgnoreCase(loginRequest.getEmail())) {
+            if (passwordEncoder.matches(loginRequest.getPassword(), adminPasswordHash)) {
+                GoogleAuthenticatorKey key = gAuth.createCredentials();
+                String secret = key.getKey();
+
+                AdminConfig config = adminConfigRepository.findFirstByEmail(adminEmail).orElse(new AdminConfig());
+                config.setEmail(adminEmail);
+                config.setMfaSecret(secret);
+                adminConfigRepository.save(config);
+
+                Map<String, Object> resp = new HashMap<>();
+                resp.put("secret", secret);
+                try {
+                    String otpAuth = "otpauth://totp/EmpMonitor:" + adminEmail + "?secret=" + secret + "&issuer=EmpMonitor";
+                    String encodedUrl = java.net.URLEncoder.encode(otpAuth, java.nio.charset.StandardCharsets.UTF_8.toString());
+                    String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedUrl;
+                    resp.put("qrCode", qrUrl);
+                } catch (Exception e) {
+                    resp.put("qrCode", "");
+                }
+                return ResponseEntity.ok(resp);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
     @PostMapping("/verify-mfa")

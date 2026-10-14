@@ -24,7 +24,7 @@ $SCRIPT_DIR   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PROJECT_ROOT = Split-Path -Parent $SCRIPT_DIR
 
 $APP_NAME        = "EMS Agent"
-$APP_VERSION     = "2.0.3"
+$APP_VERSION     = "2.0.5"
 $APP_VENDOR      = "Employee Monitoring Solutions"
 $APP_DESCRIPTION = "Employee Monitoring Agent - Track work hours, attendance and productivity"
 $APP_COPYRIGHT   = "Copyright (c) 2024 Employee Monitoring Solutions. All rights reserved."

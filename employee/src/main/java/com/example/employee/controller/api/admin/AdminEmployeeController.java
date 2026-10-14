@@ -107,6 +107,9 @@ public class AdminEmployeeController {
     public ResponseEntity<Employee> updateEmployee(@PathVariable String id, @jakarta.validation.Valid @RequestBody Employee employeeDetails) {
         Employee existing = employeeService.findByAny(id);
         if (existing != null) {
+            String oldName = existing.getName();
+            String oldCode = existing.getEmployeeCode();
+
             existing.setName(employeeDetails.getName());
             existing.setEmail(employeeDetails.getEmail());
             existing.setPhone(employeeDetails.getPhone());
@@ -120,7 +123,23 @@ public class AdminEmployeeController {
                 existing.setPassword(passwordEncoder.encode(employeeDetails.getPassword()));
             }
             
-            return ResponseEntity.ok(employeeService.save(existing));
+            Employee saved = employeeService.save(existing);
+
+            // Automatically sync existing tasks assigned under the old name or code to the new name
+            try {
+                if (oldName != null && !oldName.equalsIgnoreCase(saved.getName())) {
+                    org.springframework.data.mongodb.core.query.Query taskQuery = new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("assignedTo").is(oldName)
+                    );
+                    org.springframework.data.mongodb.core.query.Update taskUpdate = new org.springframework.data.mongodb.core.query.Update()
+                        .set("assignedTo", saved.getName());
+                    mongoTemplate.updateMulti(taskQuery, taskUpdate, com.example.employee.model.Task.class);
+                }
+            } catch (Exception syncEx) {
+                System.err.println("Failed to sync task assignments after employee update: " + syncEx.getMessage());
+            }
+
+            return ResponseEntity.ok(saved);
         }
         return ResponseEntity.notFound().build();
     }

@@ -116,7 +116,7 @@ public class LoginWindow extends JFrame {
         AgentConfig config = new AgentConfig();
         this.loginService = new AgentLoginService(config.getServerUrl());
 
-        setTitle("Employee Monitoring Agent");
+        setTitle("Tratime");
         setSize(980, 640);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -209,29 +209,16 @@ public class LoginWindow extends JFrame {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
         left.setOpaque(false);
 
-        JPanel logoBadge = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(PRIMARY);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font(FONT_FAMILY, Font.BOLD, 10));
-                FontMetrics fm = g2.getFontMetrics();
-                String text = "EMS";
-                int x = (getWidth() - fm.stringWidth(text)) / 2;
-                int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-                g2.drawString(text, x, y);
-                g2.dispose();
-            }
-        };
-        logoBadge.setPreferredSize(new Dimension(28, 24));
-        logoBadge.setOpaque(false);
-        left.add(logoBadge);
+        JLabel logoLabel = new JLabel();
+        ImageIcon titleIcon = AppIcon.getScaledIcon(24, 24);
+        if (titleIcon != null) {
+            logoLabel.setIcon(titleIcon);
+        }
+        logoLabel.setOpaque(false);
+        left.add(logoLabel);
 
-        JLabel title = new JLabel("Employee Monitoring Agent");
-        title.setFont(new Font(FONT_FAMILY, Font.PLAIN, 13));
+        JLabel title = new JLabel("Tratime");
+        title.setFont(new Font(FONT_FAMILY, Font.BOLD, 13));
         title.setForeground(TEXT_DARK);
         left.add(title);
 

@@ -15,6 +15,7 @@ import { notify } from '../utils/toast';
 interface Task {
   id: string;
   title: string;
+  client?: string;
   taskType: string;
   assignedTo: string;
   assignedBy: string;
@@ -268,6 +269,18 @@ export default function TaskList() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Client</label>
+                <select
+                  value={editingTask.client || 'Internal'}
+                  onChange={e => setEditingTask({ ...editingTask, client: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                >
+                  <option value="Internal">Internal</option>
+                  <option value="External">External</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Task Type</label>
                 <select
                   value={editingTask.taskType}
@@ -291,11 +304,11 @@ export default function TaskList() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
                 >
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
+                    <option key={emp.id} value={emp.name || emp.id}>
                       {emp.name} {emp.employeeCode ? `(${emp.employeeCode})` : ''}
                     </option>
                   ))}
-                  {!employees.some(e => e.id === editingTask.assignedTo) && (
+                  {!employees.some(e => e.id === editingTask.assignedTo || e.name === editingTask.assignedTo) && (
                     <option value={editingTask.assignedTo}>{editingTask.assignedTo}</option>
                   )}
                 </select>

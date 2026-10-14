@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck, QrCode, ArrowRight, CheckCircle2, ChevronLeft, Activity, Users, Clock } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, QrCode, ArrowRight, CheckCircle2, ChevronLeft, Activity, Users, Clock, X, Copy, Check, RotateCcw } from 'lucide-react';
 import { notify } from '../utils/toast';
 
 export default function Login() {
@@ -15,6 +15,9 @@ export default function Login() {
   const [isFirstTimeSetup, setIsFirstTimeSetup] = useState(false);
   const [qrUrl, setQrUrl] = useState('');
   const [mfaSecret, setMfaSecret] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [isResettingMfa, setIsResettingMfa] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   // Session Conflict State
   const [sessionConflict, setSessionConflict] = useState(false);
@@ -74,11 +77,9 @@ export default function Login() {
       }
       
       if (data.mfaRequired) {
-        setIsFirstTimeSetup(data.setupRequired);
-        if (data.setupRequired) {
-          setQrUrl(data.qrCode);
-          setMfaSecret(data.secret);
-        }
+        setIsFirstTimeSetup(Boolean(data.setupRequired));
+        if (data.qrCode) setQrUrl(data.qrCode);
+        if (data.secret) setMfaSecret(data.secret);
         setStep(2);
         notify.info('Two-Factor Authentication required. Please enter code.');
       } else {
@@ -94,6 +95,39 @@ export default function Login() {
     } catch (err: any) {
       setError(err.message);
       notify.error(err.message || 'Login failed. Please check credentials.');
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (mfaSecret) {
+      navigator.clipboard.writeText(mfaSecret);
+      setCopiedKey(true);
+      notify.success('Secret key copied to clipboard!');
+      setTimeout(() => setCopiedKey(false), 2000);
+    }
+  };
+
+  const handleResetOrFetchQr = async () => {
+    setIsResettingMfa(true);
+    try {
+      const response = await fetch('/api/auth/reset-mfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (response.ok && data.qrCode) {
+        setQrUrl(data.qrCode);
+        setMfaSecret(data.secret);
+        setShowQrModal(true);
+        notify.success('QR Code ready! Scan it with your authenticator app.');
+      } else {
+        notify.error(data?.message || 'Failed to load QR code.');
+      }
+    } catch (err: any) {
+      notify.error('Network error while retrieving QR code.');
+    } finally {
+      setIsResettingMfa(false);
     }
   };
 
@@ -439,10 +473,130 @@ export default function Login() {
                     </button>
                   )}
                 </form>
+
+                {/* Link to open QR Code if the Authenticator app is not on their phone */}
+                <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col items-center gap-2 text-center">
+                  <p className="text-xs text-slate-500 font-medium">
+                    App not installed on your phone or lost access?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!qrUrl) {
+                        handleResetOrFetchQr();
+                      } else {
+                        setShowQrModal(true);
+                      }
+                    }}
+                    disabled={isResettingMfa}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition border border-blue-200/60 shadow-sm"
+                  >
+                    <QrCode className="h-4 w-4 text-blue-600" />
+                    {isResettingMfa ? 'Loading QR Code...' : 'Open QR Code to Scan'}
+                  </button>
+                </div>
               </div>
             )}
 
           </div>
+
+          {/* QR Code Modal for Authenticator App Setup */}
+          {showQrModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 relative animate-in zoom-in-95 duration-200">
+                
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(false)}
+                  className="absolute top-5 right-5 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="text-center mb-5">
+                  <div className="inline-flex p-3 bg-blue-50 rounded-2xl text-blue-600 mb-3 border border-blue-100">
+                    <QrCode className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Scan Authenticator QR Code</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Scan this code with Google Authenticator or Microsoft Authenticator.
+                  </p>
+                </div>
+
+                {/* QR Code Box */}
+                <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-5">
+                  {qrUrl ? (
+                    <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 mb-3">
+                      <img src={qrUrl} alt="Scan QR Code" className="w-44 h-44 object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-44 h-44 flex items-center justify-center bg-slate-100 rounded-xl mb-3">
+                      <QrCode className="h-10 w-10 text-slate-300" />
+                    </div>
+                  )}
+                  
+                  {/* Manual Setup Key */}
+                  {mfaSecret && (
+                    <div className="w-full text-center">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Or Enter Key Manually</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <code className="text-xs font-mono font-bold text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 tracking-wider">
+                          {mfaSecret}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={handleCopyKey}
+                          title="Copy Key"
+                          className="p-1.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 rounded-lg transition"
+                        >
+                          {copiedKey ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Instructions */}
+                <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 mb-5">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600">1.</span>
+                    <span>Open <b>Google Authenticator</b> or <b>Microsoft Authenticator</b> on your phone.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600">2.</span>
+                    <span>Tap <b>+ (Add Account)</b> &rarr; <b>Scan a QR code</b>.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600">3.</span>
+                    <span>Enter the 6-digit verification code to log in.</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleResetOrFetchQr}
+                    disabled={isResettingMfa}
+                    className="flex-1 py-2.5 px-3 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw className={`h-3.5 w-3.5 ${isResettingMfa ? 'animate-spin' : ''}`} />
+                    {isResettingMfa ? 'Resetting...' : 'Reset Key'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowQrModal(false)}
+                    className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Done, Enter Code
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
           
           <p className="text-center text-slate-400 text-xs mt-8">
             &copy; {new Date().getFullYear()} EmpMonitor Inc. All rights reserved.

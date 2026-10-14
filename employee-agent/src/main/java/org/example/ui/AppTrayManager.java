@@ -52,7 +52,7 @@ public class AppTrayManager {
         popup.addSeparator();
         popup.add(exitItem);
 
-        trayIcon = new TrayIcon(image, "Employee Monitoring Agent", popup);
+        trayIcon = new TrayIcon(image, "Tratime", popup);
         trayIcon.setImageAutoSize(true);
 
         trayIcon.addMouseListener(new MouseAdapter() {

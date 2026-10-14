@@ -75,7 +75,9 @@ public class EmployeeWorkspaceWindow extends JFrame {
     // =========================================================
     private static final int WINDOW_WIDTH = 980;
 
-    private static final int WINDOW_HEIGHT = 630;
+    private static final int WINDOW_HEIGHT_NORMAL = 535;
+
+    private static final int WINDOW_HEIGHT_UPDATE = 605;
 
 
     // =========================================================
@@ -136,6 +138,8 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
     private JPanel updatePanel;
 
+    private Component updatePanelStrut;
+
     private JLabel updateVersionLabel;
 
     private JLabel updateMessageLabel;
@@ -153,6 +157,28 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
     private JComboBox<String> taskCombo;
 
+    /** Structured item representing a task fetched from backend. */
+    private static class TaskItem {
+        final String id;
+        final String title;
+        final String client;
+        final String taskType;
+        final String assignedTo;
+
+        TaskItem(String id, String title, String client, String taskType, String assignedTo) {
+            this.id = id;
+            this.title = title;
+            this.client = client != null && !client.isBlank() ? client : "Internal";
+            this.taskType = taskType != null && !taskType.isBlank() ? taskType : "Development";
+            this.assignedTo = assignedTo != null ? assignedTo : "";
+        }
+    }
+
+    private final List<TaskItem> cachedEmployeeTasks =
+            new ArrayList<>();
+
+    private volatile boolean isUpdatingCombos = false;
+
     /** Existing /api/tasks title -> Mongo task id mapping. */
     private final Map<String, String> taskIdByTitle =
             new HashMap<>();
@@ -165,6 +191,15 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
     /** Title of the task currently associated with the active timer. */
     private volatile String currentTaskTitle;
+
+    /** Client of the currently running task. */
+    private volatile String currentTaskClient = "Internal";
+
+    /** Project/TaskType of the currently running task. */
+    private volatile String currentTaskProject = "";
+
+    /** Today's actual first clock in time string from DB. */
+    private volatile String cachedClockInTime = null;
 
     /** Prevents multiple Logout clicks while WORK_ENDED is being sent. */
     private volatile boolean logoutInProgress = false;
@@ -220,6 +255,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
     // =========================================================
 
     private Timer uiTimer;
+    private Timer backgroundSyncTimer;
 
 
     private Color currentStatusDotColor =
@@ -485,20 +521,20 @@ public class EmployeeWorkspaceWindow extends JFrame {
         // =====================================================
 
         setTitle(
-                "Employee Monitoring Agent"
+                "Tratime"
         );
 
 
         setSize(
                 WINDOW_WIDTH,
-                WINDOW_HEIGHT
+                WINDOW_HEIGHT_NORMAL
         );
 
 
         setMinimumSize(
                 new Dimension(
                         WINDOW_WIDTH,
-                        WINDOW_HEIGHT
+                        WINDOW_HEIGHT_NORMAL
                 )
         );
 
@@ -525,7 +561,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         0,
                         0,
                         WINDOW_WIDTH,
-                        WINDOW_HEIGHT,
+                        WINDOW_HEIGHT_NORMAL,
                         16,
                         16
                 )
@@ -635,6 +671,33 @@ public class EmployeeWorkspaceWindow extends JFrame {
                     otaDelayTimer.setRepeats(false);
 
                     otaDelayTimer.start();
+
+                    // Periodic background live sync:
+                    // 1. Refreshes assigned tasks dynamically so newly created tasks show up immediately
+                    // 2. Checks for newly released agent versions dynamically
+                    backgroundSyncTimer = new Timer(15000, e -> {
+                        if (!AgentApplication.isOfflineMode()) {
+                            // Live Task fetch: runs on background worker
+                            new SwingWorker<Void, Void>() {
+                                @Override
+                                protected Void doInBackground() {
+                                    fetchAllEmployeeTasks();
+                                    return null;
+                                }
+
+                                @Override
+                                protected void done() {
+                                    if (!isUpdatingCombos && !workRunning) {
+                                        updateProjectsForSelectedClient();
+                                    }
+                                }
+                            }.execute();
+
+                            // Live OTA check
+                            checkForWorkspaceUpdate();
+                        }
+                    });
+                    backgroundSyncTimer.start();
                 }
         );
 
@@ -699,129 +762,30 @@ public class EmployeeWorkspaceWindow extends JFrame {
         left.setOpaque(false);
 
 
-        JPanel logoBadge =
-                new JPanel() {
-
-                    @Override
-                    protected void paintComponent(
-                            Graphics g
-                    ) {
-
-                        Graphics2D g2 =
-                                (Graphics2D)
-                                        g.create();
-
-                        g2.setRenderingHint(
-                                RenderingHints
-                                        .KEY_ANTIALIASING,
-                                RenderingHints
-                                        .VALUE_ANTIALIAS_ON
-                        );
-
-                        g2.setColor(
-                                NAVY_BANNER
-                        );
-
-                        g2.fillRoundRect(
-                                0,
-                                0,
-                                getWidth(),
-                                getHeight(),
-                                5,
-                                5
-                        );
-
-
-                        g2.setColor(
-                                Color.WHITE
-                        );
-
-
-                        g2.setFont(
-                                new Font(
-                                        FONT_FAMILY,
-                                        Font.BOLD,
-                                        10
-                                )
-                        );
-
-
-                        FontMetrics fm =
-                                g2.getFontMetrics();
-
-
-                        String text =
-                                "DLK";
-
-
-                        int x =
-                                (
-                                        getWidth()
-                                                - fm.stringWidth(
-                                                text
-                                        )
-                                )
-                                        / 2;
-
-
-                        int y =
-                                (
-                                        (
-                                                getHeight()
-                                                        - fm.getHeight()
-                                        )
-                                                / 2
-                                )
-                                        + fm.getAscent();
-
-
-                        g2.drawString(
-                                text,
-                                x,
-                                y
-                        );
-
-
-                        g2.dispose();
-                    }
-                };
-
-
-        logoBadge.setPreferredSize(
-                new Dimension(
-                        28,
-                        20
-                )
-        );
-
-
-        logoBadge.setOpaque(false);
-
-
-        left.add(
-                logoBadge
-        );
-
+        JLabel logoLabel = new JLabel();
+        ImageIcon titleIcon = AppIcon.getScaledIcon(26, 26);
+        if (titleIcon != null) {
+            logoLabel.setIcon(titleIcon);
+        }
+        logoLabel.setOpaque(false);
+        left.add(logoLabel);
 
         JLabel title =
                 new JLabel(
-                        "Employee Monitoring Agent"
+                        "Tratime"
                 );
-
 
         title.setFont(
                 new Font(
                         FONT_FAMILY,
-                        Font.PLAIN,
+                        Font.BOLD,
                         12
                 )
         );
 
-
         title.setForeground(
                 TEXT_DARK
         );
-
 
         left.add(
                 title
@@ -851,7 +815,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
         // Maximize and Close are intentionally removed.
         JButton btnMinimize =
                 createTitleButton(
-                        "Ã¢â‚¬â€",
+                        "--",
                         false
                 );
 
@@ -1111,10 +1075,10 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 createUpdatePanel()
         );
 
+        updatePanelStrut = Box.createVerticalStrut(10);
+        updatePanelStrut.setVisible(false);
         body.add(
-                Box.createVerticalStrut(
-                        10
-                )
+                updatePanelStrut
         );
 
         body.add(
@@ -1399,6 +1363,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
     ) {
 
         if (update == null) {
+            hideUpdateBanner();
             return;
         }
 
@@ -1426,11 +1391,15 @@ public class EmployeeWorkspaceWindow extends JFrame {
             );
 
             updatePanel.setVisible(true);
+            if (updatePanelStrut != null) {
+                updatePanelStrut.setVisible(true);
+            }
 
-            if (getHeight() < WINDOW_HEIGHT) {
-                setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-                setMinimumSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
-                setShape(new RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 16, 16));
+            if (getHeight() != WINDOW_HEIGHT_UPDATE) {
+                setSize(WINDOW_WIDTH, WINDOW_HEIGHT_UPDATE);
+                setMinimumSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT_UPDATE));
+                setShape(new RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT_UPDATE, 16, 16));
+                setLocationRelativeTo(null);
             }
 
             revalidate();
@@ -1441,6 +1410,24 @@ public class EmployeeWorkspaceWindow extends JFrame {
         System.out.println(
                 "OTA: Workspace update notification shown."
         );
+    }
+
+    public void hideUpdateBanner() {
+        updateAvailable = false;
+        if (updatePanel != null && updatePanel.isVisible()) {
+            updatePanel.setVisible(false);
+            if (updatePanelStrut != null) {
+                updatePanelStrut.setVisible(false);
+            }
+            if (getHeight() != WINDOW_HEIGHT_NORMAL) {
+                setSize(WINDOW_WIDTH, WINDOW_HEIGHT_NORMAL);
+                setMinimumSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT_NORMAL));
+                setShape(new RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT_NORMAL, 16, 16));
+                setLocationRelativeTo(null);
+            }
+            revalidate();
+            repaint();
+        }
     }
 
     // =========================================================
@@ -1541,65 +1528,35 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
         JPanel brand =
-                new JPanel();
-
-
-        brand.setLayout(
-                new BorderLayout()
-        );
-
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.LEFT,
+                                10,
+                                2
+                        )
+                );
 
         brand.setOpaque(false);
 
-
         JLabel emsTitle =
                 new JLabel(
-                        "DLK"
+                        "Employee Monitor System"
                 );
-
 
         emsTitle.setFont(
                 new Font(
                         FONT_FAMILY,
                         Font.BOLD,
-                        20
+                        18
                 )
         );
-
 
         emsTitle.setForeground(
                 Color.WHITE
         );
 
-
-        JLabel emsSubtitle =
-                new JLabel(
-                        ""
-                );
-
-
-        emsSubtitle.setFont(
-                new Font(
-                        FONT_FAMILY,
-                        Font.PLAIN,
-                        11
-                )
-        );
-
-
-        emsSubtitle.setForeground(
-                new Color(
-                        219,
-                        234,
-                        254
-                )
-        );
-
-
-        emsTitle.setVerticalAlignment(SwingConstants.CENTER);
         brand.add(
-                emsTitle,
-                BorderLayout.CENTER
+                emsTitle
         );
 
 
@@ -2425,7 +2382,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         IconType.TASK,
                         new String[]{
                                 "Internal",
-                                "External Client"
+                                "External"
                         }
                 );
 
@@ -2437,6 +2394,36 @@ public class EmployeeWorkspaceWindow extends JFrame {
                                         "combo"
                                 );
 
+
+        clientCombo.addActionListener(e -> {
+            if (isUpdatingCombos) return;
+            if (taskWorkStateLoading) return;
+
+            String selectedClient = clientCombo.getSelectedItem() != null ? clientCombo.getSelectedItem().toString().trim() : "Internal";
+            if (workRunning && currentTaskClient != null && !matchesClient(currentTaskClient, selectedClient)) {
+                showInformation(
+                        "Task Timer",
+                        "Please stop the current task timer before switching client."
+                );
+
+                SwingUtilities.invokeLater(() -> {
+                    isUpdatingCombos = true;
+                    try {
+                        for (int i = 0; i < clientCombo.getItemCount(); i++) {
+                            if (matchesClient(currentTaskClient, clientCombo.getItemAt(i))) {
+                                clientCombo.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    } finally {
+                        isUpdatingCombos = false;
+                    }
+                });
+                return;
+            }
+
+            updateProjectsForSelectedClient();
+        });
 
         card.add(
                 clientPanel,
@@ -2457,11 +2444,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 createLabeledSelector(
                         "Project",
                         IconType.TASK,
-                        new String[]{
-                                "Software Team",
-                                "Employee Monitoring System",
-                                "Backend Development"
-                        }
+                        new String[]{}
                 );
 
 
@@ -2472,6 +2455,37 @@ public class EmployeeWorkspaceWindow extends JFrame {
                                         "combo"
                                 );
 
+        projectCombo.addActionListener(e -> {
+            if (isUpdatingCombos) return;
+            if (taskWorkStateLoading) return;
+
+            String selectedProj = projectCombo.getSelectedItem() != null ? projectCombo.getSelectedItem().toString().trim() : "";
+            if (workRunning && currentTaskProject != null && !currentTaskProject.isBlank()
+                    && !canonicalTaskType(currentTaskProject).equalsIgnoreCase(canonicalTaskType(selectedProj))) {
+                showInformation(
+                        "Task Timer",
+                        "Please stop the current task timer before switching project."
+                );
+
+                SwingUtilities.invokeLater(() -> {
+                    isUpdatingCombos = true;
+                    try {
+                        String target = canonicalTaskType(currentTaskProject);
+                        for (int i = 0; i < projectCombo.getItemCount(); i++) {
+                            if (target.equalsIgnoreCase(canonicalTaskType(projectCombo.getItemAt(i)))) {
+                                projectCombo.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    } finally {
+                        isUpdatingCombos = false;
+                    }
+                });
+                return;
+            }
+
+            updateTasksForSelectedProject();
+        });
 
         card.add(
                 projectPanel,
@@ -2492,12 +2506,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 createLabeledSelector(
                         "Task",
                         IconType.TASK,
-                        new String[]{
-                                "Build Employee API",
-                                "API Testing",
-                                "Application Monitoring",
-                                "Attendance API"
-                        }
+                        new String[]{}
                 );
 
 
@@ -2511,6 +2520,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         taskCombo.addActionListener(
                 e -> {
+                    if (isUpdatingCombos) return;
 
                     if (taskCombo.getSelectedItem() == null) {
                         if (!workRunning) {
@@ -2525,6 +2535,17 @@ public class EmployeeWorkspaceWindow extends JFrame {
                                     .getSelectedItem()
                                     .toString()
                                     .trim();
+
+                    if ("No Tasks".equalsIgnoreCase(selectedTitle)) {
+                        if (!workRunning) {
+                            currentTaskId = null;
+                            currentTaskTitle = null;
+                            if (currentTaskLabel != null) {
+                                currentTaskLabel.setText("--");
+                            }
+                        }
+                        return;
+                    }
 
                     if (taskWorkStateLoading) {
                         return;
@@ -2557,6 +2578,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
                     currentTaskId = selectedTaskId;
                     currentTaskTitle = selectedTitle;
+
+                    if (clientCombo != null && clientCombo.getSelectedItem() != null) {
+                        currentTaskClient = clientCombo.getSelectedItem().toString().trim();
+                    }
+                    if (projectCombo != null && projectCombo.getSelectedItem() != null) {
+                        currentTaskProject = projectCombo.getSelectedItem().toString().trim();
+                    }
 
                     /*
                      * Selecting a task does NOT start work.
@@ -3464,7 +3492,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         currentTaskLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3482,7 +3510,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         startedAtLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3729,7 +3757,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         clockInMiniLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3747,7 +3775,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         workHoursMiniLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3765,7 +3793,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         breakTimeMiniLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3783,7 +3811,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         lunchTimeMiniLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -3801,7 +3829,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         idleTimeMiniLabel =
                 new JLabel(
-                        "Ã¢â‚¬â€"
+                        "--"
                 );
 
 
@@ -5026,12 +5054,15 @@ public class EmployeeWorkspaceWindow extends JFrame {
         // =====================================================
 
         if (clockInMiniLabel != null) {
-
-            clockInMiniLabel.setText(
-                    formatMillisTime(
-                            workStartedAtMillis
-                    )
-            );
+            if (cachedClockInTime != null && !cachedClockInTime.isBlank() && !cachedClockInTime.equals("--")) {
+                clockInMiniLabel.setText(cachedClockInTime);
+            } else {
+                clockInMiniLabel.setText(
+                        formatMillisTime(
+                                workStartedAtMillis
+                        )
+                );
+            }
         }
 
         // =====================================================
@@ -5045,7 +5076,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                             ? formatMillisTime(
                             currentTaskStartedAtMillis
                     )
-                            : "Ã¢â‚¬â€"
+                            : "--"
             );
         }
 
@@ -5465,6 +5496,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
         workAccumulatedSeconds = 0L;
 
 
+        if (clientCombo != null && clientCombo.getSelectedItem() != null) {
+            currentTaskClient = clientCombo.getSelectedItem().toString().trim();
+        }
+        if (projectCombo != null && projectCombo.getSelectedItem() != null) {
+            currentTaskProject = projectCombo.getSelectedItem().toString().trim();
+        }
+
         workRunning = true;
 
         AgentApplication.setTaskWorkRunning(true);
@@ -5858,6 +5896,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
             employeeWorkSegmentStartNanos =
                     segmentNowNanos;
 
+
+            if (clientCombo != null && clientCombo.getSelectedItem() != null) {
+                currentTaskClient = clientCombo.getSelectedItem().toString().trim();
+            }
+            if (projectCombo != null && projectCombo.getSelectedItem() != null) {
+                currentTaskProject = projectCombo.getSelectedItem().toString().trim();
+            }
 
             workRunning = true;
 
@@ -6729,6 +6774,21 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
         org.example.security.WindowsCredentialManager.clearCredentials();
 
+        // Inform backend server to immediately end and delete active session
+        new Thread(() -> {
+            try {
+                String token = org.example.config.AgentTokenHolder.getToken();
+                if (token != null && !token.isBlank()) {
+                    new org.example.commucnication.AgentLoginService(serverUrl).logout(token);
+                }
+            } catch (Exception ex) {
+                System.out.println("Could not call server logout: " + ex.getMessage());
+            } finally {
+                org.example.config.AgentTokenHolder.setToken(null);
+                org.example.config.AgentTokenHolder.setRefreshToken(null);
+            }
+        }, "Agent-ServerLogout").start();
+
         // Fade out transition
         Timer fadeTimer = new Timer(20, null);
         fadeTimer.addActionListener(e -> {
@@ -6847,7 +6907,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
     ) {
 
         if (millis <= 0L) {
-            return "Ã¢â‚¬â€";
+            return "--";
         }
 
 
@@ -6873,80 +6933,28 @@ public class EmployeeWorkspaceWindow extends JFrame {
         SwingWorker<Void, Void> worker =
                 new SwingWorker<>() {
 
-                    private List<String> projects =
-                            Collections.emptyList();
-
-
-                    private List<String> tasks =
-                            Collections.emptyList();
-
-
                     @Override
                     protected Void doInBackground() {
-
-                        projects =
-                                fetchProjectOptions();
-
-
-                        tasks =
-                                fetchTaskOptions();
-
-
+                        fetchAllEmployeeTasks();
                         return null;
                     }
 
-
                     @Override
                     protected void done() {
-
-                        populateCombo(
-                                projectCombo,
-                                projects
-                        );
-
-
-                        populateCombo(
-                                taskCombo,
-                                tasks
-                        );
-
-
-                        // populateCombo selects the first task. Keep the
-                        // corresponding Mongo task id in local state so the
-                        // Start Timer button can immediately use it.
-                        if (!workRunning
-                                && taskCombo != null
-                                && taskCombo.getSelectedItem() != null) {
-
-                            currentTaskTitle =
-                                    taskCombo.getSelectedItem()
-                                            .toString()
-                                            .trim();
-
-                            currentTaskId =
-                                    taskIdByTitle.get(
-                                            currentTaskTitle
-                                    );
-
-                            if (currentTaskLabel != null) {
-                                currentTaskLabel.setText(
-                                        currentTaskTitle
-                                );
-                            }
-                        }
-
+                        updateProjectsForSelectedClient();
 
                         updateWelcomeLabel();
-
-
                         updateDateLabel();
+
+                        // Backend is the source of truth. Restore today's full 24-hr day calculation
+                        // (work hours, break time, lunch time, idle time, and clock-in time)
+                        fetchTodaySummaryAsync();
 
                         // Backend is the source of truth. Restore any task
                         // that was RUNNING before this agent restarted.
                         restoreRunningTaskAsync();
                     }
                 };
-
 
         worker.execute();
     }
@@ -6961,34 +6969,33 @@ public class EmployeeWorkspaceWindow extends JFrame {
             return;
         }
 
+        isUpdatingCombos = true;
+        try {
+            String previouslySelected = combo.getSelectedItem() != null ? combo.getSelectedItem().toString() : null;
+            combo.removeAllItems();
 
-        combo.removeAllItems();
-
-
-        if (values == null) {
-            return;
-        }
-
-
-        for (String value : values) {
-
-            if (value != null
-                    && !value
-                    .trim()
-                    .isEmpty()) {
-
-                combo.addItem(
-                        value.trim()
-                );
+            if (values != null) {
+                for (String value : values) {
+                    if (value != null && !value.trim().isEmpty()) {
+                        combo.addItem(value.trim());
+                    }
+                }
             }
-        }
 
-
-        if (combo.getItemCount() > 0) {
-
-            combo.setSelectedIndex(
-                    0
-            );
+            if (combo.getItemCount() > 0) {
+                int selectIndex = 0;
+                if (previouslySelected != null) {
+                    for (int i = 0; i < combo.getItemCount(); i++) {
+                        if (previouslySelected.equalsIgnoreCase(combo.getItemAt(i))) {
+                            selectIndex = i;
+                            break;
+                        }
+                    }
+                }
+                combo.setSelectedIndex(selectIndex);
+            }
+        } finally {
+            isUpdatingCombos = false;
         }
     }
 
@@ -7053,328 +7060,178 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
     // =========================================================
-    // FETCH PROJECT OPTIONS
+    // DYNAMIC CASCADING TASKS FETCHING
     // =========================================================
 
-    private List<String> fetchProjectOptions() {
-
+    private void fetchAllEmployeeTasks() {
         try {
+            cachedEmployeeTasks.clear();
+            taskIdByTitle.clear();
 
-            /*
-             * Existing project API in the current agent.
-             *
-             * At this stage we keep the same endpoint
-             * already used by the project.
-             */
-            String url =
-                    serverUrl
-                            + "/api/tasks";
+            String url = serverUrl + "/api/tasks";
 
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
 
-            HttpRequest request =
-                    HttpRequest
-                            .newBuilder()
-                            .uri(
-                                    URI.create(url)
-                            )
-                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
-                            .header(
-                                    "Accept",
-                                    "application/json"
-                            )
-                            .GET()
-                            .build();
+            System.out.println("Fetching tasks from: " + url);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Fetch tasks HTTP Status: " + response.statusCode());
 
-
-            HttpResponse<String> response =
-                    httpClient.send(
-                            request,
-                            HttpResponse
-                                    .BodyHandlers
-                                    .ofString()
-                    );
-
-
-            if (response.statusCode() < 200
-                    || response.statusCode() >= 300) {
-
-                return Collections.emptyList();
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                System.out.println("Failed to fetch tasks, status: " + response.statusCode());
+                return;
             }
 
-
-            String json =
-                    response.body();
-
-
-            Set<String> unique =
-                    new LinkedHashSet<>();
-
-
-            int index = 0;
-
-
-            while (index < json.length()) {
-
-                int fieldIndex =
-                        json.indexOf(
-                                "\"taskType\":\"",
-                                index
-                        );
-
-
-                if (fieldIndex == -1) {
-                    break;
-                }
-
-
-                int valueStart =
-                        fieldIndex
-                                + "\"taskType\":\""
-                                .length();
-
-
-                int valueEnd =
-                        json.indexOf(
-                                '"',
-                                valueStart
-                        );
-
-
-                if (valueEnd == -1) {
-                    break;
-                }
-
-
-                String value =
-                        json.substring(
-                                valueStart,
-                                valueEnd
-                        ).trim();
-
-
-                if (!value.isEmpty()) {
-
-                    unique.add(
-                            value
-                    );
-                }
-
-
-                index =
-                        valueEnd + 1;
+            String json = response.body();
+            if (json == null || json.isBlank()) {
+                System.out.println("Tasks response body is empty");
+                return;
             }
 
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(json);
 
-            return new ArrayList<>(
-                    unique
-            );
+            String normEmpName = normalizeString(employeeDisplayName);
+            String normEmpCode = normalizeString(employeeCode);
+            String normEmpId = normalizeString(employeeId);
 
+            System.out.println("Processing tasks for empName=[" + employeeDisplayName + "], empCode=[" + employeeCode + "], empId=[" + employeeId + "]");
 
+            if (rootNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode taskNode : rootNode) {
+                    String title = taskNode.path("title").asText("").trim();
+                    String id = taskNode.path("id").asText("").trim();
+                    String clientVal = taskNode.path("client").asText("Internal").trim();
+                    String taskTypeVal = taskNode.path("taskType").asText("Development").trim();
+                    String assignedTo = taskNode.path("assignedTo").asText("").trim();
+                    String normAssigned = normalizeString(assignedTo);
+
+                    boolean matches = assignedTo.isEmpty()
+                            || assignedTo.equalsIgnoreCase(employeeDisplayName)
+                            || normAssigned.equals(normEmpName)
+                            || (normAssigned.length() >= 4 && normEmpName.length() >= 4 && (normAssigned.startsWith(normEmpName) || normEmpName.startsWith(normAssigned)))
+                            || (employeeId != null && (employeeId.equalsIgnoreCase(assignedTo) || normAssigned.equals(normEmpId)))
+                            || (employeeCode != null && (employeeCode.equalsIgnoreCase(assignedTo) || normAssigned.equals(normEmpCode)));
+
+                    System.out.println("Task: [" + title + "], Client: [" + clientVal + "], Type: [" + taskTypeVal + "], AssignedTo: [" + assignedTo + "], Matches: " + matches);
+
+                    if (!title.isEmpty() && matches) {
+                        cachedEmployeeTasks.add(new TaskItem(id, title, clientVal, taskTypeVal, assignedTo));
+                        if (!id.isEmpty()) {
+                            taskIdByTitle.put(title, id);
+                        }
+                    }
+                }
+            }
+            System.out.println("Total cached tasks for employee: " + cachedEmployeeTasks.size());
         } catch (Exception ex) {
-
-            System.out.println(
-                    "Failed to fetch projects: "
-                            + ex.getMessage()
-            );
-
-
-            return Collections.emptyList();
+            System.out.println("Failed to fetch employee tasks: " + ex.getMessage());
         }
     }
 
+    private static String canonicalTaskType(String raw) {
+        if (raw == null || raw.isBlank()) return "Development";
+        String r = raw.trim();
+        if (r.equalsIgnoreCase("Development")) return "Development";
+        if (r.equalsIgnoreCase("Project")) return "Project";
+        if (r.equalsIgnoreCase("Testing")) return "Testing";
+        if (r.equalsIgnoreCase("Support")) return "Support";
+        if (r.equalsIgnoreCase("Training")) return "Training";
+        if (r.equalsIgnoreCase("Mentoring")) return "Mentoring";
+        return r;
+    }
 
-    // =========================================================
-    // FETCH TASK OPTIONS
-    // =========================================================
+    private void updateProjectsForSelectedClient() {
+        if (projectCombo == null) return;
 
-    private List<String> fetchTaskOptions() {
+        String selectedClient = clientCombo != null && clientCombo.getSelectedItem() != null
+                ? clientCombo.getSelectedItem().toString().trim()
+                : "Internal";
 
-        try {
-
-            taskIdByTitle.clear();
-
-            String url =
-                    serverUrl
-                            + "/api/tasks";
-
-
-            HttpRequest request =
-                    HttpRequest
-                            .newBuilder()
-                            .uri(
-                                    URI.create(url)
-                            )
-                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
-                            .header(
-                                    "Accept",
-                                    "application/json"
-                            )
-                            .GET()
-                            .build();
-
-
-            HttpResponse<String> response =
-                    httpClient.send(
-                            request,
-                            HttpResponse
-                                    .BodyHandlers
-                                    .ofString()
-                    );
-
-
-            if (response.statusCode() < 200
-                    || response.statusCode() >= 300) {
-
-                return Collections.emptyList();
+        Set<String> projectSet = new LinkedHashSet<>();
+        for (TaskItem item : cachedEmployeeTasks) {
+            if (matchesClient(item.client, selectedClient)) {
+                if (!item.taskType.isBlank()) {
+                    projectSet.add(canonicalTaskType(item.taskType));
+                }
             }
-
-
-            String json =
-                    response.body();
-
-
-            Set<String> unique =
-                    new LinkedHashSet<>();
-
-
-            int index = 0;
-
-
-            while (index < json.length()) {
-
-                int titleIndex =
-                        json.indexOf(
-                                "\"title\":\"",
-                                index
-                        );
-
-
-                if (titleIndex == -1) {
-                    break;
-                }
-
-
-                int titleStart =
-                        titleIndex
-                                + "\"title\":\""
-                                .length();
-
-
-                int titleEnd =
-                        json.indexOf(
-                                '"',
-                                titleStart
-                        );
-
-
-                if (titleEnd == -1) {
-                    break;
-                }
-
-
-                String title =
-                        json.substring(
-                                titleStart,
-                                titleEnd
-                        ).trim();
-
-
-                String taskId =
-                        extractTaskIdNearTitle(
-                                json,
-                                titleIndex
-                        );
-
-
-                int assignedIndex =
-                        json.indexOf(
-                                "\"assignedTo\":\"",
-                                titleEnd
-                        );
-
-
-                String assignedTo =
-                        "";
-
-
-                if (assignedIndex != -1) {
-
-                    int assignedStart =
-                            assignedIndex
-                                    + "\"assignedTo\":\""
-                                    .length();
-
-
-                    int assignedEnd =
-                            json.indexOf(
-                                    '"',
-                                    assignedStart
-                            );
-
-
-                    if (assignedEnd != -1) {
-
-                        assignedTo =
-                                json.substring(
-                                        assignedStart,
-                                        assignedEnd
-                                ).trim();
-                    }
-                }
-
-
-                boolean assignedToEmployee =
-                        assignedTo.isEmpty()
-                                || employeeDisplayName
-                                .equalsIgnoreCase(
-                                        assignedTo
-                                )
-                                || employeeId.equals(
-                                assignedTo
-                        )
-                                || employeeCode.equals(
-                                assignedTo
-                        );
-
-
-                if (!title.isEmpty()
-                        && assignedToEmployee) {
-
-                    unique.add(
-                            title
-                    );
-
-                    if (taskId != null
-                            && !taskId.isBlank()) {
-
-                        taskIdByTitle.put(
-                                title,
-                                taskId
-                        );
-                    }
-                }
-
-
-                index =
-                        titleEnd + 1;
-            }
-
-
-            return new ArrayList<>(
-                    unique
-            );
-
-
-        } catch (Exception ex) {
-
-            System.out.println(
-                    "Failed to fetch tasks: "
-                            + ex.getMessage()
-            );
-
-
-            return Collections.emptyList();
         }
+
+        System.out.println("Dropdown update: selectedClient=[" + selectedClient + "], matching projects=" + projectSet);
+
+        List<String> projects = new ArrayList<>(projectSet);
+        if (projects.isEmpty()) {
+            projects.add("No Projects");
+            projectCombo.setEnabled(false);
+        } else {
+            projectCombo.setEnabled(true);
+        }
+        populateCombo(projectCombo, projects);
+
+        updateTasksForSelectedProject();
+    }
+
+    private void updateTasksForSelectedProject() {
+        if (taskCombo == null) return;
+
+        String selectedClient = clientCombo != null && clientCombo.getSelectedItem() != null
+                ? clientCombo.getSelectedItem().toString().trim()
+                : "Internal";
+
+        String selectedProject = projectCombo != null && projectCombo.getSelectedItem() != null
+                ? projectCombo.getSelectedItem().toString().trim()
+                : "";
+
+        Set<String> taskSet = new LinkedHashSet<>();
+        if (!selectedProject.isEmpty() && !"No Projects".equalsIgnoreCase(selectedProject)) {
+            for (TaskItem item : cachedEmployeeTasks) {
+                if (matchesClient(item.client, selectedClient)) {
+                    String itemCanonical = canonicalTaskType(item.taskType);
+                    if (itemCanonical.equalsIgnoreCase(selectedProject)) {
+                        taskSet.add(item.title);
+                    }
+                }
+            }
+        }
+
+        System.out.println("Dropdown update: selectedProject=[" + selectedProject + "], matching tasks=" + taskSet);
+
+        List<String> tasks = new ArrayList<>(taskSet);
+        if (tasks.isEmpty()) {
+            tasks.add("No Tasks");
+            taskCombo.setEnabled(false);
+        } else {
+            taskCombo.setEnabled(true);
+        }
+        populateCombo(taskCombo, tasks);
+
+        if (!workRunning && taskCombo.getSelectedItem() != null) {
+            currentTaskTitle = taskCombo.getSelectedItem().toString().trim();
+            currentTaskId = taskIdByTitle.get(currentTaskTitle);
+            if (currentTaskLabel != null) {
+                currentTaskLabel.setText(currentTaskTitle);
+            }
+        } else if (tasks.isEmpty() && !workRunning) {
+            currentTaskTitle = null;
+            currentTaskId = null;
+            if (currentTaskLabel != null) {
+                currentTaskLabel.setText("--");
+            }
+        }
+    }
+
+    private boolean matchesClient(String itemClient, String selectedClient) {
+        if (selectedClient == null || selectedClient.isBlank()) return true;
+        // If a task doesn't have client set yet (legacy task), treat it as "Internal"
+        String ic = (itemClient == null || itemClient.isBlank()) ? "internal" : itemClient.toLowerCase();
+        String sc = selectedClient.toLowerCase();
+        if (sc.contains("internal") && ic.contains("internal")) return true;
+        if (sc.contains("external") && ic.contains("external")) return true;
+        return ic.equalsIgnoreCase(sc);
     }
 
 
@@ -7706,6 +7563,42 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         ? ""
                         : restoredTaskTitle.trim();
 
+        // Find the task in cached items to also sync Client and Project selectors
+        TaskItem matchingItem = null;
+        for (TaskItem ti : cachedEmployeeTasks) {
+            if ((!currentTaskId.isBlank() && ti.id.equalsIgnoreCase(currentTaskId))
+                    || (!currentTaskTitle.isBlank() && ti.title.equalsIgnoreCase(currentTaskTitle))) {
+                matchingItem = ti;
+                break;
+            }
+        }
+
+        if (matchingItem != null) {
+            currentTaskClient = matchingItem.client;
+            currentTaskProject = matchingItem.taskType;
+
+            if (clientCombo != null) {
+                for (int i = 0; i < clientCombo.getItemCount(); i++) {
+                    if (matchesClient(matchingItem.client, clientCombo.getItemAt(i))) {
+                        clientCombo.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+            updateProjectsForSelectedClient();
+
+            if (projectCombo != null) {
+                String targetType = canonicalTaskType(matchingItem.taskType);
+                for (int i = 0; i < projectCombo.getItemCount(); i++) {
+                    if (targetType.equalsIgnoreCase(projectCombo.getItemAt(i))) {
+                        projectCombo.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+            updateTasksForSelectedProject();
+        }
+
         if (taskCombo != null && !currentTaskTitle.isBlank()) {
             for (int i = 0; i < taskCombo.getItemCount(); i++) {
                 String item = taskCombo.getItemAt(i);
@@ -7781,6 +7674,88 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
     // =========================================================
+    // DYNAMIC TODAY SUMMARY FETCHING (FULL 24-HR DAY CALCULATION)
+    // =========================================================
+
+    private void fetchTodaySummaryAsync() {
+        if (employeeCode == null || employeeCode.isBlank()) {
+            return;
+        }
+
+        SwingWorker<String, Void> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() {
+                try {
+                    String url = serverUrl + "/api/agent/attendance/today-summary/" + employeeCode;
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
+                            .header("Accept", "application/json")
+                            .GET()
+                            .build();
+
+                    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                        return response.body();
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Failed to fetch today-summary: " + ex.getMessage());
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String body = get();
+                    if (body != null && !body.isBlank()) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(body);
+
+                        String clockIn = root.path("clockInTime").asText("--");
+                        if (!"--".equals(clockIn) && !clockIn.isBlank()) {
+                            cachedClockInTime = clockIn;
+                        }
+
+                        long effectiveWorkSecs = root.path("effectiveWorkingSeconds").asLong(0L);
+                        long breakSecs = root.path("breakSeconds").asLong(0L);
+                        long lunchSecs = root.path("lunchSeconds").asLong(0L);
+                        long idleSecs = root.path("idleSeconds").asLong(0L);
+
+                        // Only apply if the backend has higher or equal accumulated time
+                        // and do not clobber actively ticking segments
+                        if (effectiveWorkSecs > employeeWorkAccumulatedSeconds) {
+                            employeeWorkAccumulatedSeconds = effectiveWorkSecs;
+                        }
+                        if (breakSecs > breakAccumulatedSeconds) {
+                            breakAccumulatedSeconds = breakSecs;
+                        }
+                        if (lunchSecs > lunchAccumulatedSeconds) {
+                            lunchAccumulatedSeconds = lunchSecs;
+                        }
+                        if (idleSecs > idleAccumulatedSeconds) {
+                            idleAccumulatedSeconds = idleSecs;
+                        }
+
+                        System.out.println("TODAY SUMMARY RESTORED: ClockIn=" + cachedClockInTime
+                                + ", WorkSecs=" + employeeWorkAccumulatedSeconds
+                                + ", BreakSecs=" + breakAccumulatedSeconds
+                                + ", LunchSecs=" + lunchAccumulatedSeconds
+                                + ", IdleSecs=" + idleAccumulatedSeconds);
+
+                        updateLocalUi();
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Error processing today-summary: " + ex.getMessage());
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+
+    // =========================================================
     // EXTRACT TASK ID
     // =========================================================
 
@@ -7840,6 +7815,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
         return value == null
                 ? ""
                 : value.trim();
+    }
+
+    private String normalizeString(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 
 
@@ -7979,6 +7961,9 @@ public class EmployeeWorkspaceWindow extends JFrame {
     public void dispose() {
         if (uiTimer != null) {
             uiTimer.stop();
+        }
+        if (backgroundSyncTimer != null) {
+            backgroundSyncTimer.stop();
         }
         super.dispose();
     }

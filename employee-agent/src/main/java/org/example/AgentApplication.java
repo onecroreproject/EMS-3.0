@@ -74,6 +74,14 @@ public class AgentApplication {
      */
     private static volatile String lastLoggedActivityState = null;
 
+    /**
+     * Single instance tracking fields held static so JVM Garbage Collector never closes them.
+     */
+    private static java.net.ServerSocket singleInstanceSocket;
+    private static java.io.RandomAccessFile singleInstanceRaf;
+    private static java.nio.channels.FileLock singleInstanceLock;
+    private static volatile JFrame activeWindow;
+
 
     /*
      * =========================================================
@@ -190,23 +198,7 @@ public class AgentApplication {
          * Single Instance Lock
          * =========================
          */
-        try {
-            java.io.File file = new java.io.File(System.getProperty("java.io.tmpdir"), "ems-agent.lock");
-            java.io.RandomAccessFile randomAccessFile = new java.io.RandomAccessFile(file, "rw");
-            java.nio.channels.FileChannel fileChannel = randomAccessFile.getChannel();
-            java.nio.channels.FileLock lock = fileChannel.tryLock();
-
-            if (lock == null) {
-                System.out.println("Another instance of EMS Agent is already running. Exiting.");
-                javax.swing.JOptionPane.showMessageDialog(null,
-                        "EMS Agent is already running.",
-                        "Agent Running",
-                        javax.swing.JOptionPane.INFORMATION_MESSAGE);
-                System.exit(0);
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to acquire application lock: " + e.getMessage());
-        }
+        acquireSingleInstanceLock();
 
 
         /*
@@ -358,6 +350,7 @@ public class AgentApplication {
                                 System.out.println("Login successful!");
                                 org.example.config.AgentTokenHolder.setToken(loginResult.getToken());
                                 org.example.config.AgentTokenHolder.setRefreshToken(loginResult.getRefreshToken());
+            activeWindow = loginWindowHolder[0];
 
 
                                 /*
@@ -605,6 +598,7 @@ public class AgentApplication {
                                                 deviceId,
                                                 workStartedAtMillis
                                         );
+                                activeWindow = workspaceWindow;
 
                                 /*
                                  * Show Workspace
@@ -2326,4 +2320,75 @@ public class AgentApplication {
             System.err.println("Could not process terms agreement check: " + e.getMessage());
         }
     }
+
+    /**
+     * Prevents multiple instances of the EMS Agent from running concurrently (Option A).
+     * Combines a local ServerSocket (port 49852) with a global file lock in ProgramData.
+     * If already running, pings the active instance to bring its window to the front and exits.
+     */
+    private static void acquireSingleInstanceLock() {
+        // 1. Port-based lock on localhost:49852
+        try {
+            singleInstanceSocket = new java.net.ServerSocket(49852, 1, java.net.InetAddress.getByName("127.0.0.1"));
+
+            Thread socketListener = new Thread(() -> {
+                while (singleInstanceSocket != null && !singleInstanceSocket.isClosed()) {
+                    try {
+                        java.net.Socket client = singleInstanceSocket.accept();
+                        client.close();
+                        SwingUtilities.invokeLater(() -> {
+                            if (activeWindow != null) {
+                                if (activeWindow.getExtendedState() == JFrame.ICONIFIED) {
+                                    activeWindow.setExtendedState(JFrame.NORMAL);
+                                }
+                                activeWindow.setVisible(true);
+                                activeWindow.toFront();
+                                activeWindow.requestFocus();
+                            }
+                        });
+                    } catch (Exception ignored) {}
+                }
+            }, "SingleInstanceSocketListener");
+            socketListener.setDaemon(true);
+            socketListener.start();
+        } catch (java.net.SocketException be) {
+            System.out.println("Another instance of EMS Agent is already running. Bringing window to front and exiting.");
+            bringExistingInstanceToFrontAndExit();
+            return;
+        } catch (Exception e) {
+            System.err.println("Could not bind single-instance port: " + e.getMessage());
+        }
+
+        // 2. Global file lock in C:\ProgramData\EmployeeAgent\ems-agent.lock
+        try {
+            java.io.File lockFile = new java.io.File("C:\\ProgramData\\EmployeeAgent", "ems-agent.lock");
+            if (!lockFile.getParentFile().exists()) {
+                lockFile.getParentFile().mkdirs();
+            }
+            singleInstanceRaf = new java.io.RandomAccessFile(lockFile, "rw");
+            singleInstanceLock = singleInstanceRaf.getChannel().tryLock();
+            if (singleInstanceLock == null) {
+                System.out.println("Another instance holds the ProgramData file lock.");
+                bringExistingInstanceToFrontAndExit();
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println("ProgramData lock file already locked by another process: " + e.getMessage());
+            bringExistingInstanceToFrontAndExit();
+            return;
+        }
+    }
+
+    private static void bringExistingInstanceToFrontAndExit() {
+        try {
+            // Signal running instance on localhost:49852 to bring its window to the front
+            try (java.net.Socket ping = new java.net.Socket(java.net.InetAddress.getByName("127.0.0.1"), 49852)) {
+                // Connected -> signal delivered!
+            }
+        } catch (Exception ignored) {}
+
+        // Exit immediately so duplicate process and duplicate tray icon are never created
+        System.exit(0);
+    }
 }
+

@@ -131,8 +131,18 @@ public class TaskWorkServiceImpl implements TaskWorkService {
             );
         }
 
-        if (!task.getAssignedTo()
-                .equalsIgnoreCase(employee.getName())) {
+        String assigned = task.getAssignedTo().trim();
+        String normAssigned = normalizeForMatch(assigned);
+        String normEmpName = normalizeForMatch(employee.getName());
+
+        boolean isAssigned = assigned.equalsIgnoreCase(employee.getName())
+                || normAssigned.equals(normEmpName)
+                || (normAssigned.length() >= 4 && normEmpName.length() >= 4 && (normAssigned.startsWith(normEmpName) || normEmpName.startsWith(normAssigned)))
+                || (employee.getId() != null && assigned.equalsIgnoreCase(employee.getId()))
+                || (employee.getEmployeeCode() != null && assigned.equalsIgnoreCase(employee.getEmployeeCode()))
+                || (employee.getEmail() != null && assigned.equalsIgnoreCase(employee.getEmail()));
+
+        if (!isAssigned) {
 
             throw new IllegalArgumentException(
                     "This task is not assigned to employee: "
@@ -519,5 +529,13 @@ public class TaskWorkServiceImpl implements TaskWorkService {
 
         return value == null ||
                 value.trim().isEmpty();
+    }
+
+    private String normalizeForMatch(String value) {
+        if (value == null) {
+            return "";
+        }
+        // Strip dots, commas, underscores, dashes, and extra whitespaces
+        return value.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 }

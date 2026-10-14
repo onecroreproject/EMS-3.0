@@ -39,6 +39,42 @@ public class AgentConfig {
 
                 loadFromFile(configPath);
 
+                String currentUrl = properties.getProperty("server.url", "").trim();
+                if (currentUrl.isEmpty()) {
+
+                    System.out.println(
+                            "Detected empty server.url in "
+                                    + configPath
+                                    + ". Auto-syncing to bundled configuration..."
+                    );
+
+                    try (InputStream inputStream =
+                                 AgentConfig.class.getResourceAsStream(
+                                         "/config.properties"
+                                 )) {
+
+                        if (inputStream != null) {
+                            Files.copy(
+                                    inputStream,
+                                    configPath,
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                            );
+                            loadFromFile(configPath);
+                            System.out.println(
+                                    "Successfully updated "
+                                            + configPath
+                                            + " to: "
+                                            + properties.getProperty("server.url")
+                            );
+                        }
+                    } catch (Exception ex) {
+                        System.out.println(
+                                "Failed to auto-update config.properties: "
+                                        + ex.getMessage()
+                        );
+                    }
+                }
+
                 System.out.println(
                         "Configuration loaded from: "
                                 + configPath
