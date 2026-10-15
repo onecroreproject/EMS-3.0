@@ -208,9 +208,32 @@ public class EmployeeWorkspaceWindow extends JFrame {
     private volatile boolean taskWorkStateLoading = false;
 
 
+    private JLabel lblWorkTitle;
+
+    private JLabel clockIcon;
+
     private JLabel workTimeLabel;
 
     private JButton workTimerButton;
+
+    private JLabel motivationalQuoteLabel;
+
+    private long lastQuoteShuffleNanos = 0L;
+
+    private static final String[] MOTIVATIONAL_QUOTES = new String[] {
+            "Stay productive and keep moving forward!",
+            "Focus on progress, not perfection.",
+            "Every small step today leads to big achievements tomorrow.",
+            "Great things are done by a series of small things brought together.",
+            "Hard work beats talent when talent doesn't work hard.",
+            "Your dedication and effort create excellence.",
+            "Believe you can and you're halfway there.",
+            "Consistency is the key to breakthrough success.",
+            "Success is the sum of small efforts repeated daily.",
+            "Stay focused, work smart, and make today count!",
+            "The future depends on what you do today.",
+            "Push yourself, because no one else is going to do it for you."
+    };
 
 
     // Current status
@@ -351,7 +374,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
 
-    private volatile boolean idleAfterBreakLunch = false;
+    private volatile boolean idleAfterBreakLunch = true;
 
 
     // =========================================================
@@ -380,7 +403,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
     // =========================================================
 
     private String localStatus =
-            "WORKING";
+            "IDLE";
 
 
     // =========================================================
@@ -513,7 +536,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 0L;
 
         this.localStatus =
-                "WORKING";
+                "IDLE";
 
 
         // =====================================================
@@ -641,12 +664,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
         /*
-         * IMPORTANT:
-         *
-         * Never initialize the UI as IDLE or SYNCING.
+         * Workspace starts in IDLE status until the employee clicks "Start Timer".
          */
+        this.idleSegmentStartNanos =
+                System.nanoTime();
+
         updateStatus(
-                "WORKING"
+                "IDLE"
         );
 
 
@@ -1512,27 +1536,25 @@ public class EmployeeWorkspaceWindow extends JFrame {
         banner.setPreferredSize(
                 new Dimension(
                         WINDOW_WIDTH,
-                        56
+                        52
                 )
         );
-
 
         banner.setBorder(
                 new EmptyBorder(
-                        6,
+                        0,
                         20,
-                        6,
+                        0,
                         20
                 )
         );
-
 
         JPanel brand =
                 new JPanel(
                         new FlowLayout(
                                 FlowLayout.LEFT,
-                                10,
-                                2
+                                0,
+                                14
                         )
                 );
 
@@ -1559,22 +1581,19 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 emsTitle
         );
 
-
         banner.add(
                 brand,
                 BorderLayout.WEST
         );
 
-
         JPanel menu =
                 new JPanel(
                         new FlowLayout(
                                 FlowLayout.RIGHT,
-                                12,
-                                4
+                                0,
+                                14
                         )
                 );
-
 
         menu.setOpaque(false);
 
@@ -2032,13 +2051,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
 
 
-        JLabel subtext =
+        motivationalQuoteLabel =
                 new JLabel(
-                        "Stay productive and keep moving forward!"
+                        MOTIVATIONAL_QUOTES[0]
                 );
 
 
-        subtext.setFont(
+        motivationalQuoteLabel.setFont(
                 new Font(
                         FONT_FAMILY,
                         Font.PLAIN,
@@ -2047,7 +2066,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
 
 
-        subtext.setForeground(
+        motivationalQuoteLabel.setForeground(
                 new Color(
                         148,
                         163,
@@ -2067,7 +2086,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
         info.add(
-                subtext
+                motivationalQuoteLabel
         );
 
 
@@ -2647,13 +2666,13 @@ public class EmployeeWorkspaceWindow extends JFrame {
         timeBox.setOpaque(false);
 
 
-        JLabel lblWork =
+        lblWorkTitle =
                 new JLabel(
                         "Work Time"
                 );
 
 
-        lblWork.setFont(
+        lblWorkTitle.setFont(
                 new Font(
                         FONT_FAMILY,
                         Font.BOLD,
@@ -2662,7 +2681,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
         );
 
 
-        lblWork.setForeground(
+        lblWorkTitle.setForeground(
                 TEXT_DARK
         );
 
@@ -2680,7 +2699,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
         timerRow.setOpaque(false);
 
 
-        JLabel clockIcon =
+        clockIcon =
                 new JLabel(
                         createWorkspaceIcon(
                                 IconType.CLOCK,
@@ -2725,7 +2744,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
 
         timeBox.add(
-                lblWork,
+                lblWorkTitle,
                 BorderLayout.NORTH
         );
 
@@ -3406,10 +3425,10 @@ public class EmployeeWorkspaceWindow extends JFrame {
         JPanel detailBox =
                 new JPanel(
                         new GridLayout(
-                                4,
+                                3,
                                 1,
                                 0,
-                                5
+                                6
                         )
                 ) {
 
@@ -3492,7 +3511,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         currentTaskLabel =
                 new JLabel(
-                        "--"
+                        "-- "
                 );
 
 
@@ -3510,7 +3529,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
 
         startedAtLabel =
                 new JLabel(
-                        "--"
+                        "-- "
                 );
 
 
@@ -3540,24 +3559,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         durationLabel,
                         TEXT_BODY,
                         false
-                )
-        );
-
-
-        idleTimeLabel =
-                new JLabel(
-                        "00:00:00"
-                );
-
-
-        detailBox.add(
-                createDetailLine(
-                        IconType.IDLE,
-                        "Idle Time",
-                        " :   ",
-                        idleTimeLabel,
-                        WARNING_ORANGE,
-                        true
                 )
         );
 
@@ -4347,10 +4348,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
     }
 
 
-    // =========================================================
-    // FOOTER
-    // =========================================================
-
     private JPanel createFooterBar() {
 
         JPanel bar =
@@ -4358,15 +4355,15 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         new BorderLayout()
                 );
 
-
         bar.setOpaque(false);
 
-
-        Dimension footerSize = new Dimension(Integer.MAX_VALUE, 36);
+        Dimension footerSize = new Dimension(Integer.MAX_VALUE, 32);
         bar.setPreferredSize(footerSize);
         bar.setMinimumSize(footerSize);
         bar.setMaximumSize(footerSize);
 
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 7));
+        left.setOpaque(false);
 
         JLabel infoText =
                 new JLabel(
@@ -4378,7 +4375,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         JLabel.LEFT
                 );
 
-
         infoText.setFont(
                 new Font(
                         FONT_FAMILY,
@@ -4387,27 +4383,24 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 )
         );
 
-
         infoText.setForeground(
                 TEXT_MUTED
         );
 
-
+        left.add(infoText);
         bar.add(
-                infoText,
+                left,
                 BorderLayout.WEST
         );
-
 
         JPanel right =
                 new JPanel(
                         new FlowLayout(
                                 FlowLayout.RIGHT,
                                 6,
-                                0
+                                7
                         )
                 );
-
 
         right.setOpaque(false);
 
@@ -4427,7 +4420,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 )
         );
 
-
         lastActivityLabel =
                 new JLabel(
                         "Last Activity : "
@@ -4441,7 +4433,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
                         JLabel.LEFT
                 );
 
-
         lastActivityLabel.setFont(
                 new Font(
                         FONT_FAMILY,
@@ -4450,22 +4441,18 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 )
         );
 
-
         lastActivityLabel.setForeground(
                 TEXT_MUTED
         );
-
 
         right.add(
                 lastActivityLabel
         );
 
-
         bar.add(
                 right,
                 BorderLayout.EAST
         );
-
 
         return bar;
     }
@@ -4684,6 +4671,20 @@ public class EmployeeWorkspaceWindow extends JFrame {
                     "Workspace activity check failed: "
                             + ex.getMessage()
             );
+        }
+
+        // =====================================================
+        // ROTATE MOTIVATIONAL QUOTE EVERY 5 MINUTES
+        // =====================================================
+
+        if (motivationalQuoteLabel != null) {
+            if (lastQuoteShuffleNanos == 0L) {
+                lastQuoteShuffleNanos = nowNanos;
+            } else if (nowNanos - lastQuoteShuffleNanos >= 300_000_000_000L) { // 5 minutes
+                lastQuoteShuffleNanos = nowNanos;
+                int randomIndex = java.util.concurrent.ThreadLocalRandom.current().nextInt(MOTIVATIONAL_QUOTES.length);
+                motivationalQuoteLabel.setText(MOTIVATIONAL_QUOTES[randomIndex]);
+            }
         }
 
         // =====================================================
@@ -4919,14 +4920,51 @@ public class EmployeeWorkspaceWindow extends JFrame {
         }
 
         // =====================================================
-        // EMPLOYEE WORK TIME
+        // DYNAMIC MAIN TIMER (Work Time / Break Time / Lunch Time / Idle Time)
         // =====================================================
 
         if (workTimeLabel != null) {
-
-            workTimeLabel.setText(
-                    formatDuration(workSeconds)
-            );
+            if (breakRunning) {
+                if (lblWorkTitle != null) {
+                    lblWorkTitle.setText("Break Time");
+                }
+                if (clockIcon != null) {
+                    clockIcon.setIcon(createWorkspaceIcon(IconType.BREAK, WARNING_ORANGE));
+                }
+                workTimeLabel.setForeground(WARNING_ORANGE);
+                workTimeLabel.setText(formatDuration(breakSeconds));
+            } else if (lunchRunning) {
+                if (lblWorkTitle != null) {
+                    lblWorkTitle.setText("Lunch Time");
+                }
+                if (clockIcon != null) {
+                    clockIcon.setIcon(createWorkspaceIcon(IconType.LUNCH, PURPLE_TEXT));
+                }
+                workTimeLabel.setForeground(PURPLE_TEXT);
+                workTimeLabel.setText(formatDuration(lunchSeconds));
+            } else if ("IDLE".equals(localStatus)) {
+                if (lblWorkTitle != null) {
+                    lblWorkTitle.setText("Idle Time");
+                }
+                if (clockIcon != null) {
+                    clockIcon.setIcon(createWorkspaceIcon(IconType.IDLE, DANGER_RED));
+                }
+                workTimeLabel.setForeground(DANGER_RED);
+                long currentIdleSeconds = 0L;
+                if (idleSegmentStartNanos > 0L) {
+                    currentIdleSeconds = Math.max(0L, (nowNanos - idleSegmentStartNanos) / 1_000_000_000L);
+                }
+                workTimeLabel.setText(formatDuration(currentIdleSeconds));
+            } else {
+                if (lblWorkTitle != null) {
+                    lblWorkTitle.setText("Work Time");
+                }
+                if (clockIcon != null) {
+                    clockIcon.setIcon(createWorkspaceIcon(IconType.CLOCK, PRIMARY_BLUE));
+                }
+                workTimeLabel.setForeground(PRIMARY_BLUE);
+                workTimeLabel.setText(formatDuration(workSeconds));
+            }
         }
 
         // =====================================================
@@ -5172,9 +5210,8 @@ public class EmployeeWorkspaceWindow extends JFrame {
             if (breakRunning) {
 
                 breakButton.setText(
-                        "End Break"
+                        "End Break   "
                                 + formatDuration(currentBreakSeconds)
-
                 );
 
             } else {
@@ -5214,7 +5251,6 @@ public class EmployeeWorkspaceWindow extends JFrame {
                 lunchButton.setText(
                         "End Lunch   "
                                 + formatDuration(currentLunchSeconds)
-
                 );
 
             } else {
@@ -5739,14 +5775,9 @@ public class EmployeeWorkspaceWindow extends JFrame {
             if (response.statusCode() < 200
                     || response.statusCode() >= 300) {
 
-                showInformation(
-                        "Task Timer",
-                        "Unable to start task. HTTP "
-                                + response.statusCode()
-                                + "\n\n"
-                                + response.body()
-                );
-
+                System.out.println("Backend task start failed with HTTP " + response.statusCode() + ": " + response.body());
+                System.out.println("Falling back to local offline work tracking.");
+                startOfflineWorkTimer();
                 return;
             }
 
@@ -5930,18 +5961,11 @@ public class EmployeeWorkspaceWindow extends JFrame {
         } catch (Exception ex) {
 
             System.out.println(
-                    "Failed to start task work: "
+                    "Failed to start task work on server: "
                             + ex.getMessage()
+                            + ". Falling back to local offline work timer."
             );
-
-            ex.printStackTrace();
-
-
-            showInformation(
-                    "Task Timer",
-                    "Failed to start task.\n\n"
-                            + ex.getMessage()
-            );
+            startOfflineWorkTimer();
         }
     }
 
@@ -6724,50 +6748,45 @@ public class EmployeeWorkspaceWindow extends JFrame {
             return;
         }
 
+        // 1. If timer/work is running, notify user to stop timer before logging out
+        if (workRunning) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please stop the timer before logging out.",
+                    "Active Timer Running",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Break/Lunch are separate attendance states. Do not logout while one of them is active.
+        if (breakRunning || lunchRunning) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please end Break or Lunch before logging out.",
+                    "Active Session",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // 2. Confirmation dialog: Are you sure you want to logout?
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
         logoutInProgress = true;
 
         System.out.println("=================================");
         System.out.println("LOGOUT REQUESTED");
-
-        // Do not leave a RUNNING task-work record behind.
-        // WORK_ENDED is sent only after task stop succeeds.
-        if (workRunning) {
-
-            if (AgentApplication.isOfflineMode()) {
-
-                stopOfflineWorkTimer();
-
-            } else {
-
-                boolean stopped =
-                        stopTaskWork();
-
-                if (!stopped) {
-
-                    logoutInProgress = false;
-
-                    System.out.println(
-                            "Logout cancelled because the active task could not be stopped."
-                    );
-
-                    return;
-                }
-            }
-        }
-
-        // Break/Lunch are separate attendance states. Do not send
-        // WORK_ENDED while one of them is still active.
-        if (breakRunning || lunchRunning) {
-
-            logoutInProgress = false;
-
-            showInformation(
-                    "Logout",
-                    "Please end Break or Lunch before logging out."
-            );
-
-            return;
-        }
 
         System.out.println(
                 "Clearing remembered credentials on logout."
@@ -7068,7 +7087,18 @@ public class EmployeeWorkspaceWindow extends JFrame {
             cachedEmployeeTasks.clear();
             taskIdByTitle.clear();
 
-            String url = serverUrl + "/api/tasks";
+            String queryParams = "";
+            if (employeeCode != null && !employeeCode.isBlank()) {
+                queryParams += "employeeCode=" + java.net.URLEncoder.encode(employeeCode, java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (employeeId != null && !employeeId.isBlank()) {
+                queryParams += (queryParams.isEmpty() ? "" : "&") + "employeeId=" + java.net.URLEncoder.encode(employeeId, java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (employeeDisplayName != null && !employeeDisplayName.isBlank()) {
+                queryParams += (queryParams.isEmpty() ? "" : "&") + "empName=" + java.net.URLEncoder.encode(employeeDisplayName, java.nio.charset.StandardCharsets.UTF_8);
+            }
+
+            String url = serverUrl + "/api/tasks" + (queryParams.isEmpty() ? "" : "?" + queryParams);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -7095,11 +7125,7 @@ public class EmployeeWorkspaceWindow extends JFrame {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(json);
 
-            String normEmpName = normalizeString(employeeDisplayName);
-            String normEmpCode = normalizeString(employeeCode);
-            String normEmpId = normalizeString(employeeId);
-
-            System.out.println("Processing tasks for empName=[" + employeeDisplayName + "], empCode=[" + employeeCode + "], empId=[" + employeeId + "]");
+            System.out.println("Loading tasks for logged-in employee: " + employeeDisplayName + " (" + employeeCode + ")");
 
             if (rootNode.isArray()) {
                 for (com.fasterxml.jackson.databind.JsonNode taskNode : rootNode) {
@@ -7108,18 +7134,8 @@ public class EmployeeWorkspaceWindow extends JFrame {
                     String clientVal = taskNode.path("client").asText("Internal").trim();
                     String taskTypeVal = taskNode.path("taskType").asText("Development").trim();
                     String assignedTo = taskNode.path("assignedTo").asText("").trim();
-                    String normAssigned = normalizeString(assignedTo);
 
-                    boolean matches = assignedTo.isEmpty()
-                            || assignedTo.equalsIgnoreCase(employeeDisplayName)
-                            || normAssigned.equals(normEmpName)
-                            || (normAssigned.length() >= 4 && normEmpName.length() >= 4 && (normAssigned.startsWith(normEmpName) || normEmpName.startsWith(normAssigned)))
-                            || (employeeId != null && (employeeId.equalsIgnoreCase(assignedTo) || normAssigned.equals(normEmpId)))
-                            || (employeeCode != null && (employeeCode.equalsIgnoreCase(assignedTo) || normAssigned.equals(normEmpCode)));
-
-                    System.out.println("Task: [" + title + "], Client: [" + clientVal + "], Type: [" + taskTypeVal + "], AssignedTo: [" + assignedTo + "], Matches: " + matches);
-
-                    if (!title.isEmpty() && matches) {
+                    if (!title.isEmpty()) {
                         cachedEmployeeTasks.add(new TaskItem(id, title, clientVal, taskTypeVal, assignedTo));
                         if (!id.isEmpty()) {
                             taskIdByTitle.put(title, id);
@@ -7923,13 +7939,25 @@ public class EmployeeWorkspaceWindow extends JFrame {
             long totalSeconds
     ) {
 
-        long minutes =
-                totalSeconds / 60;
+        long hours =
+                totalSeconds / 3600;
 
+        long minutes =
+                (
+                        totalSeconds % 3600
+                ) / 60;
 
         long seconds =
                 totalSeconds % 60;
 
+        if (hours > 0) {
+            return String.format(
+                    "%dh %02dm %02ds",
+                    hours,
+                    minutes,
+                    seconds
+            );
+        }
 
         return String.format(
                 "%dm %02ds",

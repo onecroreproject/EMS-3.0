@@ -124,30 +124,27 @@ public class TaskWorkServiceImpl implements TaskWorkService {
         // 4. Validate task assignment
         // -----------------------------------------------------
 
-        if (isBlank(task.getAssignedTo())) {
+        if (!isBlank(task.getAssignedTo())) {
+            String assigned = task.getAssignedTo().trim();
+            String normAssigned = normalizeForMatch(assigned);
+            String normEmpName = normalizeForMatch(employee.getName());
+            String normEmpCode = normalizeForMatch(employee.getEmployeeCode());
 
-            throw new IllegalArgumentException(
-                    "Task is not assigned to any employee."
-            );
-        }
+            boolean isAssigned = assigned.equalsIgnoreCase(employee.getName())
+                    || normAssigned.equals(normEmpName)
+                    || (!normAssigned.isEmpty() && !normEmpName.isEmpty() && (normAssigned.contains(normEmpName) || normEmpName.contains(normAssigned)))
+                    || (employee.getId() != null && assigned.equalsIgnoreCase(employee.getId()))
+                    || (employee.getEmployeeCode() != null && (assigned.equalsIgnoreCase(employee.getEmployeeCode()) || normAssigned.equals(normEmpCode) || normAssigned.contains(normEmpCode)))
+                    || (employee.getEmail() != null && assigned.equalsIgnoreCase(employee.getEmail()))
+                    || assigned.equalsIgnoreCase("All")
+                    || assigned.equalsIgnoreCase("Everyone");
 
-        String assigned = task.getAssignedTo().trim();
-        String normAssigned = normalizeForMatch(assigned);
-        String normEmpName = normalizeForMatch(employee.getName());
-
-        boolean isAssigned = assigned.equalsIgnoreCase(employee.getName())
-                || normAssigned.equals(normEmpName)
-                || (normAssigned.length() >= 4 && normEmpName.length() >= 4 && (normAssigned.startsWith(normEmpName) || normEmpName.startsWith(normAssigned)))
-                || (employee.getId() != null && assigned.equalsIgnoreCase(employee.getId()))
-                || (employee.getEmployeeCode() != null && assigned.equalsIgnoreCase(employee.getEmployeeCode()))
-                || (employee.getEmail() != null && assigned.equalsIgnoreCase(employee.getEmail()));
-
-        if (!isAssigned) {
-
-            throw new IllegalArgumentException(
-                    "This task is not assigned to employee: "
-                            + employee.getName()
-            );
+            if (!isAssigned) {
+                throw new IllegalArgumentException(
+                        "This task is not assigned to employee: "
+                                + employee.getName()
+                );
+            }
         }
 
 

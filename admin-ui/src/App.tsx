@@ -18,7 +18,8 @@ import ViewDepartments from './pages/ViewDepartments';
 import AddTeam from './pages/AddTeam';
 import ViewTeams from './pages/ViewTeams';
 import Attendance from './pages/Attendance';
-
+import ScreenMonitoringSettings from './pages/ScreenMonitoringSettings';
+import ScreenMonitoringView from './pages/ScreenMonitoringView';
 
 // ProtectedRoute checks if adminToken exists in localStorage or sessionStorage
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
@@ -73,6 +74,10 @@ function App() {
           <Route path="time-tracking" element={<TimeTrackingSummary />} />
           <Route path="tracking/timesheet" element={<EmployeeTimesheet />} />
           <Route path="tracking/attendance" element={<Attendance />} />
+          <Route path="tracking/screen-monitoring" element={<ScreenMonitoringView />} />
+          <Route path="tracking/screenshots" element={<ScreenMonitoringView />} />
+          <Route path="screen-monitoring" element={<ScreenMonitoringView />} />
+          <Route path="screenshots" element={<ScreenMonitoringView />} />
           <Route path="employees/add" element={<AddEmployee />} />
           <Route path="employees/view" element={<ViewEmployee />} />
           <Route path="tasks/assign" element={<AssignTask />} />
@@ -84,7 +89,12 @@ function App() {
           <Route path="admin/profile" element={<AdminProfile />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="settings" element={<AdminProfile />} />
-          {/* We will add more routes here later */}
+          <Route path="settings/general" element={<AdminProfile />} />
+          <Route path="settings/screen-monitoring" element={<ScreenMonitoringSettings />} />
+          <Route path="settings/attendance" element={<ScreenMonitoringSettings />} />
+          <Route path="settings/notifications" element={<AdminProfile />} />
+          <Route path="settings/roles" element={<AdminProfile />} />
+          <Route path="settings/system" element={<AdminProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

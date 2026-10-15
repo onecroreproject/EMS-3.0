@@ -136,13 +136,13 @@ export default function ViewTeams() {
       </div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 mt-4 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg">
               <Users className="w-6 h-6" />
             </div>
             Teams
           </h1>
-          <p className="text-slate-500 mt-2 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
             Manage your organization's teams and their department associations.
           </p>
         </div>
@@ -156,7 +156,7 @@ export default function ViewTeams() {
       </div>
 
       {/* Controls */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+      <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/80 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center transition-colors">
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
@@ -164,26 +164,26 @@ export default function ViewTeams() {
             placeholder="Search teams or departments..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-sm"
           />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Table Container */}
+      <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/80 overflow-hidden transition-colors">
+        <div className="overflow-x-auto thin-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Team Name</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Department</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              <tr className="bg-slate-50/70 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700/80">
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Team Name</th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Department</th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700/70">
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex justify-center items-center gap-2">
                       <div className="w-5 h-5 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin" />
                       Loading teams...
@@ -198,38 +198,38 @@ export default function ViewTeams() {
                 </tr>
               ) : filteredTeams.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     No teams found matching your search.
                   </td>
                 </tr>
               ) : (
                 filteredTeams.map((team) => (
-                  <tr key={team.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={team.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-4 sm:px-6 py-3.5 sm:py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs sm:text-sm shrink-0">
                           {team.name.substring(0, 2).toUpperCase()}
                         </div>
-                        <span className="font-medium text-slate-900">{team.name}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{team.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Building2 className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm font-medium">{getDepartmentName(team.departmentId)}</span>
+                    <td className="px-4 sm:px-6 py-3.5 sm:py-4">
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                        <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium">{getDepartmentName(team.departmentId)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-3.5 sm:py-4 text-right space-x-1 sm:space-x-2 whitespace-nowrap">
                       <button 
                         onClick={() => handleEditClick(team)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center justify-center"
+                        className="p-1.5 sm:p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors inline-flex items-center justify-center"
                         title="Edit Team"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleDelete(team.id, team.name)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center"
+                        className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors inline-flex items-center justify-center"
                         title="Delete Team"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -247,8 +247,8 @@ export default function ViewTeams() {
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Team">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-slate-800">Edit Team</h2>
-            <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Edit Team</h2>
+            <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -257,25 +257,25 @@ export default function ViewTeams() {
             <form onSubmit={handleEditSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700">Team Name</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Team Name</label>
                   <input
                     type="text"
                     name="name"
                     required
                     value={editingTeam.name}
                     onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700">Department</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Department</label>
                   <select
                     name="departmentId"
                     required
                     value={editingTeam.departmentId}
                     onChange={handleEditChange}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white text-sm"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none text-sm"
                   >
                     {departments.map(dept => (
                       <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -284,11 +284,11 @@ export default function ViewTeams() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/80">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors"
                 >
                   Cancel
                 </button>

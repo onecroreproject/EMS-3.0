@@ -33,8 +33,8 @@ export default function Dashboard() {
       <div className="flex justify-between items-start">
         <div>
           <p className="text-gray-500 text-sm">Welcome Back,</p>
-          <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            Admin <span className="text-2xl">👋</span>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            Admin <span className="text-3xl inline-block animate-wave cursor-default select-none" title="Welcome!">👋</span>
           </h2>
           <p className="text-gray-500 text-sm mt-1">Here's what's happening in your organization today.</p>
         </div>

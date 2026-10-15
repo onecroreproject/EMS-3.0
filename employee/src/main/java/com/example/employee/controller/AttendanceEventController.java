@@ -19,15 +19,18 @@ public class AttendanceEventController {
     private final AttendanceEventService attendanceEventService;
     private final AttendanceCalculationService attendanceCalculationService;
     private final com.example.employee.service.AdminAttendanceDailyService adminAttendanceDailyService;
+    private final com.example.employee.repository.DeviceRepository deviceRepository;
 
     public AttendanceEventController(
             AttendanceEventService attendanceEventService,
             AttendanceCalculationService attendanceCalculationService,
-            com.example.employee.service.AdminAttendanceDailyService adminAttendanceDailyService
+            com.example.employee.service.AdminAttendanceDailyService adminAttendanceDailyService,
+            com.example.employee.repository.DeviceRepository deviceRepository
     ) {
         this.attendanceEventService = attendanceEventService;
         this.attendanceCalculationService = attendanceCalculationService;
         this.adminAttendanceDailyService = adminAttendanceDailyService;
+        this.deviceRepository = deviceRepository;
     }
 
 
@@ -48,6 +51,22 @@ public class AttendanceEventController {
                 timestamp != null
                         ? Instant.parse(timestamp)
                         : Instant.now();
+
+        // Ensure device lastSeen and status are kept alive when any attendance event occurs
+        try {
+            if (deviceId != null && !deviceId.isBlank()) {
+                deviceRepository.findByDeviceId(deviceId).ifPresent(dev -> {
+                    dev.setLastSeen(Instant.now());
+                    if (!"INVALIDATED".equalsIgnoreCase(dev.getStatus())) {
+                        dev.setStatus(eventType == AttendanceEventType.WORK_ENDED ? "OFFLINE" : "ONLINE");
+                    }
+                    if (employeeCode != null && !employeeCode.isBlank()) {
+                        dev.setEmployeeCode(employeeCode);
+                    }
+                    deviceRepository.save(dev);
+                });
+            }
+        } catch (Exception ignored) {}
 
         AttendanceEventDocument savedEvent =
                 attendanceEventService.recordEvent(

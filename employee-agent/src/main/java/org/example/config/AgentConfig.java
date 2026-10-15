@@ -184,6 +184,29 @@ public class AgentConfig {
     private int heartbeatIntervalSeconds = 10;
     private int loginReminderIntervalSeconds = 60;
 
+    // Dynamic Screen Monitoring Settings
+    private boolean captureEnabled = true;
+    private int captureInterval = 5; // minutes
+    private int imageQuality = 75; // percentage
+    private String imageFormat = "JPEG";
+    private boolean captureDuringWorking = true;
+    private boolean captureDuringIdle = true;
+    private boolean captureDuringBreak = true;
+    private boolean captureWhenLoggedOut = false;
+
+    // Offline & Sync
+    private boolean enableOfflineCapture = true;
+    private int localStorageLimit = 2; // GB
+    private int retryInterval = 5; // minutes
+    private int maxRetryAttempts = 10;
+    private boolean autoSyncOnStartup = true;
+
+    // Attendance & Idle Policy
+    private int markOfflineAfterContinuousIdle = 30; // minutes
+    private boolean enableAutomaticOfflineStatus = true;
+    private int configurationVersion = 1;
+    private String versionString = "v2.1.0";
+
     public void fetchDynamicConfig(String serverUrl) {
         try {
             java.net.URL url = new java.net.URL(serverUrl + "/api/agent/config");
@@ -201,33 +224,113 @@ public class AgentConfig {
                 }
                 in.close();
                 String json = content.toString();
-                
-                // Simple parsing since we can't use complex JSON libs easily here
-                if (json.contains("\"requiredHours\":")) {
-                    String part = json.split("\"requiredHours\":")[1].split(",")[0].replaceAll("[^0-9]", "");
-                    requiredHours = Integer.parseInt(part);
-                }
-                if (json.contains("\"idleGraceMinutes\":")) {
-                    String part = json.split("\"idleGraceMinutes\":")[1].split(",")[0].replaceAll("[^0-9]", "");
-                    idleGraceMinutes = Integer.parseInt(part);
-                }
-                if (json.contains("\"autoWorkEndMinutes\":")) {
-                    String part = json.split("\"autoWorkEndMinutes\":")[1].split(",")[0].replaceAll("[^0-9]", "");
-                    autoWorkEndMinutes = Long.parseLong(part);
-                }
-                if (json.contains("\"heartbeatIntervalSeconds\":")) {
-                    String part = json.split("\"heartbeatIntervalSeconds\":")[1].split(",")[0].replaceAll("[^0-9]", "");
-                    heartbeatIntervalSeconds = Integer.parseInt(part);
-                }
-                if (json.contains("\"loginReminderIntervalSeconds\":")) {
-                    String part = json.split("\"loginReminderIntervalSeconds\":")[1].split("}")[0].replaceAll("[^0-9]", "");
-                    loginReminderIntervalSeconds = Integer.parseInt(part);
-                }
-                System.out.println("Dynamic configuration loaded successfully from server.");
+
+                requiredHours = parseJsonInt(json, "requiredHours", requiredHours);
+                idleGraceMinutes = parseJsonInt(json, "idleGraceMinutes", idleGraceMinutes);
+                autoWorkEndMinutes = parseJsonLong(json, "autoWorkEndMinutes", autoWorkEndMinutes);
+                heartbeatIntervalSeconds = parseJsonInt(json, "heartbeatIntervalSeconds", heartbeatIntervalSeconds);
+                loginReminderIntervalSeconds = parseJsonInt(json, "loginReminderIntervalSeconds", loginReminderIntervalSeconds);
+
+                // Screen capture properties
+                captureEnabled = parseJsonBoolean(json, "captureEnabled", captureEnabled);
+                captureInterval = parseJsonInt(json, "captureInterval", captureInterval);
+                imageQuality = parseJsonInt(json, "imageQuality", imageQuality);
+                imageFormat = parseJsonString(json, "imageFormat", imageFormat);
+                captureDuringWorking = parseJsonBoolean(json, "captureDuringWorking", captureDuringWorking);
+                captureDuringIdle = parseJsonBoolean(json, "captureDuringIdle", captureDuringIdle);
+                captureDuringBreak = parseJsonBoolean(json, "captureDuringBreak", captureDuringBreak);
+                captureWhenLoggedOut = parseJsonBoolean(json, "captureWhenLoggedOut", captureWhenLoggedOut);
+
+                // Offline & Sync properties
+                enableOfflineCapture = parseJsonBoolean(json, "enableOfflineCapture", enableOfflineCapture);
+                localStorageLimit = parseJsonInt(json, "localStorageLimit", localStorageLimit);
+                retryInterval = parseJsonInt(json, "retryInterval", retryInterval);
+                maxRetryAttempts = parseJsonInt(json, "maxRetryAttempts", maxRetryAttempts);
+                autoSyncOnStartup = parseJsonBoolean(json, "autoSyncOnStartup", autoSyncOnStartup);
+
+                // Attendance policy properties
+                markOfflineAfterContinuousIdle = parseJsonInt(json, "markOfflineAfterContinuousIdle", markOfflineAfterContinuousIdle);
+                enableAutomaticOfflineStatus = parseJsonBoolean(json, "enableAutomaticOfflineStatus", enableAutomaticOfflineStatus);
+                configurationVersion = parseJsonInt(json, "configurationVersion", configurationVersion);
+                versionString = parseJsonString(json, "versionString", versionString);
+
+                System.out.println("Dynamic configuration loaded successfully from server (Version: " + versionString + ").");
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch dynamic config. Using default fallbacks: " + e.getMessage());
         }
+    }
+
+    private int parseJsonInt(String json, String key, int defaultVal) {
+        try {
+            String pattern = "\"" + key + "\":";
+            if (json.contains(pattern)) {
+                String sub = json.substring(json.indexOf(pattern) + pattern.length()).trim();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < sub.length(); i++) {
+                    char c = sub.charAt(i);
+                    if (Character.isDigit(c) || (c == '-' && sb.length() == 0)) {
+                        sb.append(c);
+                    } else if (c == ',' || c == '}' || c == ' ' || c == '\n') {
+                        break;
+                    }
+                }
+                if (sb.length() > 0) {
+                    return Integer.parseInt(sb.toString());
+                }
+            }
+        } catch (Exception ignored) {}
+        return defaultVal;
+    }
+
+    private long parseJsonLong(String json, String key, long defaultVal) {
+        try {
+            String pattern = "\"" + key + "\":";
+            if (json.contains(pattern)) {
+                String sub = json.substring(json.indexOf(pattern) + pattern.length()).trim();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < sub.length(); i++) {
+                    char c = sub.charAt(i);
+                    if (Character.isDigit(c) || (c == '-' && sb.length() == 0)) {
+                        sb.append(c);
+                    } else if (c == ',' || c == '}' || c == ' ' || c == '\n') {
+                        break;
+                    }
+                }
+                if (sb.length() > 0) {
+                    return Long.parseLong(sb.toString());
+                }
+            }
+        } catch (Exception ignored) {}
+        return defaultVal;
+    }
+
+    private boolean parseJsonBoolean(String json, String key, boolean defaultVal) {
+        try {
+            String pattern = "\"" + key + "\":";
+            if (json.contains(pattern)) {
+                String sub = json.substring(json.indexOf(pattern) + pattern.length()).trim();
+                if (sub.startsWith("true")) return true;
+                if (sub.startsWith("false")) return false;
+            }
+        } catch (Exception ignored) {}
+        return defaultVal;
+    }
+
+    private String parseJsonString(String json, String key, String defaultVal) {
+        try {
+            String pattern = "\"" + key + "\":";
+            if (json.contains(pattern)) {
+                String sub = json.substring(json.indexOf(pattern) + pattern.length()).trim();
+                if (sub.startsWith("\"")) {
+                    int nextQuote = sub.indexOf("\"", 1);
+                    if (nextQuote != -1) {
+                        return sub.substring(1, nextQuote);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return defaultVal;
     }
 
     public int getRequiredWorkHours() {
@@ -249,4 +352,72 @@ public class AgentConfig {
     public int getLoginReminderIntervalSeconds() {
         return loginReminderIntervalSeconds;
     }
-}
+
+    public boolean isCaptureEnabled() {
+        return captureEnabled;
+    }
+
+    public int getCaptureIntervalMinutes() {
+        return captureInterval;
+    }
+
+    public int getImageQuality() {
+        return imageQuality;
+    }
+
+    public String getImageFormat() {
+        return imageFormat;
+    }
+
+    public boolean isCaptureDuringWorking() {
+        return captureDuringWorking;
+    }
+
+    public boolean isCaptureDuringIdle() {
+        return captureDuringIdle;
+    }
+
+    public boolean isCaptureDuringBreak() {
+        return captureDuringBreak;
+    }
+
+    public boolean isCaptureWhenLoggedOut() {
+        return captureWhenLoggedOut;
+    }
+
+    public boolean isEnableOfflineCapture() {
+        return enableOfflineCapture;
+    }
+
+    public int getLocalStorageLimitGb() {
+        return localStorageLimit;
+    }
+
+    public int getRetryIntervalMinutes() {
+        return retryInterval;
+    }
+
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+
+    public boolean isAutoSyncOnStartup() {
+        return autoSyncOnStartup;
+    }
+
+    public int getMarkOfflineAfterContinuousIdleMinutes() {
+        return markOfflineAfterContinuousIdle;
+    }
+
+    public boolean isEnableAutomaticOfflineStatus() {
+        return enableAutomaticOfflineStatus;
+    }
+
+    public int getConfigurationVersion() {
+        return configurationVersion;
+    }
+
+    public String getVersionString() {
+        return versionString;
+    }
+}

@@ -37,10 +37,10 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
   };
 
   const themeSelected: Record<string, string> = {
-    orange: 'bg-orange-50 text-[#F96D3E]',
-    blue: 'bg-blue-50 text-blue-700',
-    purple: 'bg-purple-50 text-purple-700',
-    green: 'bg-green-50 text-green-700',
+    orange: 'bg-orange-50 text-[#F96D3E] dark:bg-orange-500/20 dark:text-orange-400',
+    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
+    green: 'bg-green-50 text-green-700 dark:bg-green-500/20 dark:text-green-400',
   };
 
   const ringClass = themeRings[themeColor] || themeRings.blue;
@@ -57,23 +57,23 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between ${icon ? 'pl-9' : 'pl-3'} pr-2 ${sizeClasses[size]} bg-white border transition-all font-semibold text-slate-700 rounded-lg focus:outline-none focus:ring-0 shadow-sm hover:border-slate-300 ${isOpen ? ringClass : 'border-slate-200'}`}
+        className={`w-full flex items-center justify-between ${icon ? 'pl-9' : 'pl-3.5'} pr-3 ${sizeClasses[size]} bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700/80 transition-all font-semibold text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none shadow-xs hover:border-slate-300 dark:hover:border-slate-600 ${isOpen ? ringClass : ''}`}
       >
         {icon && (
-          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             {icon}
           </div>
         )}
         
-        <span className={selectedOption && value !== '' ? "text-slate-800" : "text-slate-500"}>
+        <span className={selectedOption && value !== '' ? "text-slate-800 dark:text-slate-100 font-medium" : "text-slate-400 dark:text-slate-500 font-normal"}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         
-        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform duration-200 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white border border-slate-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-1.5 transform opacity-100 scale-100 transition-all origin-top-right overflow-hidden">
+        <div className="absolute z-50 w-full mt-1.5 bg-white dark:bg-[#1E293B] border border-slate-100 dark:border-slate-700/80 rounded-xl shadow-2xl py-1.5 transform opacity-100 scale-100 transition-all origin-top-right overflow-hidden">
           <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {options.map((opt) => {
               const isSelected = opt.value === value;
@@ -85,8 +85,8 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                     onChange(opt.value);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 text-xs transition-colors
-                    ${isSelected ? selectedClass : 'text-slate-600 hover:bg-slate-50'}
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-xs transition-colors cursor-pointer
+                    ${isSelected ? selectedClass : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80'}
                   `}
                 >
                   <span className={isSelected ? 'font-bold' : 'font-medium'}>{opt.label}</span>

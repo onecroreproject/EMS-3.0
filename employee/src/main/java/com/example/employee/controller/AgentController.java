@@ -31,6 +31,8 @@ public class AgentController {
     @PostMapping("/heartbeat")
     public ResponseEntity<Map<String, Object>> heartbeat(
             @RequestParam String deviceId,
+            @RequestParam(required = false) String ip,
+            @RequestParam(required = false) String location,
             jakarta.servlet.http.HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
@@ -62,13 +64,21 @@ public class AgentController {
         device.setStatus("ONLINE");
         device.setLastSeen(now);
 
-        if (request != null) {
+        // Prefer dynamic IP sent by the agent
+        if (ip != null && !ip.isBlank() && !"-".equals(ip) && !"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
+            device.setIpAddress(ip.trim());
+        } else if (request != null && (device.getIpAddress() == null || device.getIpAddress().isBlank() || "127.0.0.1".equals(device.getIpAddress()))) {
             String xf = request.getHeader("X-Forwarded-For");
             String remoteIp = (xf != null && !xf.isBlank()) ? xf.split(",")[0].trim() : request.getRemoteAddr();
             if (remoteIp != null && !remoteIp.isBlank()) {
                 if ("0:0:0:0:0:0:0:1".equals(remoteIp)) remoteIp = "127.0.0.1";
                 device.setIpAddress(remoteIp);
             }
+        }
+
+        // Set dynamic precise street/locality location sent by the agent
+        if (location != null && !location.isBlank() && !"-".equals(location)) {
+            device.setLocation(location.trim());
         }
 
         deviceRepository.save(device);

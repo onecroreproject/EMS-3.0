@@ -27,7 +27,7 @@ apiClient.interceptors.response.use(
       // Token is expired, invalid, or session revoked
       localStorage.removeItem('adminToken');
       sessionStorage.removeItem('adminToken');
-      
+
       // Redirect to login page if we aren't already there
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';

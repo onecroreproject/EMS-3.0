@@ -26,8 +26,9 @@ public class OtaUpdateService {
 
         this.httpClient =
                 HttpClient.newBuilder()
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
                         .connectTimeout(
-                                Duration.ofSeconds(15)
+                                Duration.ofSeconds(30)
                         )
                         .build();
     }
@@ -54,11 +55,24 @@ public class OtaUpdateService {
                 "OTA: DOWNLOADING"
         );
 
+        String targetUrl = metadata.getDownloadUrl();
+        if (targetUrl != null && targetUrl.startsWith("http://ems.dlksoftwaresolutions.co.in")) {
+            targetUrl = targetUrl.replace("http://ems.dlksoftwaresolutions.co.in", "https://ems.dlksoftwaresolutions.co.in");
+        } else if (targetUrl != null && targetUrl.startsWith("http://")) {
+            try {
+                String configuredServerUrl = new org.example.config.AgentConfig().getServerUrl();
+                if (configuredServerUrl != null && configuredServerUrl.startsWith("https://")) {
+                    targetUrl = "https://" + targetUrl.substring(7);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
         HttpRequest request =
                 HttpRequest.newBuilder()
                         .uri(
                                 URI.create(
-                                        metadata.getDownloadUrl()
+                                        targetUrl
                                 )
                         )
                         .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
@@ -77,6 +91,22 @@ public class OtaUpdateService {
                         request,
                         HttpResponse.BodyHandlers.ofInputStream()
                 );
+
+        // Fallback: Manually follow redirect if 301/302 was received
+        int code = response.statusCode();
+        if ((code == 301 || code == 302 || code == 307 || code == 308) && response.headers().firstValue("Location").isPresent()) {
+            String redirectUrl = response.headers().firstValue("Location").get();
+            System.out.println("OTA: Following manual redirect to " + redirectUrl);
+            HttpRequest redirectRequest =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(redirectUrl))
+                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
+                            .timeout(Duration.ofMinutes(10))
+                            .header("Accept", "application/octet-stream")
+                            .GET()
+                            .build();
+            response = httpClient.send(redirectRequest, HttpResponse.BodyHandlers.ofInputStream());
+        }
 
         if (response.statusCode() < 200
                 || response.statusCode() >= 300) {

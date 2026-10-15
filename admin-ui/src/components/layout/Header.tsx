@@ -1,6 +1,10 @@
-import { Search, Bell, User, Menu, LogOut, KeyRound, X, Loader2, ChevronRight } from 'lucide-react';
+import { 
+  Search, Bell, User, Menu, LogOut, KeyRound, X, Loader2, ChevronRight,
+  Zap, ChevronDown, Sun, Moon, UserPlus, CheckCircle2,
+  Building2, Users, BarChart2, Monitor
+} from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../../lib/axios';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import AllNotificationsDrawer from '../notifications/AllNotificationsDrawer';
@@ -22,6 +26,8 @@ interface SearchEmployee {
 export default function Header({ toggleSidebar }: { toggleSidebar: () => void }) {
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const quickActionsRef = useRef<HTMLDivElement>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -216,6 +222,9 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
+      if (quickActionsRef.current && !quickActionsRef.current.contains(event.target as Node)) {
+        setIsQuickActionsOpen(false);
+      }
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
         setIsSearchDropdownOpen(false);
@@ -236,6 +245,12 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
         setIsMobileSearchOpen(false);
         setIsSearchFocused(false);
         setIsSearchDropdownOpen(false);
+        setIsQuickActionsOpen(false);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        desktopInputRef.current?.focus();
+        setIsSearchFocused(true);
       }
     }
 
@@ -379,11 +394,63 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
 
   return (
     <header 
-      className={`h-16 text-white flex items-center justify-between px-4 md:px-6 shadow-md dark:shadow-none dark:border-b dark:border-slate-800/80 z-10 shrink-0 transition-colors duration-300 ease-in-out relative ${
-        isDarkMode ? 'bg-[#0F172A]' : 'bg-[#F96D3E]'
-      }`}
+      className="h-[74px] text-white flex items-center justify-between px-4 md:px-6 shadow-md z-50 shrink-0 transition-colors duration-300 relative overflow-visible"
     >
-      {/* Mobile Expanding Search Bar (Smooth Slide & Expand Transitions) */}
+      {/* Background Wave Design - Matches Reference Image Exactly */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Dynamic Gradient Mesh Base */}
+        <div 
+          className={`absolute inset-0 transition-all duration-500 ${
+            isDarkMode 
+              ? 'bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0F172A]' 
+              : 'bg-gradient-to-r from-[#F0381B] via-[#FA5428] via-[#FF6E38] to-[#EB381B]'
+          }`} 
+        />
+
+        {/* Vector Flowing Liquid Waves */}
+        <svg 
+          className="absolute inset-0 w-full h-full object-cover" 
+          viewBox="0 0 1440 90" 
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="waveCrimsonGrad" x1="0%" y1="100%" x2="50%" y2="0%">
+              <stop offset="0%" stopColor="#B71C1C" stopOpacity={isDarkMode ? 0.35 : 0.85} />
+              <stop offset="55%" stopColor="#D32F2F" stopOpacity={isDarkMode ? 0.2 : 0.55} />
+              <stop offset="100%" stopColor="#F44336" stopOpacity={0} />
+            </linearGradient>
+
+            <linearGradient id="waveAmberGrad" x1="0%" y1="0%" x2="60%" y2="100%">
+              <stop offset="0%" stopColor={isDarkMode ? '#38BDF8' : '#FFA24C'} stopOpacity={isDarkMode ? 0.25 : 0.65} />
+              <stop offset="60%" stopColor={isDarkMode ? '#0284C7' : '#FF7033'} stopOpacity={isDarkMode ? 0.15 : 0.4} />
+              <stop offset="100%" stopColor="#F85429" stopOpacity={0} />
+            </linearGradient>
+
+            <linearGradient id="waveRightGrad" x1="30%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFA050" stopOpacity={0} />
+              <stop offset="50%" stopColor={isDarkMode ? '#1E293B' : '#E0321A'} stopOpacity={isDarkMode ? 0.35 : 0.4} />
+              <stop offset="100%" stopColor={isDarkMode ? '#0F172A' : '#B71C1C'} stopOpacity={isDarkMode ? 0.8 : 0.75} />
+            </linearGradient>
+          </defs>
+
+          {/* Top-Left Amber Wave (flows down behind Teratime logo) */}
+          <path d="M0,0 L440,0 C370,44 280,70 190,56 C110,44 50,66 0,80 Z" fill="url(#waveAmberGrad)" />
+
+          {/* Bottom-Left Crimson Flowing Liquid Wave */}
+          <path d="M0,32 C80,38 170,60 270,66 C370,72 450,46 530,54 C590,60 640,78 690,90 L0,90 Z" fill="url(#waveCrimsonGrad)" />
+
+          {/* Center Subtle Rolling Wave under Search Bar */}
+          <path d="M350,0 C480,24 630,44 790,34 C950,22 1090,48 1250,36 C1360,26 1410,10 1440,0 Z" fill="#FFFFFF" opacity={isDarkMode ? 0.04 : 0.12} />
+
+          {/* Right Fluid Wave behind Quick Actions and Avatar */}
+          <path d="M960,90 C1080,56 1220,42 1350,56 C1390,60 1420,72 1440,82 L1440,90 Z" fill="url(#waveRightGrad)" />
+
+          {/* Bottom Edge Subtle Liquid Crest Line */}
+          <path d="M0,84 C240,89 480,80 720,85 C960,90 1200,83 1440,87 L1440,90 L0,90 Z" fill={isDarkMode ? '#000000' : '#8B180A'} opacity={0.4} />
+        </svg>
+      </div>
+
+      {/* Mobile Expanding Search Bar */}
       <div 
         ref={mobileSearchRef}
         className={`sm:hidden absolute inset-0 z-40 flex items-center px-3.5 gap-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -410,7 +477,7 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
             enterKeyHint="search"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Search employee by name or email..."
+            placeholder="Search employees, departments, tasks, or reports..."
             className={`w-full pl-10 pr-9 py-2 rounded-full text-sm outline-none transition-all duration-300 ${
               isDarkMode 
                 ? 'bg-[#1E2B3C] border-2 border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.35)] text-white placeholder-slate-400' 
@@ -430,7 +497,6 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-          {/* Dynamic Live Backend Search Results */}
           {renderSearchDropdown()}
         </form>
         <button
@@ -448,45 +514,51 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
         </button>
       </div>
       
-      {/* Left: Mobile Menu & Logo */}
-      <div className="flex items-center gap-3 w-auto md:w-64">
+      {/* Left: Mobile Menu & Teratime Brand Logo */}
+      <div className="flex items-center gap-3 w-auto md:w-72 relative z-10 shrink-0">
         <button 
           onClick={toggleSidebar}
-          className={`md:hidden p-1 rounded text-white transition-colors duration-300 ${
-            isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-orange-600'
+          className={`md:hidden p-1.5 rounded-lg text-white transition-colors duration-200 ${
+            isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-white/20'
           }`}
         >
           <Menu className="h-6 w-6" />
         </button>
 
-        <div className={`hidden md:flex p-2 rounded-full transition-colors duration-300 ${
-          isDarkMode ? 'bg-blue-500/20' : 'bg-white/20'
-        }`}>
-          <svg className={`w-6 h-6 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div className="hidden md:block">
-          <h1 className="text-xl font-bold leading-tight">EmpMonitor</h1>
-          <p className={`text-[10px] transition-colors duration-300 ${isDarkMode ? 'text-slate-400' : 'text-orange-100'}`}>
-            Employee Monitoring System
-          </p>
-        </div>
+        <Link to="/" className="hidden md:flex items-center gap-3 group cursor-pointer text-white">
+          <div className="flex items-center justify-center shrink-0">
+            <img 
+              src="/teratime-logo-white.png" 
+              alt="Teratime Logo" 
+              className="h-10 w-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-200" 
+            />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold leading-tight tracking-tight text-white drop-shadow-xs">Teratime</h1>
+            <p className="text-[10px] sm:text-[11px] font-medium tracking-wide text-white/90 leading-tight">
+              Employment Management System
+            </p>
+          </div>
+        </Link>
       </div>
 
-      {/* Middle: Search Bar with Smooth Expanding Transition & Dynamic Color Shift */}
-      <div className="flex-1 px-2 md:px-4 hidden sm:flex justify-center">
+      {/* Middle: Expanding Transition Search Bar */}
+      <div 
+        className={`flex-1 px-3 sm:px-4 hidden sm:flex justify-center mx-auto relative z-10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isSearchFocused ? 'max-w-2xl' : 'max-w-md hover:max-w-lg'
+        }`}
+      >
         <form 
           onSubmit={handleSearchSubmit}
           ref={searchRef}
-          className={`relative transition-all duration-300 ease-in-out ${isSearchFocused ? 'w-full max-w-2xl' : 'w-full max-w-md hover:max-w-lg'}`}
+          className="relative w-full"
         >
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <Search className={`h-4 w-4 transition-all duration-300 ${
-              isSearchFocused 
-                ? (isDarkMode ? 'text-blue-400 scale-110' : 'text-[#F96D3E] scale-110') 
-                : (isDarkMode ? 'text-slate-400' : 'text-gray-400')
-            }`} />
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 text-[#F96D3E] animate-spin" />
+            ) : (
+              <Search className={`h-4 w-4 transition-colors duration-200 ${isSearchFocused ? 'text-[#F96D3E]' : 'text-slate-400'}`} />
+            )}
           </div>
           <input 
             ref={desktopInputRef}
@@ -497,15 +569,22 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
               setIsSearchFocused(true);
               if (searchValue.trim().length > 0) setIsSearchDropdownOpen(true);
             }}
-            placeholder="Search employee by name or email..." 
-            className={`w-full pl-10 pr-9 py-2 rounded-full transition-all duration-300 text-sm md:text-base outline-none ${
-              isDarkMode 
+            onBlur={() => {
+              setTimeout(() => {
+                if (!searchValue.trim()) {
+                  setIsSearchFocused(false);
+                }
+              }, 200);
+            }}
+            placeholder="Search employees, departments, tasks, or reports..." 
+            className={`w-full pl-10 pr-10 py-2.5 rounded-full text-sm outline-none transition-all duration-300 ${
+              isDarkMode
                 ? (isSearchFocused 
-                    ? 'bg-[#1E2B3C] border-2 border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.35)] text-white placeholder-slate-400' 
-                    : 'bg-[#1E2B3C] border-2 border-slate-700/80 text-slate-200 placeholder-slate-400 hover:border-slate-600')
-                : (isSearchFocused 
-                    ? 'bg-white border-2 border-[#F96D3E] shadow-[0_0_0_4px_rgba(249,109,62,0.3)] text-gray-900 placeholder-gray-400' 
-                    : 'bg-white border-2 border-transparent text-gray-800 placeholder-gray-400 shadow-sm hover:border-orange-200')
+                    ? 'bg-[#1E293B] text-white placeholder-slate-400 border border-blue-500/80 shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_0_3px_rgba(59,130,246,0.35)] scale-[1.01]' 
+                    : 'bg-[#1E293B]/80 text-slate-200 placeholder-slate-400 border border-slate-700/60 shadow-md hover:bg-[#1E293B] hover:border-slate-600')
+                : (isSearchFocused
+                    ? 'bg-white text-slate-900 placeholder-slate-400 border border-white/90 shadow-[0_8px_25px_-4px_rgba(0,0,0,0.2),0_0_0_3px_rgba(255,255,255,0.75)] ring-2 ring-white/95 scale-[1.01]'
+                    : 'bg-white text-slate-800 placeholder-slate-400 border border-transparent shadow-md hover:shadow-lg')
             }`}
           />
           {searchValue && (
@@ -514,73 +593,83 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
               onClick={() => {
                 setSearchValue('');
                 setIsSearchDropdownOpen(false);
+                desktopInputRef.current?.focus();
               }}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 p-0.5 cursor-pointer transition-colors"
+              title="Clear search"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           )}
-          {/* Dynamic Live Backend Search Results */}
           {renderSearchDropdown()}
         </form>
       </div>
 
-      {/* Right: Profile & Notifications */}
-      <div className="flex items-center gap-3 md:gap-6 ml-auto sm:ml-0">
+      {/* Right: Quick Actions, Theme Toggle, Notifications, Profile */}
+      <div className="flex items-center gap-2.5 sm:gap-4 ml-auto sm:ml-0 relative z-10 shrink-0">
+        {/* Mobile Search Icon */}
         <button 
           ref={mobileSearchButtonRef}
           onClick={() => {
             setIsMobileSearchOpen(prev => {
               const next = !prev;
-              if (next) {
-                setTimeout(() => mobileInputRef.current?.focus(), 80);
-              }
+              if (next) setTimeout(() => mobileInputRef.current?.focus(), 80);
               return next;
             });
           }}
-          className={`sm:hidden p-2 rounded-full transition-all duration-200 cursor-pointer ${
-            isDarkMode 
-              ? (isMobileSearchOpen ? 'bg-slate-800 text-blue-400' : 'hover:bg-slate-800 text-slate-200') 
-              : (isMobileSearchOpen ? 'bg-orange-700 text-white' : 'hover:bg-orange-600 text-white')
-          }`}
+          className="sm:hidden p-2 rounded-full hover:bg-white/15 text-white transition-colors"
           title="Search"
         >
           <Search className="h-5 w-5" />
         </button>
 
-        {/* Dark Mode Toggle */}
-        <button 
-          onClick={handleToggleTheme}
-          className={`p-2 hover:scale-110 rounded-full transition-all duration-300 cursor-pointer ${
-            isDarkMode ? 'hover:bg-slate-800 text-yellow-300' : 'hover:bg-orange-600 text-white'
-          }`}
-          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
+        {/* Light / Dark Mode Toggle Switch (Matches Reference Exactly: Light = Sun, Dark = Moon) */}
+        <div className="hidden sm:flex items-center gap-2" title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
           {isDarkMode ? (
-            <svg className="h-5 w-5 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
+            <Moon className="h-4.5 w-4.5 text-amber-300 fill-amber-300/40 drop-shadow-sm select-none" />
           ) : (
-            <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
+            <Sun className="h-4.5 w-4.5 text-white drop-shadow-sm select-none" />
           )}
-        </button>
+          <button 
+            type="button"
+            onClick={handleToggleTheme}
+            aria-label="Toggle light/dark theme"
+            className={`w-12 h-6.5 rounded-full p-0.5 transition-all duration-300 cursor-pointer flex items-center relative shadow-inner ${
+              isDarkMode 
+                ? 'bg-[#0B1120] hover:bg-[#070b14] border border-slate-600/70' 
+                : 'bg-[#8E1C0A]/90 hover:bg-[#7D1708] border border-white/30'
+            }`}
+          >
+            {/* Ambient Sparkle Inside Track (like reference UI) */}
+            {isDarkMode ? (
+              <span className="absolute right-2 text-[10px] text-slate-400 font-bold select-none leading-none pointer-events-none">
+                ✦
+              </span>
+            ) : (
+              <span className="absolute left-2 text-[10px] text-white/85 font-bold select-none leading-none pointer-events-none">
+                ✦
+              </span>
+            )}
+            
+            {/* Smooth Sliding Pristine White Knob */}
+            <div 
+              className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-300 flex items-center justify-center ${
+                isDarkMode ? 'translate-x-0.5' : 'translate-x-6'
+              }`}
+            />
+          </button>
+        </div>
 
-        {/* Notification Bell & Dropdown */}
+        {/* Notification Bell with Dynamic Unread Badge */}
         <div className="relative">
           <button 
             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            className={`relative p-2 hover:scale-105 rounded-full transition-all duration-300 cursor-pointer ${
-              isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-orange-600'
-            }`}
+            className="relative p-2 rounded-full hover:bg-white/15 transition-all text-white cursor-pointer"
             title="Notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-5 w-5 text-white" />
             {unreadCount > 0 && (
-              <span className={`absolute top-0 right-0 h-4 min-w-4 px-1 bg-red-600 border-2 rounded-full text-[9px] flex items-center justify-center font-bold text-white shadow-sm ${
-                isDarkMode ? 'border-[#0F172A]' : 'border-[#F96D3E]'
-              }`}>
+              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-[#E53935] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-[#FA502A] shadow-sm">
                 {unreadCount}
               </span>
             )}
@@ -596,24 +685,106 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
             onViewAll={() => setIsAllNotificationsOpen(true)}
           />
         </div>
-        
-        {/* Profile Dropdown */}
+
+        {/* Quick Actions Button & Floating Dropdown */}
+        <div className="relative" ref={quickActionsRef}>
+          <button
+            onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#FF4E1E] to-[#E6350E] hover:from-[#FF5F2E] hover:to-[#F24217] text-white text-xs sm:text-sm font-semibold shadow-md border border-white/25 transition-all cursor-pointer"
+          >
+            <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-white text-white" />
+            <span className="hidden xs:inline">Quick Actions</span>
+            <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-200 ${isQuickActionsOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isQuickActionsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#1E2B3C] rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/80 p-3 z-[100] text-slate-800 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 pt-2 pb-2 border-b border-slate-100 dark:border-slate-700/70 mb-1.5">
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 tracking-wider uppercase">QUICK ACTIONS</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-400">Common tasks, one click away</p>
+              </div>
+              
+              <div className="space-y-1">
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/employees/add'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <UserPlus className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Add Employee</span>
+                </button>
+
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/tasks/assign'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Create Task</span>
+                </button>
+
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/departments/add'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">Add Department</span>
+                </button>
+
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/teams/add'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Invite Team Member</span>
+                </button>
+
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/tracking/timesheet'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                    <BarChart2 className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">View Reports</span>
+                </button>
+
+                <button 
+                  onClick={() => { setIsQuickActionsOpen(false); navigate('/tracking/screen-monitoring'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0">
+                    <Monitor className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">Capture Screenshot</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Profile Dropdown (Avatar preserved as-is) */}
         <div className="relative" ref={profileRef}>
           <div 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className={`flex items-center gap-2 md:gap-3 cursor-pointer p-1 md:pr-3 rounded-full transition-colors duration-300 ${
-              isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-orange-600'
-            }`}
+            className="flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-white/10 transition-colors"
           >
-            <div className="h-8 w-8 bg-white text-[#F96D3E] rounded-full flex items-center justify-center shadow-sm">
+            <div className="h-9 w-9 bg-white text-[#F96D3E] rounded-full flex items-center justify-center shadow-md ring-2 ring-white/60 shrink-0">
               <User className="h-5 w-5" />
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-semibold leading-none text-white">Admin</p>
-              <p className={`text-xs transition-colors duration-300 ${isDarkMode ? 'text-slate-400' : 'text-orange-100'}`}>
+              <p className="text-sm font-bold leading-tight text-white">Admin</p>
+              <p className="text-[11px] text-white/80 leading-tight">
                 Administrator
               </p>
             </div>
+            <ChevronDown className="h-3.5 w-3.5 text-white/80 hidden md:block" />
           </div>
 
           {/* Dropdown Menu */}

@@ -15,6 +15,7 @@ import org.example.ui.LoginPopupManager;
 import org.example.ui.LoginWindow;
 import org.example.config.AgentConfig;
 import org.example.commucnication.AgentLoginService;
+import org.example.monitoring.ScreenCaptureService;
 
 // OTA support
 import org.example.ota.OtaUpdateService;
@@ -924,21 +925,48 @@ public class AgentApplication {
                                         new UserActivityMonitor();
 
 
-                                int idleGraceMinutes =
-                                        config.getIdleGraceMinutes();
-
-
                                 IdleDetectionService
                                         idleDetectionService =
                                         new IdleDetectionService(
                                                 activityMonitor,
-                                                idleGraceMinutes
+                                                config
                                         );
 
+                                ScreenCaptureService
+                                        screenCaptureService =
+                                        new ScreenCaptureService(
+                                                config,
+                                                serverUrl,
+                                                employeeId,
+                                                eventManager
+                                        );
+                                screenCaptureService.start();
 
-                                long autoWorkEndIdleSeconds =
-                                        config.getAutoWorkEndIdleMinutes()
-                                                * 60L;
+                                Thread configSyncThread = new Thread(() -> {
+                                    while (sessionRunning) {
+                                        try {
+                                            Thread.sleep(15000);
+                                            int prevIdle = config.getIdleGraceMinutes();
+                                            int prevCaptureInterval = config.getCaptureIntervalMinutes();
+                                            boolean prevCapture = config.isCaptureEnabled();
+
+                                            config.fetchDynamicConfig(serverUrl);
+
+                                            if (prevIdle != config.getIdleGraceMinutes() || 
+                                                prevCaptureInterval != config.getCaptureIntervalMinutes() || 
+                                                prevCapture != config.isCaptureEnabled()) {
+                                                System.out.println("⚡ Admin UI dynamic settings updated! Idle: " 
+                                                    + config.getIdleGraceMinutes() + "m, Capture: " 
+                                                    + (config.isCaptureEnabled() ? config.getCaptureIntervalMinutes() + "m" : "Disabled"));
+                                            }
+                                        } catch (InterruptedException e) {
+                                            break;
+                                        } catch (Exception ignored) {}
+                                    }
+                                }, "ConfigSync-Thread");
+                                configSyncThread.setDaemon(true);
+                                configSyncThread.start();
+
 
 
                                 Thread activityMonitorThread =
@@ -1277,7 +1305,7 @@ public class AgentApplication {
                                                                     && !autoWorkEndTriggered
                                                                     && isIdle
                                                                     && inactiveSeconds
-                                                                    >= autoWorkEndIdleSeconds
+                                                                    >= (config.getAutoWorkEndIdleMinutes() * 60L)
                                                     ) {
 
                                                         System.out.println(

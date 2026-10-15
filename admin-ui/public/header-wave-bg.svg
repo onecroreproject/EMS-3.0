@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 90" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none">
+  <defs>
+    <!-- Main Header Gradient -->
+    <linearGradient id="headerBaseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E62E1B" />
+      <stop offset="18%" stop-color="#F24124" />
+      <stop offset="42%" stop-color="#F85C2C" />
+      <stop offset="70%" stop-color="#FA6D35" />
+      <stop offset="100%" stop-color="#E8371E" />
+    </linearGradient>
+
+    <!-- Deep Crimson Fluid Wave (Bottom Left Crest) -->
+    <linearGradient id="crimsonWaveGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B71C1C" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#D32F2F" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#F44336" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Top Left Warm Amber Wave -->
+    <linearGradient id="amberWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFA000" stop-opacity="0.6" />
+      <stop offset="60%" stop-color="#FF5722" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#E64A19" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Soft Ambient Overlay Wave across Center-Right -->
+    <linearGradient id="ambientWaveGrad" x1="20%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7043" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#FF8A65" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#D84315" stop-opacity="0.6" />
+    </linearGradient>
+
+    <!-- Right Side Deep Wave Accent -->
+    <linearGradient id="rightWaveGrad" x1="0%" y1="50%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5722" stop-opacity="0" />
+      <stop offset="60%" stop-color="#D84315" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#BF360C" stop-opacity="0.75" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Gradient Fill -->
+  <rect width="1920" height="90" fill="url(#headerBaseGrad)" />
+
+  <!-- Layer 1: Top-Left Amber Swell (Flows down behind Teratime logo) -->
+  <path d="M 0,0 L 480,0 C 420,45 350,75 260,65 C 170,55 90,80 0,90 Z" fill="url(#amberWaveGrad)" />
+
+  <!-- Layer 2: Deep Crimson Bottom-Left Wave (Curves under logo and into sidebar) -->
+  <path d="M 0,40 C 90,45 180,68 280,72 C 380,76 460,50 540,60 C 590,66 630,85 660,90 L 0,90 Z" fill="url(#crimsonWaveGrad)" />
+
+  <!-- Layer 3: Central Rolling Wave (Gentle dip under search bar) -->
+  <path d="M 400,0 C 550,25 700,48 880,35 C 1050,22 1200,55 1380,40 C 1500,30 1620,15 1700,0 Z" fill="url(#ambientWaveGrad)" />
+
+  <!-- Layer 4: Right Side Dynamic Fluid Wave (Curves behind Quick Actions and Avatar) -->
+  <path d="M 1250,90 C 1380,65 1520,55 1660,70 C 1780,82 1860,68 1920,55 L 1920,90 Z" fill="url(#rightWaveGrad)" />
+
+  <!-- Layer 5: Subtle Translucent Crest Highlight across the Entire Span -->
+  <path d="M 0,25 C 220,10 440,40 680,25 C 920,10 1180,38 1420,20 C 1660,5 1800,28 1920,15 L 1920,0 L 0,0 Z" fill="#FFFFFF" opacity="0.08" />
+  
+  <!-- Layer 6: Bottom Edge Liquid Glow Accent -->
+  <path d="M 0,82 C 300,88 600,78 900,85 C 1200,92 1500,80 1920,86 L 1920,90 L 0,90 Z" fill="#BF360C" opacity="0.35" />
+</svg>

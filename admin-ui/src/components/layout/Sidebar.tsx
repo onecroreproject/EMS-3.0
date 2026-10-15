@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, Users, MonitorPlay, Globe, 
   LayoutGrid, BarChart2, CheckSquare, 
@@ -9,8 +9,23 @@ import {
 import apiClient from '../../lib/axios';
 
 export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: boolean) => void }) {
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('Tracking & Monitoring');
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(() => {
+    if (location.pathname.startsWith('/settings')) return 'Settings';
+    if (location.pathname.startsWith('/tracking') || location.pathname === '/time-tracking') return 'Tracking & Monitoring';
+    if (location.pathname.startsWith('/employees')) return 'Employee Management';
+    if (location.pathname.startsWith('/teams') || location.pathname.startsWith('/departments')) return 'Organization Management';
+    if (location.pathname.startsWith('/tasks')) return 'Task & Projects';
+    return 'Tracking & Monitoring';
+  });
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/settings')) {
+      setExpandedMenu('Settings');
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -60,6 +75,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
         { name: 'Time Tracking Summary', path: '/time-tracking' },
         { name: 'Employee Timesheet', path: '/tracking/timesheet' },
         { name: 'Attendance', path: '/tracking/attendance' },
+        { name: 'Screen Monitoring', path: '/tracking/screen-monitoring' },
       ]
     },
     { name: 'Application Usage', icon: LayoutGrid, path: '/applications' },
@@ -71,7 +87,18 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
         { name: 'Task List', path: '/tasks/track' },
       ]
     },
-    { name: 'Settings', icon: Settings, path: '/settings' },
+    { 
+      name: 'Settings', 
+      icon: Settings, 
+      subItems: [
+        { name: 'General Settings', path: '/settings' },
+        { name: 'Attendance Settings', path: '/settings/attendance' },
+        { name: 'Screen Monitoring', path: '/settings/screen-monitoring' },
+        { name: 'Notification Settings', path: '/settings/notifications' },
+        { name: 'User & Role Management', path: '/settings/roles' },
+        { name: 'System Configuration', path: '/settings/system' },
+      ]
+    },
   ];
 
   return (
@@ -93,8 +120,12 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
       `}>
         
         {/* Mobile Header (Hidden on Desktop) */}
-        <div className="h-16 flex items-center justify-center border-b border-slate-700/80 md:hidden bg-[#FF5B22] dark:bg-[#111827] text-white">
-           <h1 className="text-xl font-bold">EmpMonitor</h1>
+        <div className="h-16 flex items-center justify-center gap-2.5 border-b border-slate-700/80 md:hidden bg-[#FF5B22] dark:bg-[#111827] text-white px-4">
+           <img src="/teratime-logo-white.png" alt="Teratime" className="h-8 w-8 object-contain" />
+           <div>
+             <h1 className="text-base font-bold leading-tight">Teratime</h1>
+             <p className="text-[9px] text-white/80">Employment Management system</p>
+           </div>
         </div>
 
         <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
@@ -102,6 +133,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
             {menuItems.map((item, index) => {
               const hasSubmenu = !!item.subItems;
               const isExpanded = expandedMenu === item.name;
+              const isChildActive = item.subItems?.some((sub: any) => sub.path && (location.pathname === sub.path || (sub.path !== '/' && location.pathname.startsWith(sub.path))));
 
               return (
                 <li key={index}>
@@ -109,13 +141,19 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsO
                     <div>
                       <button
                         onClick={() => toggleMenu(item.name)}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm font-medium hover:bg-slate-700/50 hover:text-white ${isExpanded ? 'bg-slate-800 text-white' : ''}`}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+                          isChildActive 
+                            ? 'bg-[#FF5B22] text-white shadow-sm' 
+                            : isExpanded 
+                              ? 'bg-slate-800 text-white' 
+                              : 'hover:bg-slate-700/50 hover:text-white text-slate-300'
+                        }`}
                       >
                         <div className="flex items-center gap-3 truncate">
                           <item.icon className="h-4 w-4 shrink-0" />
                           <span className="truncate">{item.name}</span>
                         </div>
-                        {isExpanded ? <ChevronDown className="h-4 w-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />}
+                        {isExpanded ? <ChevronDown className="h-4 w-4 opacity-75" /> : <ChevronRight className="h-4 w-4 opacity-75" />}
                       </button>
                       
                       {/* Submenu Items with Smooth Animation */}

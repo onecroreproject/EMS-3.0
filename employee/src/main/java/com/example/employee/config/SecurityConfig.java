@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/agent/login").permitAll()
                 .requestMatchers("/api/agent/refresh").permitAll()
                 .requestMatchers("/api/agent/config").permitAll()
+                .requestMatchers("/api/agent/screenshot/**").permitAll()
+                .requestMatchers("/api/admin/screenshots/*/image", "/api/admin/screenshots/*/download").permitAll()
                 .requestMatchers("/api/agent/update/download/**").permitAll()
                 .requestMatchers("/api/v1/agent-updates/**").permitAll()
                 // Protected endpoints (LOCKED DOWN for production)

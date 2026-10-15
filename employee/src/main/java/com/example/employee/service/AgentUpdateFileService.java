@@ -100,8 +100,9 @@ public class AgentUpdateFileService {
      */
     public Resource loadFile(Path filePath) throws IOException {
 
+        Path fileName = filePath.getFileName();
         Path normalizedPath =
-                filePath.toAbsolutePath()
+                storageDirectory.resolve(fileName)
                         .normalize();
 
         if (!normalizedPath.startsWith(storageDirectory)) {

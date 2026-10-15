@@ -26,13 +26,18 @@ public class HeartbeatService {
                 }
             }
 
+            String clientIp = org.example.device.DeviceLocationResolver.getIpAddress();
+            String clientLoc = org.example.device.DeviceLocationResolver.getLocation();
+
             String url = serverUrl
                     + "/api/agent/heartbeat?deviceId="
-                    + deviceId;
+                    + deviceId
+                    + "&ip=" + java.net.URLEncoder.encode(clientIp != null ? clientIp : "", java.nio.charset.StandardCharsets.UTF_8)
+                    + "&location=" + java.net.URLEncoder.encode(clientLoc != null ? clientLoc : "", java.nio.charset.StandardCharsets.UTF_8);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                            .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
+                    .header("Authorization", "Bearer " + org.example.config.AgentTokenHolder.getToken())
                     .POST(HttpRequest.BodyPublishers.noBody())
                     .build();
 

@@ -83,6 +83,8 @@ public class AgentUpdateController {
                         )
                         .toUriString();
 
+        downloadUrl = ensureHttpsIfProduction(downloadUrl);
+
         AgentUpdateResponse response =
                 new AgentUpdateResponse(
                         update.getVersion(),
@@ -217,6 +219,8 @@ public class AgentUpdateController {
                             )
                             .toUriString();
 
+            downloadUrl = ensureHttpsIfProduction(downloadUrl);
+
             AgentUpdateResponse response =
                     new AgentUpdateResponse(
                             savedUpdate.getVersion(),
@@ -297,5 +301,16 @@ public class AgentUpdateController {
                         contentDisposition.toString()
                 )
                 .body(resource);
+    }
+
+    private String ensureHttpsIfProduction(String url) {
+        if (url == null) return null;
+        if (url.startsWith("http://ems.dlksoftwaresolutions.co.in")) {
+            return url.replace("http://", "https://");
+        }
+        if (url.startsWith("http://") && !url.contains("localhost") && !url.contains("127.0.0.1")) {
+            return url.replace("http://", "https://");
+        }
+        return url;
     }
 }

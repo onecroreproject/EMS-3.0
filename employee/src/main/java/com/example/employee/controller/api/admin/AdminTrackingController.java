@@ -412,18 +412,45 @@ public class AdminTrackingController {
             }
         }
 
-        // Handle Unclosed States up to 'now' (if querying for today)
+        // Determine if device is currently online or offline to clamp unclosed states
         Instant now = Instant.now();
-        if (currentStateStart != null && !currentState.equals("OFFLINE") && endOfDay.isAfter(now)) {
-            long duration = java.time.Duration.between(currentStateStart, now).getSeconds();
-            if (duration > 0) {
-                if (currentState.equals("WORK")) totalWorkSeconds += duration;
-                else if (currentState.equals("IDLE")) totalIdleSeconds += duration;
-                else if (currentState.equals("BREAK")) totalBreakSeconds += duration;
-                else if (currentState.equals("LUNCH")) totalLunchSeconds += duration;
+        boolean isDeviceOffline = false;
+        Instant effectiveEndTime = now;
+        if (employeeCode != null && !employeeCode.isEmpty()) {
+            java.util.List<Device> devList = deviceRepository.findByEmployeeCode(employeeCode);
+            if (!devList.isEmpty()) {
+                Device targetDev = devList.get(0);
+                if (targetDev.getLastSeen() != null) {
+                    if ("OFFLINE".equalsIgnoreCase(targetDev.getStatus()) || targetDev.getLastSeen().isBefore(now.minus(5, ChronoUnit.MINUTES))) {
+                        isDeviceOffline = true;
+                        effectiveEndTime = targetDev.getLastSeen().isBefore(now) ? targetDev.getLastSeen() : now;
+                    }
+                } else {
+                    isDeviceOffline = true;
+                }
             }
-            timeline.add(Map.of("timeObj", now, "time", formatter.format(now), "title", "Last Active (" + currentState + ")", "color", "emerald", "type", "end"));
-            lastWorkEnd = now;
+        }
+
+        // Handle Unclosed States (if querying for today)
+        // If device is offline, clamp duration to lastSeen instead of letting it count to 'now'
+        if (currentStateStart != null && !currentState.equals("OFFLINE") && endOfDay.isAfter(currentStateStart)) {
+            Instant capTime = isDeviceOffline ? effectiveEndTime : now;
+            if (capTime.isAfter(currentStateStart)) {
+                long duration = java.time.Duration.between(currentStateStart, capTime).getSeconds();
+                if (duration > 0) {
+                    if (currentState.equals("WORK")) totalWorkSeconds += duration;
+                    else if (currentState.equals("IDLE")) totalIdleSeconds += duration;
+                    else if (currentState.equals("BREAK")) totalBreakSeconds += duration;
+                    else if (currentState.equals("LUNCH")) totalLunchSeconds += duration;
+                }
+            }
+            if (!isDeviceOffline) {
+                timeline.add(Map.of("timeObj", now, "time", formatter.format(now), "title", "Last Active (" + currentState + ")", "color", "emerald", "type", "end"));
+                lastWorkEnd = now;
+            } else {
+                timeline.add(Map.of("timeObj", effectiveEndTime, "time", formatter.format(effectiveEndTime), "title", "Last Active (" + currentState + ")", "color", "slate", "type", "end"));
+                lastWorkEnd = effectiveEndTime;
+            }
         }
 
         // Finalize Timeline

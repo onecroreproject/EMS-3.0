@@ -263,14 +263,14 @@ export default function ViewEmployee() {
             { label: 'Employees', href: '/employees' },
             { label: 'Employee List' }
           ]} />
-          <h2 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
             <Users className="h-8 w-8 text-blue-500" /> Employee List
           </h2>
-          <p className="text-slate-500 text-sm mt-1">Manage all employees, view their details and monitor their activity.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage all employees, view their details and monitor their activity.</p>
         </div>
         <NavLink 
           to="/employees/add" 
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm"
+          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Add New Employee
         </NavLink>
@@ -278,57 +278,57 @@ export default function ViewEmployee() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-blue-50 p-4 rounded-xl text-blue-500">
+        <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-blue-50 dark:bg-blue-500/20 p-4 rounded-xl text-blue-500 dark:text-blue-400">
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Employees</p>
-            <h3 className="text-2xl font-bold text-slate-800">{stats.total}</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Employees</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{stats.total}</h3>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-green-50 p-4 rounded-xl text-green-500">
+        <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-green-50 dark:bg-emerald-500/20 p-4 rounded-xl text-green-500 dark:text-emerald-400">
             <UserCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Active Employees</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Active Employees</p>
             <div className="flex items-end gap-2">
-               <h3 className="text-2xl font-bold text-slate-800">{stats.active}</h3>
-               <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md mb-1">79%</span>
+               <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{stats.active}</h3>
+               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2 py-0.5 rounded-md mb-1">79%</span>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-red-50 p-4 rounded-xl text-red-500">
+        <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-red-50 dark:bg-red-500/20 p-4 rounded-xl text-red-500 dark:text-red-400">
             <UserX className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Inactive Employees</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Inactive Employees</p>
             <div className="flex items-end gap-2">
-               <h3 className="text-2xl font-bold text-slate-800">{stats.inactive}</h3>
-               <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md mb-1">15%</span>
+               <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{stats.inactive}</h3>
+               <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/20 px-2 py-0.5 rounded-md mb-1">15%</span>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-purple-50 p-4 rounded-xl text-purple-500">
+        <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-purple-50 dark:bg-purple-500/20 p-4 rounded-xl text-purple-500 dark:text-purple-400">
             <Clock className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">New This Month</p>
-            <h3 className="text-2xl font-bold text-slate-800">{stats.newThisMonth}</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">New This Month</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{stats.newThisMonth}</h3>
           </div>
         </div>
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 relative z-20">
+      <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 relative z-20 transition-colors">
         
         {/* Filter Bar */}
-        <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 items-center justify-between bg-slate-50/50 rounded-t-2xl relative z-30">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col lg:flex-row gap-4 items-center justify-between bg-slate-50/70 dark:bg-slate-800/60 rounded-t-2xl relative z-30">
           <div className="relative w-full lg:w-96">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
               <Search className="h-4 w-4" />
             </div>
             <input 
@@ -336,7 +336,7 @@ export default function ViewEmployee() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, email or employee code..." 
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all shadow-sm" 
+              className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-xs" 
             />
           </div>
           
@@ -368,13 +368,13 @@ export default function ViewEmployee() {
             
             <button 
               onClick={handleSearch}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm cursor-pointer"
             >
               Search
             </button>
             <button 
               onClick={handleClear}
-              className="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer"
             >
               Clear
             </button>
@@ -382,13 +382,13 @@ export default function ViewEmployee() {
         </div>
 
         {/* Table Options */}
-        <div className="p-4 flex justify-between items-center bg-white border-b border-slate-50 relative z-10">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="p-4 flex justify-between items-center bg-white dark:bg-[#1E293B] border-b border-slate-100 dark:border-slate-700/60 relative z-10">
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             <span>Show</span>
             <select 
               value={size} 
               onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }}
-              className="border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-blue-500 bg-white"
+              className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 outline-none focus:border-blue-500 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
@@ -396,15 +396,15 @@ export default function ViewEmployee() {
             </select>
             <span>entries</span>
           </div>
-          <button className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition shadow-sm">
+          <button className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer">
             <Download className="h-4 w-4" /> Export
           </button>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] rounded-b-2xl">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50/80 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
+          <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+            <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-100 dark:border-slate-700/80">
               <tr>
                 <th className="px-6 py-4">#</th>
                 <th className="px-6 py-4">EMP Code</th>
@@ -417,7 +417,7 @@ export default function ViewEmployee() {
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-[#1E293B]">
               {loading ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
@@ -436,42 +436,58 @@ export default function ViewEmployee() {
               ) : (
                 data?.content.map((emp, index) => {
                   const initials = getInitials(emp.name);
-                  // Give random avatar colors based on initials code
-                  const colors = ['bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-purple-100 text-purple-600', 'bg-orange-100 text-orange-600'];
+                  const colors = [
+                    'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400', 
+                    'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400', 
+                    'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400', 
+                    'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400'
+                  ];
                   const colorClass = colors[initials.charCodeAt(0) % colors.length];
 
                   return (
-                    <tr key={emp.id || emp.email} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-4">{page * size + index + 1}</td>
-                      <td className="px-4 py-4 font-medium text-slate-700">{emp.employeeCode || (emp.id ? `EMP-${emp.id.substring(0, 4)}` : 'N/A')}</td>
-                      <td className="px-4 py-4">
+                    <tr key={emp.id || emp.email} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4">{page * size + index + 1}</td>
+                      <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">{emp.employeeCode || (emp.id ? `EMP-${emp.id.substring(0, 4)}` : 'N/A')}</td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${colorClass}`}>
                             {initials}
                           </div>
-                          <span className="font-semibold text-slate-800 line-clamp-1">{emp.name}</span>
+                          <span className="font-semibold text-slate-800 dark:text-white line-clamp-1">{emp.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 truncate max-w-[150px]" title={emp.email}>{emp.email}</td>
-                      <td className="px-4 py-4 font-medium truncate max-w-[120px]">{emp.departmentName || 'N/A'}</td>
-                      <td className="px-4 py-4 font-medium truncate max-w-[120px]">{emp.teamName || 'N/A'}</td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${emp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                      <td className="px-6 py-4 truncate max-w-[150px] text-slate-600 dark:text-slate-300" title={emp.email}>{emp.email}</td>
+                      <td className="px-6 py-4 font-medium truncate max-w-[120px] text-slate-600 dark:text-slate-300">{emp.departmentName || 'N/A'}</td>
+                      <td className="px-6 py-4 font-medium truncate max-w-[120px] text-slate-600 dark:text-slate-300">{emp.teamName || 'N/A'}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
+                          emp.status === 'Active' 
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border dark:border-emerald-500/20' 
+                            : 'bg-orange-100 text-orange-700 dark:bg-amber-500/15 dark:text-amber-400 dark:border dark:border-amber-500/20'
+                        }`}>
                           {emp.status || 'Active'}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">{formatDate(emp.joiningDate)}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">{formatDate(emp.joiningDate)}</td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => setViewEmployeeId(emp.id || emp.email)} className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition" title="View">
+                          <button 
+                            onClick={() => setViewEmployeeId(emp.id || emp.email)} 
+                            className="p-1.5 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/30 transition cursor-pointer" 
+                            title="View"
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button onClick={() => setEditEmployeeId(emp.id || emp.email)} className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition" title="Edit">
+                          <button 
+                            onClick={() => setEditEmployeeId(emp.id || emp.email)} 
+                            className="p-1.5 bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-500/30 transition cursor-pointer" 
+                            title="Edit"
+                          >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => setEmployeeToDelete(emp.id || emp.email)}
-                            className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition" 
+                            className="p-1.5 bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/30 transition cursor-pointer" 
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -488,26 +504,26 @@ export default function ViewEmployee() {
 
         {/* Pagination */}
         {data && data.totalElements > 0 && (
-          <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-b-2xl">
-            <p className="text-sm text-slate-500">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-[#1E293B] rounded-b-2xl">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Showing {page * size + 1} to {Math.min((page + 1) * size, data.totalElements)} of {data.totalElements} entries
             </p>
             <div className="flex items-center gap-1">
               <button 
                 onClick={() => setPage(Math.max(0, page - 1))}
                 disabled={page === 0}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-500 transition"
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:hover:text-slate-500 transition cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </button>
               
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold shadow-sm">
+              <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold shadow-sm cursor-pointer">
                 {page + 1}
               </button>
               {page + 1 < data.totalPages && (
                 <button 
                   onClick={() => setPage(page + 1)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
                   {page + 2}
                 </button>
@@ -516,7 +532,7 @@ export default function ViewEmployee() {
               <button 
                 onClick={() => setPage(Math.min(data.totalPages - 1, page + 1))}
                 disabled={page >= data.totalPages - 1}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-500 transition"
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:hover:text-slate-500 transition cursor-pointer"
               >
                 Next <ChevronRight className="h-4 w-4" />
               </button>
@@ -529,35 +545,39 @@ export default function ViewEmployee() {
       <Modal isOpen={!!viewEmployeeId} onClose={() => setViewEmployeeId(null)} title="Employee Profile">
         {selectedEmployee ? (
           <div className="space-y-6">
-            <div className="flex items-center gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-3xl font-bold shrink-0">
+            <div className="flex items-center gap-6 p-6 bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/80 shadow-xs">
+              <div className="h-20 w-20 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl font-bold shrink-0">
                 {getInitials(selectedEmployee.name)}
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-slate-800">{selectedEmployee.name}</h3>
-                <p className="text-slate-500">{selectedEmployee.designation || 'Employee'}</p>
-                <span className={`mt-2 inline-block px-2.5 py-1 rounded-md text-xs font-bold ${selectedEmployee.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-white">{selectedEmployee.name}</h3>
+                <p className="text-slate-500 dark:text-slate-400">{selectedEmployee.designation || 'Employee'}</p>
+                <span className={`mt-2 inline-block px-2.5 py-1 rounded-md text-xs font-bold ${
+                  selectedEmployee.status === 'Active' 
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' 
+                    : 'bg-orange-100 text-orange-700 dark:bg-amber-500/20 dark:text-amber-400'
+                }`}>
                   {selectedEmployee.status || 'Active'}
                 </span>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Email Address</p>
-                <p className="font-semibold text-slate-800 truncate" title={selectedEmployee.email}>{selectedEmployee.email}</p>
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Email Address</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 truncate" title={selectedEmployee.email}>{selectedEmployee.email}</p>
               </div>
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Phone Number</p>
-                <p className="font-semibold text-slate-800 truncate">{selectedEmployee.phone || 'N/A'}</p>
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Phone Number</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{selectedEmployee.phone || 'N/A'}</p>
               </div>
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Employee Code</p>
-                <p className="font-semibold text-slate-800 truncate">{selectedEmployee.employeeCode}</p>
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Employee Code</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{selectedEmployee.employeeCode}</p>
               </div>
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Joining Date</p>
-                <p className="font-semibold text-slate-800 truncate">{formatDate(selectedEmployee.joiningDate)}</p>
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Joining Date</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{formatDate(selectedEmployee.joiningDate)}</p>
               </div>
             </div>
           </div>
@@ -572,27 +592,27 @@ export default function ViewEmployee() {
       <Modal isOpen={!!editEmployeeId} onClose={() => setEditEmployeeId(null)} title="Edit Employee">
         {selectedEmployee ? (
           <div>
-             <p className="text-slate-500 mb-6 text-sm">Make modifications to {selectedEmployee.name}'s profile below.</p>
+             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">Make modifications to {selectedEmployee.name}'s profile below.</p>
              <form key={selectedEmployee.id} className="space-y-5" onSubmit={handleEditSubmit}>
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Full Name</label>
-                   <input type="text" name="name" defaultValue={selectedEmployee.name} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Full Name</label>
+                   <input type="text" name="name" defaultValue={selectedEmployee.name} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Email Address</label>
-                   <input type="email" name="email" defaultValue={selectedEmployee.email} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Email Address</label>
+                   <input type="email" name="email" defaultValue={selectedEmployee.email} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
                  </div>
                </div>
                
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Designation</label>
-                   <input type="text" name="designation" defaultValue={selectedEmployee.designation || ''} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Designation</label>
+                   <input type="text" name="designation" defaultValue={selectedEmployee.designation || ''} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Status</label>
-                   <select name="status" defaultValue={selectedEmployee.status} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700">
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Status</label>
+                   <select name="status" defaultValue={selectedEmployee.status} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 dark:text-slate-200">
                      <option value="Active">Active</option>
                      <option value="Inactive">Inactive</option>
                    </select>
@@ -601,8 +621,8 @@ export default function ViewEmployee() {
 
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Department</label>
-                   <select name="departmentId" defaultValue={selectedEmployee.departmentId} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700">
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Department</label>
+                   <select name="departmentId" defaultValue={selectedEmployee.departmentId} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 dark:text-slate-200">
                      <option value="">Select Department</option>
                      {departments.map((dept: any) => (
                        <option key={dept.value} value={dept.value}>{dept.label}</option>
@@ -610,8 +630,8 @@ export default function ViewEmployee() {
                    </select>
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-xs font-bold text-slate-500 uppercase">Team</label>
-                   <select name="teamId" defaultValue={selectedEmployee.teamId} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700">
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Team</label>
+                   <select name="teamId" defaultValue={selectedEmployee.teamId} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 dark:text-slate-200">
                      <option value="">Select Team</option>
                      {teams.map((team: any) => (
                        <option key={team.value} value={team.value}>{team.label}</option>
@@ -620,9 +640,9 @@ export default function ViewEmployee() {
                  </div>
                </div>
                
-               <div className="pt-6 mt-6 border-t border-slate-100 flex justify-end gap-3">
-                 <button type="button" onClick={() => setEditEmployeeId(null)} className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition shadow-sm">Cancel</button>
-                 <button type="submit" className="px-5 py-2.5 bg-blue-600 rounded-xl text-sm font-bold text-white hover:bg-blue-700 transition shadow-sm">Save Changes</button>
+               <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-700/80 flex justify-end gap-3">
+                 <button type="button" onClick={() => setEditEmployeeId(null)} className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer">Cancel</button>
+                 <button type="submit" className="px-5 py-2.5 bg-blue-600 rounded-xl text-sm font-bold text-white hover:bg-blue-700 transition shadow-sm cursor-pointer">Save Changes</button>
                </div>
              </form>
           </div>

@@ -1,11 +1,13 @@
 package org.example.attendance;
 
 import org.example.activity.UserActivityMonitor;
+import org.example.config.AgentConfig;
 
 public class IdleDetectionService {
 
     private final UserActivityMonitor activityMonitor;
-    private final int idleGraceSeconds;
+    private final AgentConfig config;
+    private int fallbackIdleGraceSeconds = 120;
 
     private boolean idle;
     private boolean meeting;
@@ -15,12 +17,29 @@ public class IdleDetectionService {
             int idleGraceMinutes
     ) {
         this.activityMonitor = activityMonitor;
-        this.idleGraceSeconds =
-                idleGraceMinutes * 60;
-
+        this.config = null;
+        this.fallbackIdleGraceSeconds = Math.max(1, idleGraceMinutes) * 60;
         this.idle = false;
         this.meeting = false;
     }
+
+    public IdleDetectionService(
+            UserActivityMonitor activityMonitor,
+            AgentConfig config
+    ) {
+        this.activityMonitor = activityMonitor;
+        this.config = config;
+        this.idle = false;
+        this.meeting = false;
+    }
+
+    private int getEffectiveIdleGraceSeconds() {
+        if (config != null) {
+            return Math.max(1, config.getIdleGraceMinutes()) * 60;
+        }
+        return fallbackIdleGraceSeconds;
+    }
+
 
     public AttendanceEventType checkIdleStatus() {
 
@@ -37,22 +56,26 @@ public class IdleDetectionService {
         long inactiveSeconds =
                 activityMonitor.getInactiveDurationSeconds();
 
+        int graceSeconds = getEffectiveIdleGraceSeconds();
+
         if (!idle
-                && inactiveSeconds >= idleGraceSeconds) {
+                && inactiveSeconds >= graceSeconds) {
 
             idle = true;
 
             System.out.println(
                     "IDLE_STARTED - User inactive for "
                             + inactiveSeconds
-                            + " seconds"
+                            + " seconds (threshold: "
+                            + graceSeconds
+                            + "s)"
             );
 
             return AttendanceEventType.IDLE_STARTED;
         }
 
         if (idle
-                && inactiveSeconds < idleGraceSeconds) {
+                && inactiveSeconds < graceSeconds) {
 
             idle = false;
 

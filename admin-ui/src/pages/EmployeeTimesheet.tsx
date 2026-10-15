@@ -225,43 +225,63 @@ export default function EmployeeTimesheet() {
     if (type === 'BREAK') { client = 'System'; project = 'Break'; task = 'Tea Break'; }
     if (type === 'LUNCH') { client = 'Office'; project = 'Lunch'; task = 'Lunch Break'; }
 
-    let bgClass = '', textClass = '', icon = <CheckCircle2 className="w-3.5 h-3.5" />;
-    if (type === 'WORK') { bgClass = 'bg-emerald-50'; textClass = 'text-emerald-600'; icon = <CheckCircle2 className="w-3.5 h-3.5" />; }
-    if (type === 'BREAK') { bgClass = 'bg-purple-50'; textClass = 'text-purple-600'; icon = <Coffee className="w-3.5 h-3.5" />; }
-    if (type === 'LUNCH') { bgClass = 'bg-amber-50'; textClass = 'text-amber-600'; icon = <Coffee className="w-3.5 h-3.5" />; }
-    if (type === 'IDLE') { bgClass = 'bg-blue-50'; textClass = 'text-blue-600'; icon = <Clock className="w-3.5 h-3.5" />; }
+    let bgClass = '', textClass = '', headerBg = '', icon = <CheckCircle2 className="w-3.5 h-3.5" />;
+    if (type === 'WORK') { 
+      bgClass = 'bg-emerald-50 dark:bg-emerald-950/30'; 
+      textClass = 'text-emerald-600 dark:text-emerald-400'; 
+      headerBg = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/50';
+      icon = <CheckCircle2 className="w-3.5 h-3.5" />; 
+    }
+    if (type === 'BREAK') { 
+      bgClass = 'bg-purple-50 dark:bg-purple-950/30'; 
+      textClass = 'text-purple-600 dark:text-purple-400'; 
+      headerBg = 'bg-purple-50 dark:bg-purple-950/40 border-purple-100 dark:border-purple-900/50';
+      icon = <Coffee className="w-3.5 h-3.5" />; 
+    }
+    if (type === 'LUNCH') { 
+      bgClass = 'bg-amber-50 dark:bg-amber-950/30'; 
+      textClass = 'text-amber-600 dark:text-amber-400'; 
+      headerBg = 'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/50';
+      icon = <Coffee className="w-3.5 h-3.5" />; 
+    }
+    if (type === 'IDLE') { 
+      bgClass = 'bg-blue-50 dark:bg-blue-950/30'; 
+      textClass = 'text-blue-600 dark:text-blue-400'; 
+      headerBg = 'bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900/50';
+      icon = <Clock className="w-3.5 h-3.5" />; 
+    }
 
     const title = type === 'WORK' ? 'Work Time' : type === 'BREAK' ? 'Break Time' : type === 'LUNCH' ? 'Lunch Time' : 'Idle Time';
 
     return (
-      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white mt-4">
-        <div className={`${bgClass} px-3 py-2 flex items-center gap-1.5 border-b border-slate-200`}>
-          <div className={`p-0.5 rounded-full bg-white ${textClass}`}>{icon}</div>
+      <div className="border border-slate-200 dark:border-slate-700/80 rounded-xl overflow-hidden bg-white dark:bg-[#1E293B] mt-4 shadow-sm">
+        <div className={`${headerBg} px-3.5 py-2.5 flex items-center gap-2 border-b`}>
+          <div className={`p-1 rounded-full bg-white dark:bg-slate-800 shadow-sm ${textClass}`}>{icon}</div>
           <h3 className={`text-[13px] font-bold ${textClass}`}>{title}</h3>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-left text-[11px] whitespace-nowrap">
-            <thead className="text-slate-700 font-bold border-b border-slate-200 bg-white">
+            <thead className="text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40">
               <tr>
-                <th className="px-3 py-2">Client Name</th>
-                <th className="px-3 py-2">Project Name</th>
-                <th className="px-3 py-2">Task Name</th>
-                {displayHours.map((h, i) => <th key={i} className="px-2 py-2 text-center">{h}</th>)}
-                <th className="px-3 py-2 text-center font-bold">Total (HH:MM)</th>
+                <th className="px-3.5 py-2.5">Client Name</th>
+                <th className="px-3.5 py-2.5">Project Name</th>
+                <th className="px-3.5 py-2.5">Task Name</th>
+                {displayHours.map((h, i) => <th key={i} className="px-2 py-2.5 text-center">{h}</th>)}
+                <th className="px-3.5 py-2.5 text-center font-bold">Total (HH:MM)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-600 bg-white">
-              <tr className="hover:bg-slate-50">
-                <td className="px-3 py-2">{client}</td>
-                <td className="px-3 py-2">{project}</td>
-                <td className="px-3 py-2">{task}</td>
-                {rowData.map((secs, i) => <td key={i} className="px-2 py-2 text-center">{formatHHMM(secs)}</td>)}
-                <td className="px-3 py-2 text-center font-bold text-slate-800">{formatHHMM(totalSecs)}</td>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1E293B]">
+              <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-3.5 py-2.5 font-medium">{client}</td>
+                <td className="px-3.5 py-2.5">{project}</td>
+                <td className="px-3.5 py-2.5">{task}</td>
+                {rowData.map((secs, i) => <td key={i} className="px-2 py-2.5 text-center">{formatHHMM(secs)}</td>)}
+                <td className="px-3.5 py-2.5 text-center font-bold text-slate-800 dark:text-slate-100">{formatHHMM(totalSecs)}</td>
               </tr>
-              <tr className={`${bgClass} border-t border-slate-200`}>
-                <td colSpan={3} className="px-3 py-2 text-right font-bold text-slate-800">Total {title}</td>
-                {rowData.map((secs, i) => <td key={i} className="px-2 py-2 text-center font-bold text-slate-800">{formatHHMM(secs)}</td>)}
-                <td className="px-3 py-2 text-center font-bold text-slate-800">{formatHHMM(totalSecs)}</td>
+              <tr className={`${bgClass} border-t border-slate-200 dark:border-slate-700`}>
+                <td colSpan={3} className="px-3.5 py-2.5 text-right font-bold text-slate-800 dark:text-slate-100">Total {title}</td>
+                {rowData.map((secs, i) => <td key={i} className="px-2 py-2.5 text-center font-bold text-slate-800 dark:text-slate-100">{formatHHMM(secs)}</td>)}
+                <td className="px-3.5 py-2.5 text-center font-bold text-slate-800 dark:text-slate-100">{formatHHMM(totalSecs)}</td>
               </tr>
             </tbody>
           </table>
@@ -274,40 +294,40 @@ export default function EmployeeTimesheet() {
     if (!data) return null;
     return (
       <div className="flex flex-wrap items-center gap-2 mt-4 lg:mt-0">
-        <div className="bg-emerald-50/50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-emerald-100 min-w-[140px]">
-          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl px-3.5 py-2 flex items-center gap-2.5 border border-emerald-100 dark:border-emerald-900/50 min-w-[140px] shadow-sm">
+          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
             <CheckCircle2 className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.workSeconds || 0)}</h3>
-            <p className="text-[10px] text-slate-500 uppercase">Work Time</p>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.workSeconds || 0)}</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Work Time</p>
           </div>
         </div>
-        <div className="bg-blue-50/50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-blue-100 min-w-[140px]">
-          <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+        <div className="bg-blue-50/70 dark:bg-blue-950/30 rounded-xl px-3.5 py-2 flex items-center gap-2.5 border border-blue-100 dark:border-blue-900/50 min-w-[140px] shadow-sm">
+          <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shrink-0 shadow-sm">
             <Clock className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.idleSeconds || 0)}</h3>
-            <p className="text-[10px] text-slate-500 uppercase">Idle Time</p>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.idleSeconds || 0)}</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Idle Time</p>
           </div>
         </div>
-        <div className="bg-amber-50/50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-amber-100 min-w-[140px]">
-          <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+        <div className="bg-amber-50/70 dark:bg-amber-950/30 rounded-xl px-3.5 py-2 flex items-center gap-2.5 border border-amber-100 dark:border-amber-900/50 min-w-[140px] shadow-sm">
+          <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shrink-0 shadow-sm">
             <Coffee className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.lunchSeconds || 0)}</h3>
-            <p className="text-[10px] text-slate-500 uppercase">Lunch Time</p>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.lunchSeconds || 0)}</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Lunch Time</p>
           </div>
         </div>
-        <div className="bg-purple-50/50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-purple-100 min-w-[140px]">
-          <div className="w-7 h-7 rounded-full bg-purple-400 flex items-center justify-center shrink-0">
+        <div className="bg-purple-50/70 dark:bg-purple-950/30 rounded-xl px-3.5 py-2 flex items-center gap-2.5 border border-purple-100 dark:border-purple-900/50 min-w-[140px] shadow-sm">
+          <div className="w-7 h-7 rounded-full bg-purple-400 flex items-center justify-center shrink-0 shadow-sm">
             <Coffee className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.breakSeconds || 0)}</h3>
-            <p className="text-[10px] text-slate-500 uppercase">Break Time</p>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.breakSeconds || 0)}</h3>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Break Time</p>
           </div>
         </div>
       </div>
@@ -318,77 +338,77 @@ export default function EmployeeTimesheet() {
     if (!data) return null;
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
-        <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2">
-               <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-2.5">
+               <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
                 <CheckCircle2 className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.workSeconds || 0)}</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Work Time</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.workSeconds || 0)}</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Work Time</p>
               </div>
             </div>
-            <span className="font-bold text-slate-700 text-xs">{(((data.summary?.workSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{(((data.summary?.workSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
             <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(((data.summary?.workSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100)}%` }}></div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2">
-               <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-2.5">
+               <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shrink-0 shadow-sm">
                 <Clock className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.idleSeconds || 0)}</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Idle Time</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.idleSeconds || 0)}</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Idle Time</p>
               </div>
             </div>
-            <span className="font-bold text-slate-700 text-xs">{(((data.summary?.idleSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{(((data.summary?.idleSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
             <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(((data.summary?.idleSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100)}%` }}></div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2">
-               <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-2.5">
+               <div className="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shrink-0 shadow-sm">
                 <Coffee className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.lunchSeconds || 0)}</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Lunch Time</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.lunchSeconds || 0)}</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Lunch Time</p>
               </div>
             </div>
-            <span className="font-bold text-slate-700 text-xs">{(((data.summary?.lunchSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{(((data.summary?.lunchSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
             <div className="bg-amber-400 h-full rounded-full" style={{ width: `${(((data.summary?.lunchSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100)}%` }}></div>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2">
-               <div className="w-7 h-7 rounded-full bg-purple-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-2.5">
+               <div className="w-7 h-7 rounded-full bg-purple-400 flex items-center justify-center shrink-0 shadow-sm">
                 <Coffee className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-800">{formatText(data.summary?.breakSeconds || 0)}</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Break Time</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatText(data.summary?.breakSeconds || 0)}</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Break Time</p>
               </div>
             </div>
-            <span className="font-bold text-slate-700 text-xs">{(((data.summary?.breakSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">{(((data.summary?.breakSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100).toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
             <div className="bg-purple-400 h-full rounded-full" style={{ width: `${(((data.summary?.breakSeconds || 0) / Math.max(1, data.summary?.totalSeconds || 1)) * 100)}%` }}></div>
           </div>
         </div>
       </div>
     );
-  }
+  };
 
   const renderMultiDayView = () => {
     if (!data || !data.rows || !Array.isArray(data.rows)) return null;
@@ -416,24 +436,24 @@ export default function EmployeeTimesheet() {
     return (
       <>
         {renderMultiDaySummary()}
-        <div className="mt-4 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <h3 className="font-bold text-[13px] text-slate-800">{title}</h3>
-            <div className="flex flex-wrap items-center gap-3 text-[10px] font-medium">
-              <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-500"></div> Work Time</div>
-              <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-[2px] bg-blue-500"></div> Idle Time</div>
-              <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-[2px] bg-amber-400"></div> Lunch Time</div>
-              <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-[2px] bg-purple-400"></div> Break Time</div>
+        <div className="mt-4 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <h3 className="font-bold text-[13px] text-slate-800 dark:text-slate-100">{title}</h3>
+            <div className="flex flex-wrap items-center gap-3 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[3px] bg-emerald-500"></div> Work Time</div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[3px] bg-blue-500"></div> Idle Time</div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[3px] bg-amber-400"></div> Lunch Time</div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[3px] bg-purple-400"></div> Break Time</div>
             </div>
           </div>
 
           <div className="p-3 h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }} barSize={35}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:opacity-20" />
                 <XAxis dataKey="name" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
                 <YAxis tick={{fontSize: 10, fill: '#64748b'}} tickFormatter={(val) => `${val}h`} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{fill: '#f8fafc'}} />
+                <Tooltip content={<CustomTooltip />} cursor={{fill: '#f8fafc', opacity: 0.1}} />
                 <Bar dataKey="workVal" stackId="a" fill="#10b981" name="Work" />
                 <Bar dataKey="idleVal" stackId="a" fill="#3b82f6" name="Idle" />
                 <Bar dataKey="lunchVal" stackId="a" fill="#fbbf24" name="Lunch" />
@@ -442,44 +462,44 @@ export default function EmployeeTimesheet() {
             </ResponsiveContainer>
           </div>
 
-          <div className="overflow-x-auto border-t border-slate-100">
+          <div className="overflow-x-auto border-t border-slate-100 dark:border-slate-700/80 no-scrollbar">
             <table className="w-full text-left text-[11px] whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700/80">
                 <tr>
-                  <th className="px-4 py-2">{viewMode === 'YEAR' ? 'Month' : 'Date'}</th>
-                  <th className="px-4 py-2 text-center">Work Time</th>
-                  <th className="px-4 py-2 text-center">Idle Time</th>
-                  <th className="px-4 py-2 text-center">Lunch Time</th>
-                  <th className="px-4 py-2 text-center">Break Time</th>
-                  <th className="px-4 py-2 text-center font-bold">Total (HH:MM)</th>
-                  <th className="px-4 py-2 text-center">Efficiency %</th>
-                  <th className="px-4 py-2 text-center">Action</th>
+                  <th className="px-4 py-2.5">{viewMode === 'YEAR' ? 'Month' : 'Date'}</th>
+                  <th className="px-4 py-2.5 text-center">Work Time</th>
+                  <th className="px-4 py-2.5 text-center">Idle Time</th>
+                  <th className="px-4 py-2.5 text-center">Lunch Time</th>
+                  <th className="px-4 py-2.5 text-center">Break Time</th>
+                  <th className="px-4 py-2.5 text-center font-bold">Total (HH:MM)</th>
+                  <th className="px-4 py-2.5 text-center">Efficiency %</th>
+                  <th className="px-4 py-2.5 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1E293B]">
                 {paginatedRows.map((day, i) => (
-                  <tr key={i} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-2 font-medium text-slate-800">{viewMode === 'YEAR' ? (day.label || '') : `${day.dayName || ''}, ${day.label || ''}`}</td>
-                    <td className="px-4 py-2 text-center">{formatText(day.workSeconds || 0)}</td>
-                    <td className="px-4 py-2 text-center">{formatText(day.idleSeconds || 0)}</td>
-                    <td className="px-4 py-2 text-center">{formatText(day.lunchSeconds || 0)}</td>
-                    <td className="px-4 py-2 text-center">{formatText(day.breakSeconds || 0)}</td>
-                    <td className="px-4 py-2 text-center font-bold text-slate-800">{formatHHMM(day.totalSeconds || 0)}</td>
-                    <td className="px-4 py-2 text-center">
+                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-slate-100">{viewMode === 'YEAR' ? (day.label || '') : `${day.dayName || ''}, ${day.label || ''}`}</td>
+                    <td className="px-4 py-2.5 text-center">{formatText(day.workSeconds || 0)}</td>
+                    <td className="px-4 py-2.5 text-center">{formatText(day.idleSeconds || 0)}</td>
+                    <td className="px-4 py-2.5 text-center">{formatText(day.lunchSeconds || 0)}</td>
+                    <td className="px-4 py-2.5 text-center">{formatText(day.breakSeconds || 0)}</td>
+                    <td className="px-4 py-2.5 text-center font-bold text-slate-800 dark:text-slate-100">{formatHHMM(day.totalSeconds || 0)}</td>
+                    <td className="px-4 py-2.5 text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        (day.efficiency || 0) >= 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        (day.efficiency || 0) >= 70 ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400'
                       }`}>
                         {day.efficiency || 0}%
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-center">
-                      <button className="text-blue-500 hover:bg-blue-50 p-1 rounded transition-colors inline-flex justify-center">
+                    <td className="px-4 py-2.5 text-center">
+                      <button className="text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 p-1 rounded transition-colors inline-flex justify-center cursor-pointer">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-slate-50 font-bold border-t border-slate-200 text-slate-800">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 font-bold border-t border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100">
                   <td className="px-4 py-3">Total</td>
                   <td className="px-4 py-3 text-center">{formatText(data.summary?.workSeconds || 0)}</td>
                   <td className="px-4 py-3 text-center">{formatText(data.summary?.idleSeconds || 0)}</td>
@@ -487,37 +507,36 @@ export default function EmployeeTimesheet() {
                   <td className="px-4 py-3 text-center">{formatText(data.summary?.breakSeconds || 0)}</td>
                   <td className="px-4 py-3 text-center">{formatHHMM(data.summary?.totalSeconds || 0)}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">{data.summary?.efficiency || 0}%</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400">{data.summary?.efficiency || 0}%</span>
                   </td>
-                  <td className="px-4 py-3 text-center text-blue-500 font-bold">-</td>
+                  <td className="px-4 py-3 text-center text-blue-500 dark:text-blue-400 font-bold">-</td>
                 </tr>
               </tbody>
             </table>
           </div>
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white border-t border-slate-100 gap-3">
-              <span className="text-[11px] text-slate-500 font-medium">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-white dark:bg-[#1E293B] border-t border-slate-100 dark:border-slate-700/80 gap-3">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Showing {(currentPage - 1) * ROWS_PER_PAGE + 1} to {Math.min(currentPage * ROWS_PER_PAGE, data.rows.length)} of {data.rows.length} entries
               </span>
               <div className="flex gap-1 items-center">
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  className="px-2 py-1 rounded border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-medium hover:bg-slate-50 transition-colors"
+                  className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Prev
                 </button>
                 <div className="flex items-center gap-1 mx-1">
                   {[...Array(totalPages)].map((_, idx) => {
                     const page = idx + 1;
-                    // Only show a few pages around current to avoid long pagination
                     if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
                       return (
                         <button
                           key={idx}
                           onClick={() => setCurrentPage(page)}
                           className={`w-6 h-6 rounded text-[11px] font-bold flex items-center justify-center transition-colors ${
-                            currentPage === page ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+                            currentPage === page ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                           }`}
                         >
                           {page}
@@ -532,7 +551,7 @@ export default function EmployeeTimesheet() {
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  className="px-2 py-1 rounded border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-medium hover:bg-slate-50 transition-colors"
+                  className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Next
                 </button>
@@ -556,12 +575,12 @@ export default function EmployeeTimesheet() {
               { label: 'Employee Timesheet' }
             ]} />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mt-2">Employee Timesheet</h2>
-          <p className="text-slate-500 text-[11px] mt-0.5">View employee wise efficient work, idle time, lunch and break details.</p>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mt-2">Employee Timesheet</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">View employee wise efficient work, idle time, lunch and break details.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-white rounded-md border border-slate-200 overflow-hidden shadow-sm h-8">
+          <div className="flex bg-white dark:bg-[#1E293B] rounded-lg border border-slate-200 dark:border-slate-700/80 overflow-hidden shadow-sm h-8">
             {(['DAY', 'WEEK', 'MONTH', 'YEAR'] as const).map(mode => (
               <button
                 key={mode}
@@ -569,7 +588,7 @@ export default function EmployeeTimesheet() {
                 className={`px-3 text-[11px] font-semibold transition-colors flex items-center h-full ${
                   viewMode === mode 
                     ? 'bg-blue-600 text-white' 
-                    : 'text-slate-600 hover:bg-slate-50 border-r border-slate-200 last:border-0'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 border-r border-slate-200 dark:border-slate-700/80 last:border-0'
                 }`}
               >
                 {mode === 'DAY' ? '1 Day' : mode === 'WEEK' ? '1 Week' : mode === 'MONTH' ? '1 Month' : '1 Year'}
@@ -580,15 +599,15 @@ export default function EmployeeTimesheet() {
       </div>
 
       {/* Filters Toolbar */}
-      <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 justify-between items-end">
+      <div className="bg-white dark:bg-[#1E293B] p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex flex-col md:flex-row gap-3 justify-between items-end">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="flex flex-col gap-1 w-full md:w-auto">
-            <label className="text-[10px] font-bold text-slate-700">Employee</label>
+            <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Employee</label>
             <div className="relative">
               <select 
                 value={employeeCode} 
                 onChange={e => setEmployeeCode(e.target.value)}
-                className="appearance-none px-3 py-1.5 pr-8 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm min-w-[180px] w-full transition-all cursor-pointer"
+                className="appearance-none px-3 py-1.5 pr-8 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm min-w-[180px] w-full transition-all cursor-pointer"
               >
                 <option value="" disabled>Select Employee</option>
                 {employees.map(e => <option key={e.employeeCode} value={e.employeeCode}>{e.name} ({e.employeeCode})</option>)}
@@ -599,9 +618,9 @@ export default function EmployeeTimesheet() {
             </div>
           </div>
           <div className="flex flex-col gap-1 w-full md:w-auto">
-            <label className="text-[10px] font-bold text-slate-700">Department</label>
+            <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Department</label>
             <div className="relative">
-              <select className="appearance-none px-3 py-1.5 pr-8 bg-slate-50/50 border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none shadow-sm min-w-[160px] w-full cursor-not-allowed" disabled>
+              <select className="appearance-none px-3 py-1.5 pr-8 bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-md text-[11px] font-medium text-slate-500 dark:text-slate-400 outline-none shadow-sm min-w-[160px] w-full cursor-not-allowed" disabled>
                 <option>{data ? data.departmentName : 'All Departments'}</option>
               </select>
               <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -610,9 +629,9 @@ export default function EmployeeTimesheet() {
             </div>
           </div>
           <div className="flex flex-col gap-1 w-full md:w-auto">
-            <label className="text-[10px] font-bold text-slate-700">Date</label>
-            <div className="flex items-center bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden h-[30px]">
-              <button className="px-2 border-r border-slate-200 hover:bg-slate-50 text-slate-600 h-full flex items-center" onClick={() => {
+            <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Date</label>
+            <div className="flex items-center bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm overflow-hidden h-[30px]">
+              <button className="px-2 border-r border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300 h-full flex items-center cursor-pointer" onClick={() => {
                 const d = new Date(date);
                 if (viewMode === 'DAY') d.setDate(d.getDate() - 1);
                 if (viewMode === 'WEEK') d.setDate(d.getDate() - 7);
@@ -626,9 +645,9 @@ export default function EmployeeTimesheet() {
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="px-2 text-center text-[11px] font-medium text-slate-700 outline-none w-[110px]"
+                className="px-2 text-center text-[11px] font-medium text-slate-700 dark:text-slate-200 outline-none w-[110px] bg-transparent"
               />
-              <button className="px-2 border-l border-slate-200 hover:bg-slate-50 text-slate-600 h-full flex items-center" onClick={() => {
+              <button className="px-2 border-l border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300 h-full flex items-center cursor-pointer" onClick={() => {
                 const d = new Date(date);
                 if (viewMode === 'DAY') d.setDate(d.getDate() + 1);
                 if (viewMode === 'WEEK') d.setDate(d.getDate() + 7);
@@ -643,18 +662,18 @@ export default function EmployeeTimesheet() {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-semibold transition shadow-sm h-[30px]">
+          <button className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-semibold transition shadow-sm h-[30px] cursor-pointer">
             <Monitor className="h-3.5 w-3.5" /> Generate Report
           </button>
           <button 
             onClick={exportToExcel}
             disabled={!data}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#107C41] border border-[#0b5c2f] rounded-md text-[11px] font-semibold text-white hover:bg-[#0b5c2f] transition shadow-sm h-[30px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#107C41] border border-[#0b5c2f] rounded-md text-[11px] font-semibold text-white hover:bg-[#0b5c2f] transition shadow-sm h-[30px] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" /> Export to Excel
           </button>
           <button 
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition shadow-sm h-[30px]"
+            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm h-[30px] cursor-pointer"
             onClick={() => {
               if (!data) return;
               if (viewMode === 'DAY') {
@@ -680,31 +699,31 @@ export default function EmployeeTimesheet() {
           {/* Summary Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm h-20">
+              <div key={i} className="bg-white dark:bg-[#1E293B] rounded-xl p-3.5 border border-slate-200 dark:border-slate-700/80 shadow-sm h-20">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-200"></div>
+                    <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700"></div>
                     <div className="space-y-2">
-                      <div className="h-3 w-16 bg-slate-200 rounded"></div>
-                      <div className="h-2 w-12 bg-slate-200 rounded"></div>
+                      <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                      <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700 rounded"></div>
                     </div>
                   </div>
-                  <div className="h-3 w-8 bg-slate-200 rounded"></div>
+                  <div className="h-3 w-8 bg-slate-200 dark:bg-slate-700 rounded"></div>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3"></div>
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full mt-3"></div>
               </div>
             ))}
           </div>
           {/* Main Content Skeleton */}
-          <div className="bg-white border border-slate-200 rounded-lg h-[300px] w-full"></div>
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 rounded-xl h-[300px] w-full"></div>
         </div>
       ) : !data ? (
-        <div className="py-20 flex flex-col items-center justify-center text-slate-500 animate-fade-in">
-          <Monitor className="h-12 w-12 text-slate-300 mb-3" />
-          <h3 className="text-lg font-bold text-slate-700">
+        <div className="py-20 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 animate-fade-in">
+          <Monitor className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">
             {!employeeCode ? "Select an Employee" : error ? "Error Loading Timesheet" : "No Timesheet Data Available"}
           </h3>
-          <p className="text-sm mt-1 text-center">
+          <p className="text-sm mt-1 text-center text-slate-500 dark:text-slate-400">
             {!employeeCode 
               ? "Please select an employee from the dropdown above to view their timesheet." 
               : error ? <span className="text-red-500 font-medium">{error}</span> 
@@ -715,7 +734,7 @@ export default function EmployeeTimesheet() {
         <div className="animate-fade-in">
           {viewMode === 'DAY' && (
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mt-4">
-              <h2 className="text-[15px] font-bold text-slate-800">
+              <h2 className="text-[15px] font-bold text-slate-800 dark:text-slate-100">
                 Timesheet for {data?.employeeName} ({data?.employeeCode}) - {data?.startDateLabel}
               </h2>
               {renderSummaryInline()}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Monitor, MonitorOff, Users, Smartphone, RefreshCw,
   Search, Eye, X, ChevronLeft, ChevronRight, Activity,
@@ -48,6 +49,7 @@ interface SummaryData {
 }
 
 export default function TimeTrackingSummary() {
+  const navigate = useNavigate();
   const [devices, setDevices] = useState<DeviceTracking[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,11 @@ export default function TimeTrackingSummary() {
   // Selected device for side panel
   const [selectedDevice, setSelectedDevice] = useState<DeviceTracking | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+
+  // Screenshots state (100% dynamic from backend)
+  const [recentScreenshots, setRecentScreenshots] = useState<Array<{ id: string; time: string; fullTime?: string; appName?: string; imageUrl: string; status?: string }>>([]);
+  const [previewScreenshot, setPreviewScreenshot] = useState<{ imageUrl: string; title: string } | null>(null);
 
   // Modals
   const [showTimelineModal, setShowTimelineModal] = useState(false);
@@ -169,6 +176,7 @@ export default function TimeTrackingSummary() {
   };
 
   const selectedDeviceIdRef = useRef<string | null>(null);
+  const activeRequestIdRef = useRef<number>(0);
 
   const buildSummaryQuery = (empCode?: string) => {
     const params = new URLSearchParams();
@@ -184,17 +192,20 @@ export default function TimeTrackingSummary() {
     return params.toString();
   };
 
-  const fetchTrackingData = async () => {
+  const fetchTrackingData = async (isManualSelect = false, manualEmpCode?: string) => {
     try {
       if (devices.length === 0) setLoading(true);
+      if (isManualSelect) setIsSummaryLoading(true);
 
       const res = await apiClient.get('/api/admin/tracking/devices');
       const fetchedDevices: DeviceTracking[] = res.data || [];
       setDevices(fetchedDevices);
 
-      const activeEmpCode = selectedDeviceIdRef.current 
-        ? fetchedDevices.find(d => d.id === selectedDeviceIdRef.current)?.employee.employeeCode
-        : undefined;
+      const activeEmpCode = isManualSelect 
+        ? manualEmpCode 
+        : (selectedDeviceIdRef.current 
+            ? fetchedDevices.find(d => d.id === selectedDeviceIdRef.current)?.employee.employeeCode
+            : undefined);
 
       const summaryRes = await apiClient.get('/api/admin/tracking/summary?' + buildSummaryQuery(activeEmpCode));
       setSummaryData(summaryRes.data);
@@ -204,21 +215,30 @@ export default function TimeTrackingSummary() {
         if (updatedSelected) setSelectedDevice(updatedSelected);
       }
 
+      // Fetch recent screenshots
+      try {
+        const shotRes = await apiClient.get('/api/admin/screenshots/recent', {
+          params: { employeeCode: activeEmpCode }
+        });
+        setRecentScreenshots(shotRes.data || []);
+      } catch (ignored) {}
+
       setLastUpdated(new Date().toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
     } catch (error) {
       console.error("Failed to fetch tracking data", error);
     } finally {
       setLoading(false);
+      setIsSummaryLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTrackingData();
 
-    // Auto refresh every 1 second
+    // Auto refresh every 4 seconds for tracking data
     const interval = setInterval(() => {
       fetchTrackingData();
-    }, 1000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, []);
@@ -226,10 +246,8 @@ export default function TimeTrackingSummary() {
   const handleSelectDevice = (device: DeviceTracking | null) => {
     setSelectedDevice(device);
     selectedDeviceIdRef.current = device ? device.id : null;
-    const query = buildSummaryQuery(device?.employee.employeeCode);
-    apiClient.get('/api/admin/tracking/summary?' + query)
-      .then(res => setSummaryData(res.data))
-      .catch(console.error);
+    setIsSummaryLoading(true);
+    fetchTrackingData(true, device?.employee.employeeCode);
   };
 
   const filteredDevices = devices.filter(d => {
@@ -373,61 +391,61 @@ export default function TimeTrackingSummary() {
               { label: 'Time Tracking Summary' }
             ]} />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mt-2">Time Tracking Summary</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Monitor employee work hours, activity and live device status in real-time</p>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-2">Time Tracking Summary</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Monitor employee work hours, activity and live device status in real-time</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/40 rounded-full">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs font-bold text-emerald-700">Live Data</span>
+            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Live Data</span>
           </div>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-emerald-50 p-4 rounded-xl text-emerald-500 shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl text-emerald-500 dark:text-emerald-400 shrink-0">
             <Monitor className="h-7 w-7" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">{onlineCount}</h3>
-            <p className="text-sm font-medium text-slate-500">Online Devices</p>
-            <p className="text-xs font-bold text-emerald-600 mt-0.5">{onlinePercent}% online</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{onlineCount}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Online Devices</p>
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{onlinePercent}% online</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-red-50 p-4 rounded-xl text-red-500 shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-red-50 dark:bg-red-950/40 p-4 rounded-xl text-red-500 dark:text-red-400 shrink-0">
             <MonitorOff className="h-7 w-7" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">{offlineCount}</h3>
-            <p className="text-sm font-medium text-slate-500">Offline Devices</p>
-            <p className="text-xs font-bold text-red-600 mt-0.5">{offlinePercent}% offline</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{offlineCount}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Offline Devices</p>
+            <p className="text-xs font-bold text-red-600 dark:text-red-400 mt-0.5">{offlinePercent}% offline</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-blue-50 p-4 rounded-xl text-blue-500 shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-xl text-blue-500 dark:text-blue-400 shrink-0">
             <Users className="h-7 w-7" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">{new Set(devices.map(d => d.employee.id)).size}</h3>
-            <p className="text-sm font-medium text-slate-500">Total Employees</p>
-            <p className="text-xs font-bold text-emerald-600 mt-0.5">{onlineCount} active now</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{new Set(devices.map(d => d.employee.id)).size}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Employees</p>
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{onlineCount} active now</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-purple-50 p-4 rounded-xl text-purple-500 shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex items-center gap-4 transition-colors">
+          <div className="bg-purple-50 dark:bg-purple-950/40 p-4 rounded-xl text-purple-500 dark:text-purple-400 shrink-0">
             <Smartphone className="h-7 w-7" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800">{devices.length}</h3>
-            <p className="text-sm font-medium text-slate-500">Total Devices</p>
-            <p className="text-xs font-bold text-slate-500 mt-0.5">{devices.length} registered</p>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{devices.length}</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Devices</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{devices.length} registered</p>
           </div>
         </div>
       </div>
@@ -435,7 +453,7 @@ export default function TimeTrackingSummary() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[250px]">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             <Search className="h-4 w-4" />
           </div>
           <input
@@ -443,24 +461,24 @@ export default function TimeTrackingSummary() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search by employee name, code, device ID or hostname..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm"
+            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-colors"
           />
         </div>
 
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px] text-slate-700 dark:text-slate-200 transition-colors">
           <option>All Status</option>
           <option>Online</option>
           <option>Offline</option>
         </select>
 
-        <select value={osFilter} onChange={e => setOsFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
+        <select value={osFilter} onChange={e => setOsFilter(e.target.value)} className="px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px] text-slate-700 dark:text-slate-200 transition-colors">
           <option>All OS</option>
           <option>Windows 11</option>
           <option>Windows 10</option>
           <option>macOS</option>
         </select>
 
-        <select value={activityFilter} onChange={e => setActivityFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
+        <select value={activityFilter} onChange={e => setActivityFilter(e.target.value)} className="px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:border-blue-500 shadow-sm min-w-[140px] text-slate-700 dark:text-slate-200 transition-colors">
           <option>All Activity</option>
           <option>Working</option>
           <option>Idle</option>
@@ -473,17 +491,17 @@ export default function TimeTrackingSummary() {
           <button 
             type="button"
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className={`flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto px-4 py-2.5 bg-white border rounded-xl text-sm font-medium transition shadow-sm cursor-pointer ${showDatePicker ? 'border-blue-500 text-blue-600 ring-2 ring-blue-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+            className={`flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-[#1E293B] border rounded-xl text-sm font-medium transition shadow-sm cursor-pointer ${showDatePicker ? 'border-blue-500 text-blue-600 ring-2 ring-blue-50 dark:ring-blue-900/40' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           >
             <div className="flex items-center gap-2 min-w-0">
               <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
-              <span className="font-semibold text-slate-700 text-xs sm:text-sm truncate">
+              <span className="font-semibold text-slate-700 dark:text-slate-200 text-xs sm:text-sm truncate">
                 {dateRangePreset === 'Today' ? `Today (${formatDisplayDate(startDate)})` :
                  startDate === endDate ? formatDisplayDate(startDate) :
                  `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`}
               </span>
             </div>
-            <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
           </button>
 
           {showDatePicker && (
@@ -495,11 +513,11 @@ export default function TimeTrackingSummary() {
               />
 
               {/* Date picker container - modal on mobile, dropdown on desktop */}
-              <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:translate-y-0 sm:inset-x-auto sm:top-full sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-80 max-w-sm mx-auto sm:mx-0 bg-white rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Select Date Range</span>
+              <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:translate-y-0 sm:inset-x-auto sm:top-full sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-80 max-w-sm mx-auto sm:mx-0 bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Date Range</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">{dateRangePreset}</span>
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 rounded-full">{dateRangePreset}</span>
                     <button 
                       type="button" 
                       onClick={() => setShowDatePicker(false)} 
@@ -522,7 +540,7 @@ export default function TimeTrackingSummary() {
                       key={p.label}
                       type="button"
                       onClick={() => handlePresetSelect(p.preset)}
-                      className={`py-2 px-3 rounded-lg text-xs font-medium transition text-left cursor-pointer ${dateRangePreset === p.label ? 'bg-blue-600 text-white font-bold shadow-sm' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
+                      className={`py-2 px-3 rounded-lg text-xs font-medium transition text-left cursor-pointer ${dateRangePreset === p.label ? 'bg-blue-600 text-white font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                     >
                       {p.label}
                     </button>
@@ -530,23 +548,23 @@ export default function TimeTrackingSummary() {
                 </div>
 
                 {/* Custom Date Range Inputs */}
-                <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1">From Date</label>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">From Date</label>
                     <input
                       type="date"
                       value={tempStartDate}
                       onChange={(e) => setTempStartDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-blue-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 bg-white dark:bg-slate-800"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1">To Date</label>
+                    <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">To Date</label>
                     <input
                       type="date"
                       value={tempEndDate}
                       onChange={(e) => setTempEndDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-blue-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 bg-white dark:bg-slate-800"
                     />
                   </div>
                   <div className="flex gap-2 pt-1">
@@ -571,10 +589,10 @@ export default function TimeTrackingSummary() {
         {/* Left Column (Table & Widgets) */}
         <div className="flex-1 min-w-0 space-y-5 w-full">
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 overflow-hidden transition-colors">
             <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <table className="w-full text-left text-sm table-auto lg:table-fixed min-w-[800px] lg:min-w-0">
-                <thead className="bg-slate-50 text-slate-600 text-[11px] uppercase tracking-wider font-bold border-b border-slate-100">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 text-[11px] uppercase tracking-wider font-bold border-b border-slate-100 dark:border-slate-700">
                   <tr>
                     <th className="px-2 py-3 w-[4%]">#</th>
                     <th className="px-2 py-3 w-[15%]">Employee</th>
@@ -588,14 +606,14 @@ export default function TimeTrackingSummary() {
                     <th className="px-2 py-3 w-[8%] text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white text-slate-700 text-xs">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/70 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 text-xs">
                   {paginatedDevices.length === 0 ? (
                     <tr><td colSpan={10} className="px-6 py-12 text-center text-slate-400">No devices found.</td></tr>
                   ) : (
                     paginatedDevices.map((device, index) => (
-                      <tr key={device.id} className={`hover:bg-slate-50 transition-colors ${selectedDevice?.id === device.id ? 'bg-blue-50/50' : ''}`}>
+                      <tr key={device.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors ${selectedDevice?.id === device.id ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''}`}>
                         <td className="px-2 py-2.5">{page * size + index + 1}</td>
-                        <td className="px-2 py-2.5 truncate font-medium text-slate-800" title={device.employee.name}>
+                        <td className="px-2 py-2.5 truncate font-medium text-slate-800 dark:text-slate-100" title={device.employee.name}>
                           {device.employee.name}
                         </td>
                         <td className="px-2 py-2.5 text-slate-500 truncate" title={device.employee.employeeCode}>
@@ -616,7 +634,7 @@ export default function TimeTrackingSummary() {
                           {formatDateTime(device.lastSeen)}
                         </td>
                         <td className="px-1 py-2.5 text-center">
-                          <button onClick={() => handleSelectDevice(device)} className={`flex items-center justify-center w-full gap-1 px-2 py-1 rounded-md text-[10px] font-bold transition border ${selectedDevice?.id === device.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}>
+                          <button onClick={() => handleSelectDevice(device)} className={`flex items-center justify-center w-full gap-1 px-2 py-1 rounded-md text-[10px] font-bold transition border ${selectedDevice?.id === device.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40'}`}>
                             <Eye className="h-3 w-3" /> View
                           </button>
                         </td>
@@ -629,16 +647,16 @@ export default function TimeTrackingSummary() {
 
             {/* Pagination */}
             {filteredDevices.length > 0 && (
-              <div className="p-4 border-t border-slate-100 flex justify-between items-center bg-white">
-                <p className="text-sm text-slate-500 font-medium">
+              <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-[#1E293B]">
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                   Showing {page * size + 1} to {Math.min((page + 1) * size, filteredDevices.length)} of {filteredDevices.length} entries
                 </p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition">Previous</button>
+                  <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition">Previous</button>
                   <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold shadow-sm">{page + 1}</button>
-                  {page + 1 < totalPages && <button onClick={() => setPage(page + 1)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition">{page + 2}</button>}
-                  {page + 2 < totalPages && <button onClick={() => setPage(page + 2)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition">{page + 3}</button>}
-                  <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition">Next</button>
+                  {page + 1 < totalPages && <button onClick={() => setPage(page + 1)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition">{page + 2}</button>}
+                  {page + 2 < totalPages && <button onClick={() => setPage(page + 2)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition">{page + 3}</button>}
+                  <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition">Next</button>
                 </div>
               </div>
             )}
@@ -647,10 +665,10 @@ export default function TimeTrackingSummary() {
           {/* Bottom Widgets */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5 items-stretch">
             {/* Widget 1 */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50">
+            <div className="bg-white dark:bg-[#1E293B] p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex flex-col h-full transition-colors">
+              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50 dark:border-slate-700/60">
                 <div className="min-w-0 flex-1 pr-2">
-                  <h3 className="font-bold text-slate-800 text-sm leading-tight">Activity Timeline</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">Activity Timeline</h3>
                   <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={selectedDevice ? `${selectedDevice.employee.name} • ${selectedDateLabel}` : selectedDateLabel}>
                     {selectedDevice ? `${selectedDevice.employee.name} • ${selectedDateLabel}` : selectedDateLabel}
                   </p>
@@ -666,29 +684,38 @@ export default function TimeTrackingSummary() {
               <div className="pl-1.5 ml-1 pr-1 flex-1">
                 {!selectedDevice ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                    <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                    <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                       <Monitor className="h-4 w-4 text-slate-400" />
                     </div>
-                    <p className="text-xs font-bold text-slate-600">No Employee Selected</p>
-                    <p className="text-[11px] text-center mt-0.5">Please select an employee to view their timeline.</p>
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Employee Selected</p>
+                    <p className="text-[11px] text-center mt-0.5 text-slate-400">Please select an employee to view their timeline.</p>
+                  </div>
+                ) : isSummaryLoading ? (
+                  <div className="space-y-3.5 mt-2 animate-pulse">
+                    {[1, 2, 3, 4].map(idx => (
+                      <div key={idx} className="flex items-center justify-between gap-3">
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-28"></div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="space-y-2.5 border-l-2 border-slate-100 mt-1">
+                  <div className="space-y-2.5 border-l-2 border-slate-100 dark:border-slate-700 mt-1">
                     {summaryData?.timeline && summaryData.timeline.length > 0 ? summaryData.timeline.slice(0, 5).map((event, i) => (
                       <div key={i} className="relative">
-                        <div className={`absolute -left-[6px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white ${event.color === 'emerald' ? 'bg-emerald-500' : event.color === 'blue' ? 'bg-blue-500' : event.color === 'slate' ? 'bg-slate-400' : event.color === 'violet' || event.color === 'purple' ? 'bg-violet-500' : 'bg-orange-400'} ${i === Math.min(summaryData.timeline.length, 5) - 1 && event.title.includes('Last Active') ? 'animate-pulse' : ''}`}></div>
+                        <div className={`absolute -left-[6px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-800 ${event.color === 'emerald' ? 'bg-emerald-500' : event.color === 'blue' ? 'bg-blue-500' : event.color === 'slate' ? 'bg-slate-400' : event.color === 'violet' || event.color === 'purple' ? 'bg-violet-500' : 'bg-orange-400'} ${i === Math.min(summaryData.timeline.length, 5) - 1 && event.title.includes('Last Active') ? 'animate-pulse' : ''}`}></div>
                         <div className="flex items-center justify-between text-xs pl-3.5 py-0.5">
                           <span className="font-medium text-slate-500 shrink-0 text-[11px]">{event.time}</span>
-                          <span className={`font-bold ml-2 text-right truncate ${event.color === 'emerald' ? 'text-emerald-700' : event.color === 'blue' ? 'text-blue-600' : event.color === 'slate' ? 'text-slate-500' : event.color === 'violet' || event.color === 'purple' ? 'text-violet-600' : 'text-orange-600'}`}>{event.title.split(' (')[0]}</span>
+                          <span className={`font-bold ml-2 text-right truncate ${event.color === 'emerald' ? 'text-emerald-700 dark:text-emerald-400' : event.color === 'blue' ? 'text-blue-600 dark:text-blue-400' : event.color === 'slate' ? 'text-slate-500 dark:text-slate-400' : event.color === 'violet' || event.color === 'purple' ? 'text-violet-600 dark:text-violet-400' : 'text-orange-600 dark:text-orange-400'}`}>{event.title.split(' (')[0]}</span>
                         </div>
                       </div>
                     )) : (
                       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                        <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                        <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                           <Info className="h-4 w-4 text-slate-400" />
                         </div>
-                        <p className="text-xs font-bold text-slate-600">No Data Available</p>
-                        <p className="text-[11px] text-center mt-0.5">No timeline events recorded yet.</p>
+                        <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Data Available</p>
+                        <p className="text-[11px] text-center mt-0.5 text-slate-400">No timeline events recorded yet.</p>
                       </div>
                     )}
                   </div>
@@ -697,10 +724,10 @@ export default function TimeTrackingSummary() {
             </div>
 
             {/* Widget 2 */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50">
+            <div className="bg-white dark:bg-[#1E293B] p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex flex-col h-full transition-colors">
+              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50 dark:border-slate-700/60">
                 <div className="min-w-0 flex-1 pr-2">
-                  <h3 className="font-bold text-slate-800 text-sm leading-tight">Top Applications</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">Top Applications</h3>
                   <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={`Usage for ${selectedDateLabel}`}>
                     Usage for {selectedDateLabel}
                   </p>
@@ -708,7 +735,7 @@ export default function TimeTrackingSummary() {
                 {selectedDevice && (
                   <span 
                     onClick={() => setShowAppsModal(true)}
-                    className="text-xs text-blue-600 font-bold cursor-pointer hover:underline mt-0.5 whitespace-nowrap shrink-0"
+                    className="text-xs text-blue-600 dark:text-blue-400 font-bold cursor-pointer hover:underline mt-0.5 whitespace-nowrap shrink-0"
                   >
                     View All &rarr;
                   </span>
@@ -717,32 +744,44 @@ export default function TimeTrackingSummary() {
               <div className="flex-1 pr-0.5">
                 {!selectedDevice ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                    <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                    <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                       <Layout className="h-4 w-4 text-slate-400" />
                     </div>
-                    <p className="text-xs font-bold text-slate-600">No Employee Selected</p>
-                    <p className="text-[11px] text-center mt-0.5">Please select an employee to view applications.</p>
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Employee Selected</p>
+                    <p className="text-[11px] text-center mt-0.5 text-slate-400">Please select an employee to view applications.</p>
+                  </div>
+                ) : isSummaryLoading ? (
+                  <div className="space-y-3 mt-2 animate-pulse">
+                    {[1, 2, 3, 4].map(idx => (
+                      <div key={idx} className="flex items-center justify-between gap-3 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-700"></div>
+                          <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                        </div>
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="space-y-2 mt-0.5">
                     {summaryData?.topApplications && summaryData.topApplications.length > 0 ? summaryData.topApplications.slice(0, 5).map((app, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-slate-50/80 transition-colors">
+                      <div key={i} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                           {getAppIcon(app.name)}
-                          <span className="font-medium text-slate-700 truncate" title={app.name}>{app.name}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300 truncate" title={app.name}>{app.name}</span>
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0 text-right">
                           <span className="text-slate-500 font-medium text-[11px] whitespace-nowrap">{formatDuration(app.durationSeconds)}</span>
-                          <span className="font-bold text-slate-800 w-9 text-right">{calculatePct(app.durationSeconds, summaryData.topApplications)}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 w-9 text-right">{calculatePct(app.durationSeconds, summaryData.topApplications)}</span>
                         </div>
                       </div>
                     )) : (
                       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                        <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                        <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                           <Info className="h-4 w-4 text-slate-400" />
                         </div>
-                        <p className="text-xs font-bold text-slate-600">No Data Available</p>
-                        <p className="text-[11px] text-center mt-0.5">No application usage found.</p>
+                        <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Data Available</p>
+                        <p className="text-[11px] text-center mt-0.5 text-slate-400">No application usage found.</p>
                       </div>
                     )}
                   </div>
@@ -751,10 +790,10 @@ export default function TimeTrackingSummary() {
             </div>
 
             {/* Widget 3 */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50">
+            <div className="bg-white dark:bg-[#1E293B] p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/80 flex flex-col h-full transition-colors">
+              <div className="flex justify-between items-start mb-3 pb-2 border-b border-slate-50 dark:border-slate-700/60">
                 <div className="min-w-0 flex-1 pr-2">
-                  <h3 className="font-bold text-slate-800 text-sm leading-tight">Top Websites</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">Top Websites</h3>
                   <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={`Visits for ${selectedDateLabel}`}>
                     Visits for {selectedDateLabel}
                   </p>
@@ -762,7 +801,7 @@ export default function TimeTrackingSummary() {
                 {selectedDevice && (
                   <span 
                     onClick={() => setShowWebsitesModal(true)}
-                    className="text-xs text-blue-600 font-bold cursor-pointer hover:underline mt-0.5 whitespace-nowrap shrink-0"
+                    className="text-xs text-blue-600 dark:text-blue-400 font-bold cursor-pointer hover:underline mt-0.5 whitespace-nowrap shrink-0"
                   >
                     View All &rarr;
                   </span>
@@ -771,32 +810,44 @@ export default function TimeTrackingSummary() {
               <div className="flex-1 pr-0.5">
                 {!selectedDevice ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                    <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                    <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                       <Globe className="h-4 w-4 text-slate-400" />
                     </div>
-                    <p className="text-xs font-bold text-slate-600">No Employee Selected</p>
-                    <p className="text-[11px] text-center mt-0.5">Please select an employee to view websites.</p>
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Employee Selected</p>
+                    <p className="text-[11px] text-center mt-0.5 text-slate-400">Please select an employee to view websites.</p>
+                  </div>
+                ) : isSummaryLoading ? (
+                  <div className="space-y-3 mt-2 animate-pulse">
+                    {[1, 2, 3, 4].map(idx => (
+                      <div key={idx} className="flex items-center justify-between gap-3 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-700"></div>
+                          <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-28"></div>
+                        </div>
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="space-y-2 mt-0.5">
                     {summaryData?.topWebsites && summaryData.topWebsites.length > 0 ? summaryData.topWebsites.slice(0, 5).map((site, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-slate-50/80 transition-colors">
+                      <div key={i} className="flex items-center justify-between text-xs py-1 px-1.5 rounded-lg hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                           {getWebsiteIcon(site.name)}
-                          <span className="font-medium text-slate-700 truncate" title={site.name}>{site.name}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300 truncate" title={site.name}>{site.name}</span>
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0 text-right">
                           <span className="text-slate-500 font-medium text-[11px] whitespace-nowrap">{formatDuration(site.durationSeconds)}</span>
-                          <span className="font-bold text-slate-800 w-9 text-right">{calculatePct(site.durationSeconds, summaryData.topWebsites)}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 w-9 text-right">{calculatePct(site.durationSeconds, summaryData.topWebsites)}</span>
                         </div>
                       </div>
                     )) : (
                       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-6">
-                        <div className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center mb-2">
+                        <div className="h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-2">
                           <Info className="h-4 w-4 text-slate-400" />
                         </div>
-                        <p className="text-xs font-bold text-slate-600">No Data Available</p>
-                        <p className="text-[11px] text-center mt-0.5">No website usage found.</p>
+                        <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No Data Available</p>
+                        <p className="text-[11px] text-center mt-0.5 text-slate-400">No website usage found.</p>
                       </div>
                     )}
                   </div>
@@ -809,47 +860,47 @@ export default function TimeTrackingSummary() {
       {/* Right Column - Device Details Panel (Permanently Visible) */}
       <div className="w-full xl:w-[340px] xl:shrink-0 flex flex-col gap-4 xl:sticky xl:top-4">
         {!selectedDevice ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 flex flex-col items-center justify-center h-[500px] text-center p-8">
-            <div className="bg-blue-50 p-6 rounded-full mb-4">
-              <Monitor className="h-12 w-12 text-blue-400" />
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/80 flex flex-col items-center justify-center h-[500px] text-center p-8 transition-colors">
+            <div className="bg-blue-50 dark:bg-blue-950/40 p-6 rounded-full mb-4">
+              <Monitor className="h-12 w-12 text-blue-400 dark:text-blue-500" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">No Device Selected</h3>
-            <p className="text-sm text-slate-500">Click on "View" in the table row to see detailed information for a specific device and employee.</p>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">No Device Selected</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Click on "View" in the table row to see detailed information for a specific device and employee.</p>
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/80 animate-in fade-in duration-300 transition-colors">
               {/* Panel Header */}
-              <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-100">
-                <h3 className="font-bold text-slate-800 text-base sm:text-lg">Device Details</h3>
-                <button onClick={() => handleSelectDevice(null)} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+              <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base sm:text-lg">Device Details</h3>
+                <button onClick={() => handleSelectDevice(null)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Panel Profile */}
-              <div className="px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 border-b border-slate-100">
+              <div className="px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-xl flex items-center justify-center text-white font-bold text-sm sm:text-base shadow-sm ${getAvatarColor(selectedDevice.employee.name)}`}>
                     {getInitials(selectedDevice.employee.name)}
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-bold text-slate-800 text-sm sm:text-base truncate">{selectedDevice.employee.name}</h4>
-                    <p className="text-xs text-slate-500 truncate">Employee Code: {selectedDevice.employee.employeeCode || '-'}</p>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base truncate">{selectedDevice.employee.name}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Employee Code: {selectedDevice.employee.employeeCode || '-'}</p>
                   </div>
                 </div>
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider shrink-0 uppercase ${selectedDevice.status === 'ONLINE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-red-50 text-red-700 border border-red-200/60'}`}>
+                <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider shrink-0 uppercase ${selectedDevice.status === 'ONLINE' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200/60 dark:border-red-800/40'}`}>
                   {selectedDevice.status}
                 </span>
               </div>
 
               {/* Panel Tabs */}
-              <div className="px-4 sm:px-5 border-b border-slate-100 flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-x-4 text-xs font-bold text-slate-500 whitespace-nowrap">
+              <div className="px-4 sm:px-5 border-b border-slate-100 dark:border-slate-700 flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-x-4 text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                 {['Overview', 'Activity', 'Applications', 'Websites', 'Screenshots'].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`py-2.5 border-b-2 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent hover:text-slate-700'}`}
+                    className={`py-2.5 border-b-2 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400' : 'border-transparent hover:text-slate-700 dark:hover:text-slate-300'}`}
                   >
                     {tab}
                   </button>
@@ -865,27 +916,27 @@ export default function TimeTrackingSummary() {
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Monitor className="h-4 w-4 shrink-0" /> Device ID
                       </div>
-                      <div className="text-slate-800 font-mono text-xs mt-0.5 break-all min-w-0">{selectedDevice.deviceId}</div>
+                      <div className="text-slate-800 dark:text-slate-200 font-mono text-xs mt-0.5 break-all min-w-0">{selectedDevice.deviceId}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Layout className="h-4 w-4 shrink-0" /> Hostname
                       </div>
-                      <div className="text-slate-800 font-medium break-words min-w-0">{selectedDevice.hostname}</div>
+                      <div className="text-slate-800 dark:text-slate-200 font-medium break-words min-w-0">{selectedDevice.hostname}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Info className="h-4 w-4 shrink-0" /> OS
                       </div>
-                      <div className="text-slate-800 break-words min-w-0">{selectedDevice.os}</div>
+                      <div className="text-slate-800 dark:text-slate-200 break-words min-w-0">{selectedDevice.os}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Settings className="h-4 w-4 shrink-0" /> Agent Version
                       </div>
-                      <div className="text-slate-800 font-medium min-w-0">{selectedDevice.agentVersion}</div>
+                      <div className="text-slate-800 dark:text-slate-200 font-medium min-w-0">{selectedDevice.agentVersion}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <CheckCircle2 className="h-4 w-4 shrink-0" /> Status
                       </div>
-                      <div className="flex items-center gap-1.5 font-bold text-slate-800 min-w-0">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 min-w-0">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${selectedDevice.status === 'ONLINE' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
                         {selectedDevice.status}
                       </div>
@@ -898,32 +949,32 @@ export default function TimeTrackingSummary() {
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Clock className="h-4 w-4 shrink-0" /> Registered At
                       </div>
-                      <div className="text-slate-800 text-xs mt-0.5 break-words min-w-0">{formatDateTime(selectedDevice.registeredAt)}</div>
+                      <div className="text-slate-800 dark:text-slate-200 text-xs mt-0.5 break-words min-w-0">{formatDateTime(selectedDevice.registeredAt)}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Clock className="h-4 w-4 shrink-0" /> Last Seen
                       </div>
-                      <div className="text-slate-800 text-xs mt-0.5 break-words min-w-0">{formatDateTime(selectedDevice.lastSeen)}</div>
+                      <div className="text-slate-800 dark:text-slate-200 text-xs mt-0.5 break-words min-w-0">{formatDateTime(selectedDevice.lastSeen)}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <Globe className="h-4 w-4 shrink-0" /> IP Address
                       </div>
-                      <div className="text-slate-800 font-mono text-xs mt-0.5 break-all min-w-0">{selectedDevice.ipAddress || '-'}</div>
+                      <div className="text-slate-800 dark:text-slate-200 font-mono text-xs mt-0.5 break-all min-w-0">{selectedDevice.ipAddress || '-'}</div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 font-medium whitespace-nowrap">
                         <MapPin className="h-4 w-4 shrink-0" /> Location
                       </div>
-                      <div className="text-slate-800 text-xs mt-0.5 break-words leading-relaxed min-w-0">{selectedDevice.location || '-'}</div>
+                      <div className="text-slate-800 dark:text-slate-200 text-xs mt-0.5 break-words leading-relaxed min-w-0">{selectedDevice.location || '-'}</div>
                     </div>
 
                     {selectedDevice.status === 'ONLINE' && (
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex gap-2.5 items-center">
+                      <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/40 rounded-xl p-3 flex gap-2.5 items-center">
                         <div className="bg-emerald-500 rounded-full h-5 w-5 shrink-0 flex items-center justify-center text-white">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-emerald-800 text-xs">Device is online and tracking activity</h4>
-                          <p className="text-[11px] text-emerald-600">Actively tracking.</p>
+                          <h4 className="font-bold text-emerald-800 dark:text-emerald-300 text-xs">Device is online and tracking activity</h4>
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Actively tracking.</p>
                         </div>
                       </div>
                     )}
@@ -933,8 +984,8 @@ export default function TimeTrackingSummary() {
 
                 {activeTab === 'Activity' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs bg-slate-50 border border-slate-100 p-2.5 rounded-xl font-medium">
-                      <span className="text-slate-600 font-semibold">{selectedDateLabel}</span>
+                    <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 p-2.5 rounded-xl font-medium">
+                      <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedDateLabel}</span>
                       <button 
                         type="button"
                         onClick={() => setShowTimelineModal(true)} 
@@ -946,18 +997,18 @@ export default function TimeTrackingSummary() {
 
                     {/* Stats pills */}
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-emerald-50/70 border border-emerald-100 rounded-lg p-2">
+                      <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-800/40 rounded-lg p-2">
                         <span className="text-[10px] uppercase font-bold text-emerald-600 block">Working</span>
-                        <span className="font-bold text-emerald-900">
+                        <span className="font-bold text-emerald-900 dark:text-emerald-300">
                           {(() => {
                             const s = summaryData?.stats?.workSeconds || 0;
                             return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
                           })()}
                         </span>
                       </div>
-                      <div className="bg-amber-50/70 border border-amber-100 rounded-lg p-2">
+                      <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800/40 rounded-lg p-2">
                         <span className="text-[10px] uppercase font-bold text-amber-600 block">Idle</span>
-                        <span className="font-bold text-amber-900">
+                        <span className="font-bold text-amber-900 dark:text-amber-300">
                           {(() => {
                             const s = summaryData?.stats?.idleSeconds || 0;
                             return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -992,21 +1043,97 @@ export default function TimeTrackingSummary() {
 
             {/* Recent Screenshots Card */}
             {activeTab === 'Overview' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+              <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 p-4 transition-colors">
                 <div className="flex justify-between items-center mb-2.5">
-                  <h4 className="font-bold text-slate-800 text-sm">Recent Screenshots</h4>
-                  <span className="text-xs text-blue-600 font-bold cursor-pointer hover:underline">View All</span>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Recent Screenshots</h4>
+                  <span 
+                    onClick={() => navigate('/tracking/screen-monitoring')} 
+                    className="text-xs text-blue-600 font-bold cursor-pointer hover:underline"
+                  >
+                    View All
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {['01:58 PM', '01:45 PM', '01:30 PM', '01:15 PM'].map((time, i) => (
-                    <div key={i} className="group cursor-pointer">
-                      <div className="aspect-[4/3] bg-slate-900 rounded-lg overflow-hidden relative shadow-sm border border-slate-200 flex items-center justify-center mb-1 group-hover:ring-2 ring-blue-500 transition">
-                        <ImageIcon className="h-5 w-5 text-slate-600" />
+                {isSummaryLoading ? (
+                  <div className="grid grid-cols-3 gap-2 animate-pulse py-1">
+                    {[1, 2, 3, 4, 5, 6].map((idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="aspect-[16/10] bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                        <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded w-12 mx-auto"></div>
                       </div>
-                      <p className="text-[10px] text-slate-500 text-center font-medium">{time}</p>
+                    ))}
+                  </div>
+                ) : recentScreenshots.length === 0 ? (
+                  <div className="py-8 flex flex-col items-center justify-center text-center text-slate-400">
+                    <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2">
+                      <Monitor className="h-5 w-5 text-slate-400" />
                     </div>
-                  ))}
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">No Screenshots Yet</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Captures will appear here automatically</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {recentScreenshots.slice(0, 6).map((shot) => (
+                      <div 
+                        key={shot.id} 
+                        onClick={() => setPreviewScreenshot({ imageUrl: shot.imageUrl, title: `${shot.appName || 'Workstation'} • ${shot.time}` })}
+                        className="group cursor-pointer"
+                      >
+                        <div className="aspect-[16/10] bg-slate-900 rounded-lg overflow-hidden relative shadow-xs border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-1 group-hover:ring-2 ring-blue-500 transition">
+                          <img 
+                            src={shot.imageUrl} 
+                            alt={shot.appName || 'Screenshot'} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            loading="lazy"
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center font-medium truncate">{shot.time}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Screenshots Tab in Device Details */}
+            {activeTab === 'Screenshots' && (
+              <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/80 p-4 space-y-3 transition-colors">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Device Screenshots</h4>
+                  <span 
+                    onClick={() => navigate('/tracking/screen-monitoring')} 
+                    className="text-xs text-blue-600 font-bold cursor-pointer hover:underline"
+                  >
+                    Open Gallery &rarr;
+                  </span>
                 </div>
+                {recentScreenshots.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                      <Monitor className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-600">No Device Screenshots Recorded</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">No captures recorded for this device yet</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {recentScreenshots.map((shot) => (
+                      <div 
+                        key={shot.id}
+                        onClick={() => setPreviewScreenshot({ imageUrl: shot.imageUrl, title: `${shot.appName || 'Workstation'} • ${shot.time}` })}
+                        className="group cursor-pointer border border-slate-200 rounded-xl p-2 hover:border-blue-400 hover:shadow-xs transition bg-slate-50/50"
+                      >
+                        <div className="aspect-[16/10] bg-slate-900 rounded-lg overflow-hidden mb-1.5">
+                          <img src={shot.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition" loading="lazy" />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-slate-700">{shot.time}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">{shot.status || 'Working'}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate mt-0.5">{shot.appName}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1017,75 +1144,75 @@ export default function TimeTrackingSummary() {
 
       {/* Activity Timeline Modal */}
       {showTimelineModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowTimelineModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-[720px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 pt-20 pb-6 sm:p-6 sm:pt-24 overflow-y-auto animate-in fade-in duration-200" onClick={() => setShowTimelineModal(false)}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-[720px] max-w-full max-h-[85vh] flex flex-col overflow-hidden my-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/80">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-lg">Activity Timeline</h3>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Activity Timeline</h3>
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-800/50">
                     {dateRangePreset}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {selectedDevice 
                     ? `${selectedDevice.employee.name} (${selectedDevice.employee.employeeCode || selectedDevice.deviceId}) • ${selectedDateLabel}`
                     : `Global Overview • ${selectedDateLabel}`}
                 </p>
               </div>
-              <button onClick={() => setShowTimelineModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+              <button onClick={() => setShowTimelineModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg transition cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               {/* Productivity Overview */}
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 sm:p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl p-3 sm:p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h4 className="font-bold text-blue-900">Productivity Score</h4>
-                  <p className="text-xs text-blue-700 font-medium mt-1">Efficiency for {selectedDateLabel}</p>
+                  <h4 className="font-bold text-blue-900 dark:text-blue-200">Productivity Score</h4>
+                  <p className="text-xs text-blue-700 dark:text-blue-300/80 font-medium mt-1">Efficiency for {selectedDateLabel}</p>
                 </div>
-                <div className="flex items-center sm:items-end justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100">
+                <div className="flex items-center sm:items-end justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100 dark:border-blue-800/40">
                   <div className="text-left sm:text-right">
-                    <p className="text-[10px] uppercase font-bold text-blue-500 mb-0.5">First Start</p>
-                    <p className="text-xs font-bold text-blue-900">{summaryData?.stats?.firstWorkStart || '--:--'}</p>
+                    <p className="text-[10px] uppercase font-bold text-blue-500 dark:text-blue-400 mb-0.5">First Start</p>
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-200">{summaryData?.stats?.firstWorkStart || '--:--'}</p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="text-[10px] uppercase font-bold text-blue-500 mb-0.5">Last End</p>
-                    <p className="text-xs font-bold text-blue-900">{summaryData?.stats?.lastWorkEnd || '--:--'}</p>
+                    <p className="text-[10px] uppercase font-bold text-blue-500 dark:text-blue-400 mb-0.5">Last End</p>
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-200">{summaryData?.stats?.lastWorkEnd || '--:--'}</p>
                   </div>
-                  <div className="text-right ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-blue-200">
-                    <p className="text-2xl sm:text-3xl font-black text-blue-600">{summaryData?.stats?.efficiency || 0}%</p>
+                  <div className="text-right ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-blue-200 dark:border-blue-800/60">
+                    <p className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">{summaryData?.stats?.efficiency || 0}%</p>
                   </div>
                 </div>
               </div>
 
               {/* Stats row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-6 sm:mb-8">
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Working</p>
-                  <p className="text-sm font-bold text-slate-800">{(() => {
+                <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Working</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{(() => {
                     const s = summaryData?.stats?.workSeconds || 0;
                     return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
                   })()}</p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Idle</p>
-                  <p className="text-sm font-bold text-slate-800">{(() => {
+                <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Idle</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{(() => {
                     const s = summaryData?.stats?.idleSeconds || 0;
                     return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
                   })()}</p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Break</p>
-                  <p className="text-sm font-bold text-slate-800">{(() => {
+                <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Break</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{(() => {
                     const s = summaryData?.stats?.breakSeconds || 0;
                     return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
                   })()}</p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Lunch</p>
-                  <p className="text-sm font-bold text-slate-800">{(() => {
+                <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Lunch</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{(() => {
                     const s = summaryData?.stats?.lunchSeconds || 0;
                     return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
                   })()}</p>
@@ -1095,21 +1222,39 @@ export default function TimeTrackingSummary() {
               {/* Full Timeline List */}
               {summaryData?.timeline && summaryData.timeline.length > 0 ? (
                 <div className="space-y-0 pl-6 relative">
-                  <div className="absolute top-3 bottom-3 left-[123px] w-[2px] bg-slate-200 z-0"></div>
+                  <div className="absolute top-3 bottom-3 left-[123px] w-[2px] bg-slate-200 dark:bg-slate-700 z-0"></div>
                   {summaryData.timeline.map((event, i) => (
-                    <div key={i} className={`relative flex items-start gap-6 py-3 px-4 -ml-4 hover:bg-slate-50 rounded-xl transition-all z-10 ${event.type === 'start' || event.type === 'end' ? 'opacity-80' : ''}`}>
+                    <div key={i} className={`relative flex items-start gap-6 py-3 px-4 -ml-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all z-10 ${event.type === 'start' || event.type === 'end' ? 'opacity-80' : ''}`}>
                       <div className="w-[70px] shrink-0 text-right pt-0.5 z-10">
-                        <span className="text-xs font-medium text-slate-500 bg-transparent py-1 whitespace-nowrap group-hover:text-slate-800">{event.time}</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-transparent py-1 whitespace-nowrap group-hover:text-slate-800 dark:group-hover:text-slate-200">{event.time}</span>
                       </div>
 
-                      <div className={`w-3 h-3 rounded-full mt-1.5 z-10 border-2 border-white ring-2 ${event.color === 'emerald' ? 'bg-emerald-500 ring-emerald-100' : event.color === 'blue' ? 'bg-blue-500 ring-blue-100' : event.color === 'slate' ? 'bg-slate-400 ring-slate-100' : event.color === 'violet' || event.color === 'purple' ? 'bg-violet-500 ring-violet-100' : 'bg-orange-400 ring-orange-100'}`}></div>
+                      <div className={`w-3 h-3 rounded-full mt-1.5 z-10 border-2 border-white dark:border-[#1E293B] ring-2 ${
+                        event.color === 'emerald' 
+                          ? 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-950' 
+                          : event.color === 'blue' 
+                          ? 'bg-blue-500 ring-blue-100 dark:ring-blue-950' 
+                          : event.color === 'slate' 
+                          ? 'bg-slate-400 dark:bg-slate-500 ring-slate-100 dark:ring-slate-800' 
+                          : event.color === 'violet' || event.color === 'purple' 
+                          ? 'bg-violet-500 ring-violet-100 dark:ring-violet-950' 
+                          : 'bg-orange-400 ring-orange-100 dark:ring-orange-950'
+                      }`}></div>
 
-                      <div className="flex-1 pb-4 bg-white z-10">
-                        <h4 className={`text-xs font-bold uppercase mb-0.5 ${event.color === 'emerald' ? 'text-slate-800' : event.color === 'blue' ? 'text-slate-800' : event.color === 'slate' ? 'text-slate-600' : 'text-slate-800'}`}>
+                      <div className="flex-1 pb-4 bg-transparent z-10">
+                        <h4 className={`text-xs font-bold uppercase mb-0.5 ${
+                          event.color === 'emerald' 
+                            ? 'text-slate-800 dark:text-slate-100' 
+                            : event.color === 'blue' 
+                            ? 'text-slate-800 dark:text-slate-100' 
+                            : event.color === 'slate' 
+                            ? 'text-slate-600 dark:text-slate-400' 
+                            : 'text-slate-800 dark:text-slate-100'
+                        }`}>
                           {event.title.split(' (')[0]}
                         </h4>
                         {event.duration && (
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
                             Duration: {(() => {
                               const h = Math.floor(event.duration / 3600);
                               const m = Math.floor((event.duration % 3600) / 60);
@@ -1119,19 +1264,19 @@ export default function TimeTrackingSummary() {
                           </p>
                         )}
                         {!event.duration && event.type !== 'start' && event.type !== 'end' && (
-                          <p className="text-[10px] text-slate-500">Started {event.time}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">Started {event.time}</p>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                    <Clock className="h-6 w-6 text-slate-400" />
+                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500">
+                  <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                    <Clock className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">No Activity Events Recorded</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No Activity Events Recorded</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
                     No timeline activity recorded for {selectedDevice ? selectedDevice.employee.name : 'any employee'} on {selectedDateLabel}.
                   </p>
                 </div>
@@ -1143,23 +1288,23 @@ export default function TimeTrackingSummary() {
 
       {/* Top Applications Modal */}
       {showAppsModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowAppsModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-[680px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 pt-20 pb-6 sm:p-6 sm:pt-24 overflow-y-auto animate-in fade-in duration-200" onClick={() => setShowAppsModal(false)}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-[680px] max-w-full max-h-[85vh] flex flex-col overflow-hidden my-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/80">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-lg">Top Applications</h3>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Top Applications</h3>
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-800/50">
                     {dateRangePreset}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {selectedDevice 
                     ? `${selectedDevice.employee.name} (${selectedDevice.employee.employeeCode || selectedDevice.deviceId}) • ${selectedDateLabel}`
                     : `Global Applications • ${selectedDateLabel}`}
                 </p>
               </div>
-              <button onClick={() => setShowAppsModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+              <button onClick={() => setShowAppsModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg transition cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1167,19 +1312,19 @@ export default function TimeTrackingSummary() {
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               {/* Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-blue-600 mb-1">Total Apps</p>
-                  <p className="text-lg font-bold text-blue-950">{summaryData?.topApplications?.length || 0}</p>
+                <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 mb-1">Total Apps</p>
+                  <p className="text-lg font-bold text-blue-950 dark:text-blue-200">{summaryData?.topApplications?.length || 0}</p>
                 </div>
-                <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-emerald-600 mb-1">Total App Time</p>
-                  <p className="text-lg font-bold text-emerald-950">
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 mb-1">Total App Time</p>
+                  <p className="text-lg font-bold text-emerald-950 dark:text-emerald-200">
                     {formatDuration(summaryData?.topApplications?.reduce((acc, a) => acc + a.durationSeconds, 0) || 0)}
                   </p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 col-span-2 sm:col-span-1">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Top App</p>
-                  <p className="text-sm font-bold text-slate-800 truncate" title={summaryData?.topApplications?.[0]?.name || '-'}>
+                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/70 rounded-xl p-3 col-span-2 sm:col-span-1">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Top App</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={summaryData?.topApplications?.[0]?.name || '-'}>
                     {summaryData?.topApplications?.[0]?.name || '-'}
                   </p>
                 </div>
@@ -1187,15 +1332,15 @@ export default function TimeTrackingSummary() {
 
               {/* Full Applications List */}
               {summaryData?.topApplications && summaryData.topApplications.length > 0 ? (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {summaryData.topApplications.map((app, i) => (
-                    <div key={i} className="py-3 px-3 hover:bg-slate-50 rounded-xl transition flex items-center justify-between gap-4">
+                    <div key={i} className="py-3 px-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <span className="text-xs font-bold text-slate-400 w-5 text-center">#{i + 1}</span>
+                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center">#{i + 1}</span>
                         {getAppIcon(app.name)}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 truncate" title={app.name}>{app.name}</p>
-                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1.5 max-w-[200px]">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate" title={app.name}>{app.name}</p>
+                          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5 max-w-[200px]">
                             <div 
                               className="bg-blue-500 h-full rounded-full" 
                               style={{ width: calculatePct(app.durationSeconds, summaryData.topApplications) }}
@@ -1204,8 +1349,8 @@ export default function TimeTrackingSummary() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0 text-right">
-                        <span className="text-xs font-semibold text-slate-600">{formatDuration(app.durationSeconds)}</span>
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md w-12 text-center">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{formatDuration(app.durationSeconds)}</span>
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 px-2 py-0.5 rounded-md w-12 text-center">
                           {calculatePct(app.durationSeconds, summaryData.topApplications)}
                         </span>
                       </div>
@@ -1214,11 +1359,11 @@ export default function TimeTrackingSummary() {
                 </div>
               ) : (
                 <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                  <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
                     <Layout className="h-6 w-6 text-slate-400" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">No Application Usage Recorded</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No Application Usage Recorded</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
                     No application activities recorded for {selectedDevice ? selectedDevice.employee.name : 'any employee'} on {selectedDateLabel}.
                   </p>
                 </div>
@@ -1230,23 +1375,23 @@ export default function TimeTrackingSummary() {
 
       {/* Top Websites Modal */}
       {showWebsitesModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowWebsitesModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-[680px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 pt-20 pb-6 sm:p-6 sm:pt-24 overflow-y-auto animate-in fade-in duration-200" onClick={() => setShowWebsitesModal(false)}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-[680px] max-w-full max-h-[85vh] flex flex-col overflow-hidden my-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/80">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800 text-lg">Top Websites</h3>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Top Websites</h3>
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-800/50">
                     {dateRangePreset}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {selectedDevice 
                     ? `${selectedDevice.employee.name} (${selectedDevice.employee.employeeCode || selectedDevice.deviceId}) • ${selectedDateLabel}`
                     : `Global Websites • ${selectedDateLabel}`}
                 </p>
               </div>
-              <button onClick={() => setShowWebsitesModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+              <button onClick={() => setShowWebsitesModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg transition cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1254,19 +1399,19 @@ export default function TimeTrackingSummary() {
             <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
               {/* Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-purple-600 mb-1">Total Websites</p>
-                  <p className="text-lg font-bold text-purple-950">{summaryData?.topWebsites?.length || 0}</p>
+                <div className="bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 mb-1">Total Websites</p>
+                  <p className="text-lg font-bold text-purple-950 dark:text-purple-200">{summaryData?.topWebsites?.length || 0}</p>
                 </div>
-                <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3">
-                  <p className="text-[10px] uppercase font-bold text-emerald-600 mb-1">Total Web Time</p>
-                  <p className="text-lg font-bold text-emerald-950">
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-3">
+                  <p className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 mb-1">Total Web Time</p>
+                  <p className="text-lg font-bold text-emerald-950 dark:text-emerald-200">
                     {formatDuration(summaryData?.topWebsites?.reduce((acc, s) => acc + s.durationSeconds, 0) || 0)}
                   </p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 col-span-2 sm:col-span-1">
-                  <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Most Visited</p>
-                  <p className="text-sm font-bold text-slate-800 truncate" title={summaryData?.topWebsites?.[0]?.name || '-'}>
+                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/70 rounded-xl p-3 col-span-2 sm:col-span-1">
+                  <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Most Visited</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={summaryData?.topWebsites?.[0]?.name || '-'}>
                     {summaryData?.topWebsites?.[0]?.name || '-'}
                   </p>
                 </div>
@@ -1274,15 +1419,15 @@ export default function TimeTrackingSummary() {
 
               {/* Full Websites List */}
               {summaryData?.topWebsites && summaryData.topWebsites.length > 0 ? (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {summaryData.topWebsites.map((site, i) => (
-                    <div key={i} className="py-3 px-3 hover:bg-slate-50 rounded-xl transition flex items-center justify-between gap-4">
+                    <div key={i} className="py-3 px-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <span className="text-xs font-bold text-slate-400 w-5 text-center">#{i + 1}</span>
+                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center">#{i + 1}</span>
                         {getWebsiteIcon(site.name)}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 truncate" title={site.name}>{site.name}</p>
-                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1.5 max-w-[200px]">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate" title={site.name}>{site.name}</p>
+                          <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5 max-w-[200px]">
                             <div 
                               className="bg-purple-500 h-full rounded-full" 
                               style={{ width: calculatePct(site.durationSeconds, summaryData.topWebsites) }}
@@ -1291,8 +1436,8 @@ export default function TimeTrackingSummary() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0 text-right">
-                        <span className="text-xs font-semibold text-slate-600">{formatDuration(site.durationSeconds)}</span>
-                        <span className="text-xs font-bold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-md w-12 text-center">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{formatDuration(site.durationSeconds)}</span>
+                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800/50 px-2 py-0.5 rounded-md w-12 text-center">
                           {calculatePct(site.durationSeconds, summaryData.topWebsites)}
                         </span>
                       </div>
@@ -1301,15 +1446,59 @@ export default function TimeTrackingSummary() {
                 </div>
               ) : (
                 <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                  <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
                     <Globe className="h-6 w-6 text-slate-400" />
                   </div>
-                  <p className="text-sm font-bold text-slate-700">No Website Visits Recorded</p>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No Website Visits Recorded</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
                     No web activities recorded for {selectedDevice ? selectedDevice.employee.name : 'any employee'} on {selectedDateLabel}.
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Screenshot Modal */}
+      {previewScreenshot && (
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 pt-20 pb-6 sm:p-6 sm:pt-24 overflow-y-auto animate-in fade-in duration-150"
+          onClick={() => setPreviewScreenshot(null)}
+        >
+          <div 
+            className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 w-[920px] max-w-full overflow-hidden flex flex-col my-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">{previewScreenshot.title}</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setPreviewScreenshot(null);
+                    navigate('/tracking/screen-monitoring');
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition"
+                >
+                  Open in Screen Monitoring &rarr;
+                </button>
+                <button 
+                  onClick={() => setPreviewScreenshot(null)} 
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-lg transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-950 flex items-center justify-center max-h-[75vh] overflow-hidden">
+              <img 
+                src={previewScreenshot.imageUrl} 
+                alt={previewScreenshot.title}
+                className="max-h-[70vh] w-auto max-w-full rounded-lg object-contain shadow-lg"
+              />
             </div>
           </div>
         </div>

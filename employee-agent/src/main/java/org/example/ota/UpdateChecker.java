@@ -37,6 +37,7 @@ public class UpdateChecker {
 
         this.httpClient =
                 HttpClient.newBuilder()
+                        .followRedirects(HttpClient.Redirect.ALWAYS)
                         .connectTimeout(
                                 Duration.ofSeconds(10)
                         )

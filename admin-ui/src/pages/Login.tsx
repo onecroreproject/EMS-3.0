@@ -227,10 +227,11 @@ export default function Login() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16 hover:scale-105 transition-transform duration-300 w-max cursor-pointer">
-            <div className="bg-[#F96D3E] p-2.5 rounded-xl shadow-[0_0_20px_rgba(249,109,62,0.4)]">
-              <Activity className="h-6 w-6 text-white" />
+            <img src="/teratime-logo-white.png" alt="Teratime" className="h-11 w-11 object-contain drop-shadow-md" />
+            <div>
+              <span className="text-2xl font-bold text-white tracking-tight block leading-tight">Teratime</span>
+              <span className="text-[11px] font-medium text-slate-300 tracking-wide block">Employment Management system</span>
             </div>
-            <span className="text-2xl font-bold text-white tracking-tight">EmpMonitor</span>
           </div>
 
           <h1 className="text-5xl font-bold text-white leading-tight mb-6">
@@ -271,10 +272,13 @@ export default function Login() {
           
           {/* Mobile Header */}
           <div className="flex lg:hidden items-center justify-center gap-3 mb-10">
-            <div className="bg-[#F96D3E] p-2.5 rounded-xl shadow-lg">
-              <Activity className="h-6 w-6 text-white" />
+            <div className="bg-[#F96D3E] p-2 rounded-xl shadow-lg flex items-center justify-center">
+              <img src="/teratime-logo-white.png" alt="Teratime" className="h-8 w-8 object-contain" />
             </div>
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">EmpMonitor</span>
+            <div>
+              <span className="text-2xl font-bold text-slate-900 tracking-tight block leading-tight">Teratime</span>
+              <span className="text-[10px] font-medium text-slate-500 tracking-wide block">Employment Management system</span>
+            </div>
           </div>
 
           <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100">
@@ -599,7 +603,7 @@ export default function Login() {
           )}
           
           <p className="text-center text-slate-400 text-xs mt-8">
-            &copy; {new Date().getFullYear()} EmpMonitor Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} Teratime. All rights reserved.
           </p>
         </div>
       </div>

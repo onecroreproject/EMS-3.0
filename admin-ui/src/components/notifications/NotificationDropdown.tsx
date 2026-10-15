@@ -118,7 +118,7 @@ export default function NotificationDropdown({
   return (
     <div
       ref={dropdownRef}
-      className={`absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-[#1E2B3C] rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/80 overflow-hidden z-50 text-slate-800 dark:text-slate-100 transition-all duration-200 ease-out origin-top-right will-change-[opacity,transform] ${
+      className={`absolute right-[-60px] xs:right-[-35px] sm:right-0 top-full mt-2 w-[calc(100vw-28px)] max-w-sm sm:w-96 bg-white dark:bg-[#1E2B3C] rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/80 overflow-hidden z-[100] text-slate-800 dark:text-slate-100 transition-all duration-200 ease-out origin-top-right will-change-[opacity,transform] ${
         isVisible
           ? 'opacity-100 scale-100 translate-y-0'
           : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'

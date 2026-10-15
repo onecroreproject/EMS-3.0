@@ -24,15 +24,15 @@ export default function Layout() {
   }, [navigate, location]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 transition-colors duration-300">
+    <div className="flex flex-col h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-[#0b0f19] transition-colors duration-300">
       {/* Top Orange Header */}
       <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
 
       {/* Below Header: Sidebar + Main Content */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative z-0 w-full max-w-full">
         <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 w-full no-scrollbar">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 w-full max-w-full no-scrollbar">
           <Outlet />
         </main>
       </div>

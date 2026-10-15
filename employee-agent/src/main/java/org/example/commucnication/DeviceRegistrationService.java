@@ -43,7 +43,10 @@ public class DeviceRegistrationService {
                     deviceInfoService.getOperatingSystem();
 
             String ipAddress =
-                    deviceInfoService.getIpAddress();
+                    org.example.device.DeviceLocationResolver.getIpAddress();
+
+            String location =
+                    org.example.device.DeviceLocationResolver.getLocation();
 
             String agentVersion =
                     org.example.AgentVersion.VERSION;
@@ -56,7 +59,8 @@ public class DeviceRegistrationService {
                         "hostname": "%s",
                         "operatingSystem": "%s",
                         "agentVersion": "%s",
-                        "ipAddress": "%s"
+                        "ipAddress": "%s",
+                        "location": "%s"
                     }
                     """.formatted(
                     deviceId,
@@ -65,7 +69,8 @@ public class DeviceRegistrationService {
                     hostname,
                     operatingSystem,
                     agentVersion,
-                    ipAddress
+                    ipAddress,
+                    location
             );
 
             String authToken = (token != null && !token.isBlank()) ? token : org.example.config.AgentTokenHolder.getToken();
